@@ -52,8 +52,10 @@ src/
 └── features/auth/
     ├── screens/                 # Composición de pantallas de autenticación
     │   └── LoginScreen.jsx
-    └── components/              # Piezas propias de autenticación
-        └── LoginForm.jsx
+    ├── components/              # Piezas propias de autenticación
+    │   └── LoginForm.jsx
+    └── validators/              # Reglas puras de validación
+        └── loginValidator.js
 ```
 
 ### Reglas para ubicar código
