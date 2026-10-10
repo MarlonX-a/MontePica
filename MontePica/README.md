@@ -22,8 +22,11 @@ MontePica/
 │       └── auth/                  # Funcionalidad de autenticación
 │           ├── screens/
 │           │   └── LoginScreen.jsx # Composición visual de la pantalla
-│           └── components/
-│               └── LoginForm.jsx  # Etiquetas, campos y botón de acceso
+│           ├── components/
+│           │   └── LoginForm.jsx  # Campos validados y botón de acceso
+│           └── validators/         # Reglas de validación de auth
+│               ├── loginValidator.js
+│               └── registerValidator.js
 ├── global.css                     # Directivas base de Tailwind
 ├── app.json                       # Configuración de Expo
 ├── babel.config.js                # Babel y preset de NativeWind
@@ -43,7 +46,9 @@ Las carpetas `services`, `store`, `hooks`, `constants` y `utils` no existen toda
 4. `src/app/(auth)/_layout.jsx` define el Stack del grupo de autenticación y registra la ruta `login`.
 5. `src/app/(auth)/login.jsx` es una entrada pequeña: renderiza `LoginScreen` desde la feature.
 6. `src/features/auth/screens/LoginScreen.jsx` compone el contenedor, el encabezado `Title`, el formulario y los textos inferiores.
-7. `src/features/auth/components/LoginForm.jsx` presenta las etiquetas, los campos editables, el campo de contraseña oculta y el botón.
+7. `src/features/auth/components/LoginForm.jsx` presenta las etiquetas, los campos editables, los errores de validación y el botón.
+8. `src/features/auth/validators/loginValidator.js` contiene reglas para validar el correo y la contraseña del acceso.
+9. `src/features/auth/validators/registerValidator.js` contiene reglas para validar los datos del registro.
 
 El grupo `(auth)` organiza las rutas de autenticación y no forma parte de la URL. Por eso la ruta de acceso queda como `/login`.
 
@@ -69,7 +74,9 @@ La dirección de imports debe ser: **rutas → features → componentes comparti
 
 ## Estado actual del acceso
 
-El login implementa la presentación visual y permite escribir en los campos nativos. El botón no envía credenciales y los textos para recuperar la contraseña y crear una cuenta aún no navegan. No hay conexión de autenticación, llamadas al servidor, validación ni persistencia de sesión.
+El login permite escribir en los campos y valida que el correo no esté vacío y tenga un formato básico válido, y que la contraseña no esté vacía. Los errores aparecen al salir del campo o al pulsar “Ingresar”, y se actualizan mientras se corrige un campo que ya mostró un error. La contraseña se puede mostrar u ocultar. El diseño actual usa un fondo crema y tonos terracota; la imagen superior de la referencia todavía no está incorporada.
+
+El registro valida nombre, correo, teléfono de 10 dígitos (también acepta el prefijo ecuatoriano `+593`), contraseña de al menos 8 caracteres con una mayúscula y un número, confirmación de contraseña y aceptación de términos. Los errores aparecen al salir de cada campo o al pulsar “Crear cuenta”. Ambas validaciones son locales: el botón de registro aún no crea cuentas ni envía datos a un servidor, y no hay persistencia de sesión.
 
 ## Comandos
 
