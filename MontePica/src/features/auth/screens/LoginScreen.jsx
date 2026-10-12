@@ -1,5 +1,5 @@
 import { View, Text, Pressable } from 'react-native';
-import { Link } from 'expo-router';
+import { Link, router } from 'expo-router';
 import Title from '@/components/ui/Title';
 import LoginForm from '@/features/auth/components/LoginForm';
 
@@ -12,7 +12,7 @@ export default function LoginScreen() {
           subtitulo="Ingresa para ordenar o administrar el servicio."
         />
       </View>
-      <LoginForm />
+      <LoginForm onValidSubmit={() => router.replace('/home')} />
       <Text className="mt-5 text-center text-sm text-[#8b8178]">
         ¿Primera vez?
       </Text>
