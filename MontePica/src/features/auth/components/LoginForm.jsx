@@ -5,7 +5,7 @@ import {
   validateLoginForm,
 } from '@/features/auth/validators/loginValidator';
 
-export default function LoginForm() {
+export default function LoginForm({ onValidSubmit }) {
   const [values, setValues] = useState({ email: '', password: '' });
   const [errors, setErrors] = useState({ email: '', password: '' });
   const [touched, setTouched] = useState({ email: false, password: false });
@@ -31,8 +31,13 @@ export default function LoginForm() {
   }
 
   function handleSubmit() {
+    const nextErrors = validateLoginForm(values);
     setTouched({ email: true, password: true });
-    setErrors(validateLoginForm(values));
+    setErrors(nextErrors);
+
+    if (!nextErrors.email && !nextErrors.password) {
+      onValidSubmit?.();
+    }
   }
 
   return (

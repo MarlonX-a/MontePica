@@ -7,10 +7,13 @@ Aplicación móvil construida con Expo, React Native, Expo Router y NativeWind. 
 ```text
 MontePica/
 ├── assets/                       # Iconos e imágenes de la aplicación
+│   └── encebollado-manabita.png  # Foto de plato destacado en Inicio
 ├── src/
 │   ├── app/                       # Rutas de Expo Router
 │   │   ├── _layout.jsx            # Stack raíz; importa los estilos globales
 │   │   ├── index.jsx              # Entrada inicial; redirige al acceso
+│   │   ├── (client)/              # Rutas del área del cliente
+│   │   │   └── home.jsx           # Ruta /home
 │   │   └── (auth)/                # Grupo de navegación de autenticación
 │   │       ├── _layout.jsx        # Stack del grupo (auth)
 │   │       └── login.jsx          # Ruta /login; conecta ruta con pantalla
@@ -19,6 +22,11 @@ MontePica/
 │   │   └── ui/                    # Piezas visuales transversales
 │   │       └── Title.jsx          # Título y subtítulo configurables
 │   └── features/
+│       ├── client/
+│       │   ├── components/
+│       │   │   └── BottomNavigation.jsx
+│       │   └── screens/
+│       │       └── HomeScreen.jsx
 │       └── auth/                  # Funcionalidad de autenticación
 │           ├── screens/
 │           │   └── LoginScreen.jsx # Composición visual de la pantalla
@@ -51,6 +59,8 @@ Las carpetas `services`, `store`, `hooks`, `constants` y `utils` no existen toda
 9. `src/features/auth/validators/registerValidator.js` contiene reglas para validar los datos del registro.
 
 El grupo `(auth)` organiza las rutas de autenticación y no forma parte de la URL. Por eso la ruta de acceso queda como `/login`.
+
+La pantalla de inicio del cliente está en `/home`, usa una foto local del encebollado y muestra la barra inferior. La ruta raíz `/` sigue redirigiendo al inicio de sesión; la navegación entre las otras pestañas aún no está conectada a pantallas.
 
 ## Dónde poner código nuevo
 
