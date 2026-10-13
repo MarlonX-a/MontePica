@@ -161,7 +161,12 @@ export default function TableScannerScreen() {
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Continuar al menú"
-              onPress={() => {}}
+              onPress={() =>
+                router.push({
+                  pathname: "/menu",
+                  params: { service: "dine-in", table: MOCK_SCANNED_TABLE },
+                })
+              }
               className="h-12 flex-row items-center justify-center rounded-xl bg-[#b7472a]"
             >
               <Text className="mr-2 text-white">→</Text>

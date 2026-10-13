@@ -106,6 +106,12 @@ export default function HomeScreen() {
               title="Pedir a domicilio"
               subtitle="Lo llevamos hasta ti"
               primary
+              onPress={() =>
+                router.push({
+                  pathname: '/menu',
+                  params: { service: 'delivery' },
+                })
+              }
             />
             <OrderButton
               icon="⌂"
