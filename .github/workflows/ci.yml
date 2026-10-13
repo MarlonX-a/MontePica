@@ -30,7 +30,7 @@ jobs:
           cache-dependency-path: MontePica/package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts
 
       - name: Run linter when configured
         shell: bash

@@ -1,4 +1,4 @@
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+import { isValidEmail } from './emailValidator.js';
 
 export function validateLoginField(field, value) {
   if (field === 'email') {
@@ -8,7 +8,7 @@ export function validateLoginField(field, value) {
       return 'Ingresa tu correo electrónico.';
     }
 
-    if (!EMAIL_PATTERN.test(email)) {
+    if (!isValidEmail(email)) {
       return 'Ingresa un correo electrónico válido.';
     }
   }
