@@ -1,5 +1,6 @@
 import { ImageBackground, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
 import BottomNavigation from '@/features/client/components/BottomNavigation';
 
 function CartIcon() {
@@ -14,10 +15,11 @@ function CartIcon() {
   );
 }
 
-function OrderButton({ icon, title, subtitle, primary }) {
+function OrderButton({ icon, title, subtitle, primary, onPress }) {
   return (
     <Pressable
       accessibilityRole="button"
+      onPress={onPress}
       className={`min-h-[104px] flex-1 rounded-2xl px-3 py-3 ${primary ? 'bg-[#b7472a]' : 'border border-[#eadfd2] bg-white'}`}
     >
       <View
@@ -109,6 +111,7 @@ export default function HomeScreen() {
               icon="⌂"
               title="Para servirse"
               subtitle="Disfruta en el local"
+              onPress={() => router.push('/scan-table')}
             />
           </View>
 
