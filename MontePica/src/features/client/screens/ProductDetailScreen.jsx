@@ -3,37 +3,11 @@ import { Image, Pressable, ScrollView, Text, TextInput, View } from 'react-nativ
 import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import IconButton from '@/features/client/components/IconButton';
+import SelectableChip from '@/features/client/components/SelectableChip';
 import { getProductPrice, menuProducts } from '@/features/client/data/menuProducts';
 
 const spiceOptions = ['Sin ají', 'Suave', 'Medio', 'Fuerte'];
-
-function RoundButton({ label, onPress, children }) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      onPress={onPress}
-      className="h-11 w-11 items-center justify-center rounded-full bg-white/90"
-    >
-      <Text className="text-xl text-[#514941]">{children}</Text>
-    </Pressable>
-  );
-}
-
-function SpiceOption({ label, selected, onPress }) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityState={{ selected }}
-      onPress={onPress}
-      className={`mr-2 rounded-full px-3 py-2 ${selected ? 'bg-[#8e3b27]' : 'bg-[#f1eee9]'}`}
-    >
-      <Text className={`text-[11px] ${selected ? 'font-semibold text-white' : 'text-[#70665e]'}`}>
-        {label}
-      </Text>
-    </Pressable>
-  );
-}
 
 function QuantityButton({ label, onPress, children, disabled }) {
   return (
@@ -100,15 +74,15 @@ export default function ProductDetailScreen() {
               </>
             )}
             <View className="absolute left-5 right-5 top-3 flex-row justify-between">
-              <RoundButton label="Volver al menú" onPress={() => router.back()}>
+              <IconButton label="Volver al menú" onPress={() => router.back()}>
                 ‹
-              </RoundButton>
-              <RoundButton
+              </IconButton>
+              <IconButton
                 label={favorite ? 'Quitar de favoritos' : 'Agregar a favoritos'}
                 onPress={() => setFavorite((value) => !value)}
               >
                 {favorite ? '♥' : '♡'}
-              </RoundButton>
+              </IconButton>
             </View>
             <View className="absolute bottom-4 left-5 rounded-full bg-white/90 px-3 py-1.5">
               <Text className="text-[10px] font-semibold text-[#8a4a34]">
@@ -149,11 +123,17 @@ export default function ProductDetailScreen() {
                 </Text>
                 <View className="flex-row">
                   {spiceOptions.map((option) => (
-                    <SpiceOption
+                    <SelectableChip
                       key={option}
                       label={option}
                       selected={spice === option}
                       onPress={() => setSpice(option)}
+                      className="mr-2 rounded-full px-3 py-2"
+                      selectedClassName="bg-[#8e3b27]"
+                      unselectedClassName="bg-[#f1eee9]"
+                      textClassName="text-[11px]"
+                      selectedTextClassName="font-semibold text-white"
+                      unselectedTextClassName="text-[#70665e]"
                     />
                   ))}
                 </View>
