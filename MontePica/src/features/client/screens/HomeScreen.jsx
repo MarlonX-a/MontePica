@@ -2,18 +2,7 @@ import { ImageBackground, Pressable, ScrollView, Text, View } from 'react-native
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import BottomNavigation from '@/features/client/components/BottomNavigation';
-
-function CartIcon() {
-  return (
-    <View className="h-11 w-11 items-center justify-center rounded-full bg-white">
-      <View className="h-4 w-4 items-center">
-        <View className="absolute -top-1 h-2 w-2 rounded-t-full border border-[#8b8178]" />
-        <View className="mt-1 h-3 w-4 rounded-b border border-[#8b8178]" />
-      </View>
-      <View className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[#b7472a]" />
-    </View>
-  );
-}
+import CartButton from '@/features/client/components/CartButton';
 
 function OrderButton({ icon, title, subtitle, primary, onPress }) {
   return (
@@ -60,12 +49,7 @@ export default function HomeScreen() {
                 Mesa aún no vinculada
               </Text>
             </View>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Carrito de compras"
-            >
-              <CartIcon />
-            </Pressable>
+            <CartButton />
           </View>
 
           <ImageBackground

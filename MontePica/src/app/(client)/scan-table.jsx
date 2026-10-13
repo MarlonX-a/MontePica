@@ -1,5 +1,1 @@
-import TableScannerScreen from '@/features/client/screens/TableScannerScreen';
-
-export default function ScanTableRoute() {
-  return <TableScannerScreen />;
-}
+export { default } from '@/features/client/screens/TableScannerScreen';

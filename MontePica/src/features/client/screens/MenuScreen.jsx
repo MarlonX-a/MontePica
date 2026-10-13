@@ -1,52 +1,15 @@
 import { useMemo, useState } from 'react';
-import {
-  Pressable,
-  ScrollView,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { ScrollView, Text, TextInput, View } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BottomNavigation from '@/features/client/components/BottomNavigation';
 import MenuProductCard from '@/features/client/components/MenuProductCard';
+import CartButton from '@/features/client/components/CartButton';
 import { menuProducts } from '@/features/client/data/menuProducts';
+import SelectableChip from '@/features/client/components/SelectableChip';
 
 const categories = ['Todos', 'Ceviches', 'Bebidas'];
-
-function CartButton() {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel="Carrito de compras"
-      className="h-11 w-11 items-center justify-center rounded-full bg-white"
-    >
-      <View className="h-4 w-4 items-center">
-        <View className="absolute -top-1 h-2 w-2 rounded-t-full border border-[#8b8178]" />
-        <View className="mt-1 h-3 w-4 rounded-b border border-[#8b8178]" />
-      </View>
-      <View className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[#b7472a]" />
-    </Pressable>
-  );
-}
-
-function CategoryChip({ label, selected, onPress }) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityState={{ selected }}
-      onPress={onPress}
-      className={`mr-2 rounded-full px-4 py-2 ${selected ? 'bg-[#8e3b27]' : 'bg-white'}`}
-    >
-      <Text
-        className={`text-xs ${selected ? 'font-semibold text-white' : 'text-[#70665e]'}`}
-      >
-        {label}
-      </Text>
-    </Pressable>
-  );
-}
 
 export default function MenuScreen() {
   const { service, table } = useLocalSearchParams();
@@ -108,11 +71,17 @@ export default function MenuScreen() {
             className="mb-4 max-h-10"
           >
             {categories.map((category) => (
-              <CategoryChip
+              <SelectableChip
                 key={category}
                 label={category}
                 selected={selectedCategory === category}
                 onPress={() => setSelectedCategory(category)}
+                className="mr-2 rounded-full px-4 py-2"
+                selectedClassName="bg-[#8e3b27]"
+                unselectedClassName="bg-white"
+                textClassName="text-xs"
+                selectedTextClassName="font-semibold text-white"
+                unselectedTextClassName="text-[#70665e]"
               />
             ))}
           </ScrollView>

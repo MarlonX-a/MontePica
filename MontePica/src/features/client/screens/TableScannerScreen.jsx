@@ -4,19 +4,35 @@ import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import IconButton from "@/features/client/components/IconButton";
 
 const MOCK_SCANNED_TABLE = "Mesa 08";
 
-function ScannerIconButton({ label, onPress, children }) {
+function ScannerHeader({ showTorch, torchEnabled, onToggleTorch }) {
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      onPress={onPress}
-      className="h-11 w-11 items-center justify-center rounded-full bg-white/10"
-    >
-      <Text className="text-xl text-white">{children}</Text>
-    </Pressable>
+    <View className="flex-row items-center justify-between px-5 pb-3 pt-2">
+      <IconButton
+        label="Volver al inicio"
+        onPress={() => router.back()}
+        className="h-11 w-11 items-center justify-center rounded-full bg-white/10"
+        textClassName="text-xl text-white"
+      >
+        ×
+      </IconButton>
+      <Text className="text-base font-semibold text-white">Escanear mesa</Text>
+      {showTorch ? (
+        <IconButton
+          label={torchEnabled ? "Apagar linterna" : "Encender linterna"}
+          onPress={onToggleTorch}
+          className="h-11 w-11 items-center justify-center rounded-full bg-white/10"
+          textClassName="text-xl text-white"
+        >
+          ϟ
+        </IconButton>
+      ) : (
+        <View className="h-11 w-11" />
+      )}
+    </View>
   );
 }
 
@@ -69,18 +85,7 @@ export default function TableScannerScreen() {
     return (
       <SafeAreaView className="flex-1 bg-[#1c1a18]">
         <StatusBar style="light" />
-        <View className="flex-row items-center px-4 pt-2">
-          <ScannerIconButton
-            label="Volver al inicio"
-            onPress={() => router.back()}
-          >
-            ×
-          </ScannerIconButton>
-          <Text className="flex-1 text-center text-base font-semibold text-white">
-            Escanear mesa
-          </Text>
-          <View className="h-11 w-11" />
-        </View>
+        <ScannerHeader showTorch={false} />
         <PermissionMessage
           permission={permission}
           onRequest={requestPermission}
@@ -93,23 +98,11 @@ export default function TableScannerScreen() {
     <SafeAreaView className="flex-1 bg-[#1c1a18]">
       <StatusBar style="light" />
       <View className="flex-1 bg-[#1c1a18]">
-        <View className="flex-row items-center justify-between px-5 pb-3 pt-2">
-          <ScannerIconButton
-            label="Volver al inicio"
-            onPress={() => router.back()}
-          >
-            ×
-          </ScannerIconButton>
-          <Text className="text-base font-semibold text-white">
-            Escanear mesa
-          </Text>
-          <ScannerIconButton
-            label={torchEnabled ? "Apagar linterna" : "Encender linterna"}
-            onPress={() => setTorchEnabled((enabled) => !enabled)}
-          >
-            ϟ
-          </ScannerIconButton>
-        </View>
+        <ScannerHeader
+          showTorch
+          torchEnabled={torchEnabled}
+          onToggleTorch={() => setTorchEnabled((enabled) => !enabled)}
+        />
 
         <View className="relative flex-1 overflow-hidden">
           <CameraView
