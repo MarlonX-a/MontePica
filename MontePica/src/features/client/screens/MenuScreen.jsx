@@ -49,7 +49,7 @@ export default function MenuScreen() {
                 {isDineIn ? `${table || 'Mesa 08'} · Servicio en salón` : 'Pedido a domicilio'}
               </Text>
             </View>
-            <CartButton />
+            <CartButton onPress={() => router.push('/orders')} />
           </View>
 
           <View className="mb-4 h-12 flex-row items-center rounded-xl border border-[#eadfd2] bg-white px-3">
@@ -128,6 +128,7 @@ export default function MenuScreen() {
           activeTab="menu"
           onTabPress={(tab) => {
             if (tab === 'home') router.replace('/home');
+            if (tab === 'orders') router.replace('/orders');
             if (tab === 'profile') {
               logoutUser();
               router.replace('/(auth)/login');

@@ -61,7 +61,7 @@ Las carpetas `services`, `store`, `hooks`, `constants` y `utils` no existen toda
 
 El grupo `(auth)` organiza las rutas de autenticación y no forma parte de la URL. Por eso la ruta de acceso queda como `/login`.
 
-La pantalla de inicio del cliente está en `/home`, usa una foto local del encebollado y muestra la barra inferior. La ruta `/waiter` muestra la bandeja local de pedidos para cuentas con rol mesero, con pedidos de prueba, filtros, acciones de aceptar o rechazar y una vista de detalle. La ruta raíz `/` sigue redirigiendo al inicio de sesión; la navegación entre las pestañas de pedidos aún no está conectada a una pantalla para clientes.
+La pantalla de inicio del cliente está en `/home`, usa una foto local del encebollado y muestra la barra inferior. La ruta `/orders` muestra el carrito del cliente, permite ajustar cantidades y confirmar la reserva; después de confirmar muestra el seguimiento del pedido. La ruta `/waiter` muestra la bandeja local de pedidos para cuentas con rol mesero, con pedidos de prueba, filtros, acciones de aceptar o rechazar y una vista de detalle. La ruta raíz `/` sigue redirigiendo al inicio de sesión.
 
 ## Dónde poner código nuevo
 
@@ -87,7 +87,7 @@ La dirección de imports debe ser: **rutas → features → componentes comparti
 
 El login permite escribir en los campos y valida que el correo no esté vacío y tenga un formato básico válido, y que la contraseña no esté vacía. Los errores aparecen al salir del campo o al pulsar “Ingresar”, y se actualizan mientras se corrige un campo que ya mostró un error. La contraseña se puede mostrar u ocultar. El diseño actual usa un fondo crema y tonos terracota; la imagen superior de la referencia todavía no está incorporada.
 
-El registro valida nombre, correo, teléfono de 10 dígitos (también acepta el prefijo ecuatoriano `+593`), contraseña de al menos 8 caracteres con una mayúscula y un número, confirmación de contraseña y aceptación de términos. También permite escoger el rol Cliente o Mesero. Las cuentas se almacenan únicamente en memoria mientras la aplicación está abierta: no se envían datos a un servidor ni existe persistencia de sesión. Una cuenta mesero entra al panel `/waiter`, donde puede avanzar el estado de pedidos simulados. El botón Perfil de Inicio y Menú cierra la sesión y regresa al login.
+El registro valida nombre, correo, teléfono de 10 dígitos (también acepta el prefijo ecuatoriano `+593`), contraseña de al menos 8 caracteres con una mayúscula y un número, confirmación de contraseña y aceptación de términos. También permite escoger el rol Cliente o Mesero. Las cuentas, el carrito y el pedido activo se almacenan únicamente en memoria mientras la aplicación está abierta: no se envían datos a un servidor ni existe persistencia de sesión. Una cuenta mesero entra al panel `/waiter`, donde puede gestionar pedidos simulados. El botón Perfil de Inicio y Menú cierra la sesión y regresa al login.
 
 ## Comandos
 

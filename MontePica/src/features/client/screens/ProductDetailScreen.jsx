@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import IconButton from '@/features/client/components/IconButton';
 import SelectableChip from '@/features/client/components/SelectableChip';
 import { getProductPrice, menuProducts } from '@/features/client/data/menuProducts';
+import { addToCart } from '@/features/client/data/orderStore';
 
 const spiceOptions = ['Sin ají', 'Suave', 'Medio', 'Fuerte'];
 
@@ -27,7 +28,7 @@ function QuantityButton({ label, onPress, children, disabled }) {
 }
 
 export default function ProductDetailScreen() {
-  const { id } = useLocalSearchParams();
+  const { id, service, table } = useLocalSearchParams();
   const [spice, setSpice] = useState('Suave');
   const [quantity, setQuantity] = useState(1);
   const [note, setNote] = useState('');
@@ -183,7 +184,17 @@ export default function ProductDetailScreen() {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={`Agregar ${quantity} al pedido por $${total}`}
-            onPress={() => {}}
+            onPress={() => {
+              addToCart({
+                product,
+                quantity,
+                spice: isCeviche ? spice : undefined,
+                note: isCeviche ? note.trim() : '',
+                service,
+                table,
+              });
+              router.replace('/orders');
+            }}
             className="h-12 flex-1 flex-row items-center justify-center rounded-xl bg-[#b7472a]"
           >
             <Text className="mr-2 text-white">▣</Text>

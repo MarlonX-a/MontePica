@@ -32,6 +32,9 @@ function OrderButton({ icon, title, subtitle, primary, onPress }) {
     </Pressable>
   );
 }
+if (tab === 'orders') {
+  router.push('/orders');
+}
 
 export default function HomeScreen() {
   function handleTabPress(tab) {
@@ -57,7 +60,7 @@ export default function HomeScreen() {
                 Mesa aún no vinculada
               </Text>
             </View>
-            <CartButton />
+            <CartButton onPress={() => router.push('/orders')} />
           </View>
 
           <ImageBackground
