@@ -8,6 +8,7 @@ import MenuProductCard from '@/features/client/components/MenuProductCard';
 import CartButton from '@/features/client/components/CartButton';
 import { menuProducts } from '@/features/client/data/menuProducts';
 import SelectableChip from '@/features/client/components/SelectableChip';
+import { logoutUser } from '@/features/auth/data/authStore';
 
 const categories = ['Todos', 'Ceviches', 'Bebidas'];
 
@@ -127,6 +128,10 @@ export default function MenuScreen() {
           activeTab="menu"
           onTabPress={(tab) => {
             if (tab === 'home') router.replace('/home');
+            if (tab === 'profile') {
+              logoutUser();
+              router.replace('/(auth)/login');
+            }
           }}
         />
       </View>

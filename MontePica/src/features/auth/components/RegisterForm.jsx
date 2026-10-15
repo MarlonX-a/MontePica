@@ -69,7 +69,7 @@ function RegisterField({
   );
 }
 
-export default function RegisterForm() {
+export default function RegisterForm({ onRegistered }) {
   const [values, setValues] = useState({
     name: '',
     email: '',
@@ -82,6 +82,8 @@ export default function RegisterForm() {
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [confirmationVisible, setConfirmationVisible] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [role, setRole] = useState('client');
+  const [submitError, setSubmitError] = useState('');
 
   function handleChange(field, value) {
     const nextValues = { ...values, [field]: value };
@@ -134,7 +136,13 @@ export default function RegisterForm() {
       confirmPassword: true,
       terms: true,
     });
-    setErrors(validateRegisterForm(values, termsAccepted));
+    const nextErrors = validateRegisterForm(values, termsAccepted);
+    setErrors(nextErrors);
+
+    if (!Object.values(nextErrors).some(Boolean)) {
+      const result = onRegistered?.({ ...values, role });
+      setSubmitError(result?.error || '');
+    }
   }
 
   const passwordRequirements = getPasswordRequirements(values.password);
@@ -153,6 +161,36 @@ export default function RegisterForm() {
         onBlur={() => handleBlur('name')}
         autoCapitalize="words"
       />
+
+      <Text className="mb-2 text-xs font-medium text-[#514941]">
+        Tipo de cuenta
+      </Text>
+      <View className="mb-3 flex-row gap-2">
+        {[
+          { value: 'client', label: 'Cliente' },
+          { value: 'waiter', label: 'Mesero' },
+        ].map((option) => (
+          <Pressable
+            key={option.value}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: role === option.value }}
+            onPress={() => setRole(option.value)}
+            className={`flex-1 rounded-xl border px-4 py-3 ${
+              role === option.value
+                ? 'border-[#b7472a] bg-[#fff0e7]'
+                : 'border-[#eadfd2] bg-white'
+            }`}
+          >
+            <Text
+              className={`text-center text-xs font-semibold ${
+                role === option.value ? 'text-[#b7472a]' : 'text-[#70665e]'
+              }`}
+            >
+              {option.label}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
       <RegisterField
         label="Correo electrónico"
         placeholder="picamonte@gmail.com"
@@ -229,6 +267,11 @@ export default function RegisterForm() {
       {errors.terms ? (
         <Text className="mt-1 text-xs text-red-600" accessibilityRole="alert">
           {errors.terms}
+        </Text>
+      ) : null}
+      {submitError ? (
+        <Text className="mt-1 text-xs text-red-600" accessibilityRole="alert">
+          {submitError}
         </Text>
       ) : null}
 

@@ -3,6 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import BottomNavigation from '@/features/client/components/BottomNavigation';
 import CartButton from '@/features/client/components/CartButton';
+import { logoutUser } from '@/features/auth/data/authStore';
 
 function OrderButton({ icon, title, subtitle, primary, onPress }) {
   return (
@@ -33,6 +34,13 @@ function OrderButton({ icon, title, subtitle, primary, onPress }) {
 }
 
 export default function HomeScreen() {
+  function handleTabPress(tab) {
+    if (tab === 'profile') {
+      logoutUser();
+      router.replace('/(auth)/login');
+    }
+  }
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff8ef' }}>
       <View className="flex-1 bg-[#fff8ef]">
@@ -107,7 +115,7 @@ export default function HomeScreen() {
 
         </ScrollView>
 
-        <BottomNavigation activeTab="home" />
+        <BottomNavigation activeTab="home" onTabPress={handleTabPress} />
       </View>
     </SafeAreaView>
   );

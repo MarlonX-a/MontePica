@@ -36,7 +36,7 @@ export default function LoginForm({ onValidSubmit }) {
     setErrors(nextErrors);
 
     if (!nextErrors.email && !nextErrors.password) {
-      onValidSubmit?.();
+      onValidSubmit?.(values);
     }
   }
 

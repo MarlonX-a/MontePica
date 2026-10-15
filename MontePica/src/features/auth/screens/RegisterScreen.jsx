@@ -6,9 +6,10 @@ import {
   Text,
   View,
 } from 'react-native';
-import { Link } from 'expo-router';
+import { Link, router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import RegisterForm from '@/features/auth/components/RegisterForm';
+import { registerUser } from '@/features/auth/data/authStore';
 
 export default function RegisterScreen() {
   return (
@@ -62,7 +63,15 @@ export default function RegisterScreen() {
             </Text>
           </View>
 
-          <RegisterForm />
+          <RegisterForm
+            onRegistered={(user) => {
+              const result = registerUser(user);
+              if (result.ok) {
+                router.replace(user.role === 'waiter' ? '/waiter' : '/home');
+              }
+              return result;
+            }}
+          />
 
           <View className="mt-5 flex-row justify-center">
             <Text className="text-xs text-[#8b8178]">
