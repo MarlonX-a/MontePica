@@ -32,12 +32,14 @@ function OrderButton({ icon, title, subtitle, primary, onPress }) {
     </Pressable>
   );
 }
-if (tab === 'orders') {
-  router.push('/orders');
-}
 
 export default function HomeScreen() {
   function handleTabPress(tab) {
+    if (tab === 'orders') {
+      router.push('/orders');
+      return;
+    }
+
     if (tab === 'profile') {
       logoutUser();
       router.replace('/(auth)/login');
