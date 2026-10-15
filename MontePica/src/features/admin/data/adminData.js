@@ -1,4 +1,4 @@
-import { menuProducts } from '@/features/client/data/menuProducts';
+import { menuProducts } from '@/shared/data/menuProducts';
 
 export const initialProducts = menuProducts.map((product, index) => ({
   ...product,

@@ -6,9 +6,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import BottomNavigation from '@/features/client/components/BottomNavigation';
 import MenuProductCard from '@/features/client/components/MenuProductCard';
 import CartButton from '@/features/client/components/CartButton';
-import { menuProducts } from '@/features/client/data/menuProducts';
+import { menuProducts } from '@/shared/data/menuProducts';
 import SelectableChip from '@/features/client/components/SelectableChip';
-import { logoutUser } from '@/features/auth/data/authStore';
+import { logoutUser } from '@/shared/session/sessionStore';
 
 const categories = ['Todos', 'Ceviches', 'Bebidas'];
 

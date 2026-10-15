@@ -3,7 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import BottomNavigation from '@/features/client/components/BottomNavigation';
 import CartButton from '@/features/client/components/CartButton';
-import { logoutUser } from '@/features/auth/data/authStore';
+import { logoutUser } from '@/shared/session/sessionStore';
 
 function OrderButton({ icon, title, subtitle, primary, onPress }) {
   return (
