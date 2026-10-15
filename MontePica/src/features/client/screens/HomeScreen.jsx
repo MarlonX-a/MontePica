@@ -39,7 +39,6 @@ export default function HomeScreen() {
       router.push('/orders');
       return;
     }
-
     if (tab === 'profile') {
       logoutUser();
       router.replace('/(auth)/login');
@@ -118,6 +117,17 @@ export default function HomeScreen() {
             />
           </View>
 
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => router.push('/admin/products')}
+            className="mt-5 flex-row items-center justify-between rounded-2xl border border-[#eadfd2] bg-white px-4 py-4 active:bg-[#fff0e4]"
+          >
+            <View>
+              <Text className="text-sm font-semibold text-[#b7472a]">Administrar MontePica</Text>
+              <Text className="mt-1 text-xs text-[#8b8178]">Productos, mesas y usuarios</Text>
+            </View>
+            <Text className="text-lg text-[#b7472a]">→</Text>
+          </Pressable>
         </ScrollView>
 
         <BottomNavigation activeTab="home" onTabPress={handleTabPress} />
