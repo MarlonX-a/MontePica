@@ -15,7 +15,7 @@ Lee estas instrucciones antes de modificar la aplicación. Mantén los cambios d
 
 MontePica es una aplicación móvil para una cevichería. El menú de muestra debe limitarse a ceviches —por ejemplo, pescado, camarón y mixto— y bebidas como jugos, limonada y cola. No agregues platos ajenos a ese catálogo.
 
-La aplicación sigue siendo un prototipo local: no hay backend, persistencia de pedidos ni sesión real. Conserva este límite hasta que el usuario solicite integrar esos servicios. Los precios, disponibilidad, mesa y productos actuales son datos de muestra.
+La aplicación sigue siendo un prototipo local: no hay backend ni persistencia después de reiniciar la app. La sesión, las cuentas registradas, el carrito, los pedidos y los cambios de administración se mantienen solo en memoria. Conserva este límite hasta que el usuario solicite integrar esos servicios. Los precios, disponibilidad, mesa y productos actuales son datos de muestra.
 
 Flujo actual:
 
@@ -24,13 +24,15 @@ Flujo actual:
 3. Desde Inicio, **Para servirse** abre el escáner. El escáner muestra una mesa reconocida simulada (Mesa 08) y continúa al menú.
 4. **Pedir a domicilio** abre el menú directamente.
 5. El menú permite buscar y filtrar productos localmente; al tocar una tarjeta abre el detalle del producto.
-6. En el detalle, picante, nota y cantidad son controles locales. **Agregar** todavía no envía ni guarda pedidos.
+6. En el detalle, picante, nota y cantidad son controles locales. **Agregar** añade el producto al carrito en memoria; confirmar crea un pedido de demostración y muestra su seguimiento local.
+
+La pantalla `/waiter` tiene pedidos de ejemplo propios y no está conectada al carrito ni a los pedidos del cliente. Las pantallas de administración también usan datos locales aislados: los cambios de producto no actualizan el catálogo que ve el cliente.
 
 No conviertas una simulación visual en una llamada de red ni des por confirmados pedidos, pagos o datos persistentes.
 
 ## Arquitectura actual
 
-El código de la aplicación vive en `src/`. `src/app/` define rutas con Expo Router; las pantallas y los componentes propios del negocio viven en `src/features/`.
+El código de la aplicación vive en `src/`. `src/app/` declara rutas y layouts con Expo Router; cada feature contiene sus pantallas, componentes y lógica propios. `src/shared/` contiene estado o datos usados por más de una feature; `src/components/ui/` contiene UI transversal sin reglas de negocio.
 
 ```text
 src/
@@ -41,24 +43,20 @@ src/
 │   │   ├── _layout.jsx
 │   │   ├── login.jsx
 │   │   └── register.jsx
-│   └── (client)/
-│       ├── home.jsx
-│       ├── scan-table.jsx
-│       ├── menu.jsx
-│       └── product/
-│           └── [id].jsx
+│   ├── (client)/                    # home, scan-table, menu, orders y product/[id]
+│   ├── (waiter)/                    # waiter.jsx → /waiter
+│   └── admin/                        # layout, products, tables y users
 ├── components/
-│   └── ui/
-│       └── Title.jsx
-└── features/
-    ├── auth/
-    │   ├── components/          # LoginForm y RegisterForm
-    │   ├── screens/             # LoginScreen y RegisterScreen
-    │   └── validators/          # Validaciones locales de auth
-    └── client/
-        ├── components/          # BottomNavigation y MenuProductCard
-        ├── data/                 # Catálogo local compartido por menú y detalle
-        └── screens/              # Home, escáner, menú y detalle
+│   ├── components.md
+│   └── ui/Title.jsx
+├── features/
+│   ├── auth/                    # formularios, pantallas, authStore y validadores
+│   ├── client/                  # pantallas, componentes y orderStore del cliente
+│   ├── waiter/                  # bandeja local del mesero
+│   └── admin/                   # administración y estado local
+└── shared/
+    ├── data/menuProducts.js     # catálogo usado por cliente y administración
+    └── session/sessionStore.js # usuario actual en memoria
 ```
 
 Otros archivos importantes:
@@ -75,16 +73,23 @@ Otros archivos importantes:
 - Una pantalla va en `src/features/<feature>/screens/`.
 - Una pieza propia de una feature que tenga suficiente UI o responsabilidad para entenderse y mantenerse aparte va en `src/features/<feature>/components/`. Por ejemplo, las tarjetas del menú pertenecen a `features/client/components/`.
 - Un componente sencillo que solo se usa dentro de una pantalla puede quedarse definido en esa pantalla. No crees un archivo por cada fragmento pequeño sin una razón clara.
-- Coloca datos locales compartidos por pantallas de una misma feature en `src/features/<feature>/data/`; evita duplicar el catálogo en el menú y en el detalle.
-- `src/components/` es solo para UI transversal sin dependencia de autenticación, cliente ni otra feature. No muevas ahí componentes específicos del menú o del login.
+- Coloca datos locales usados solo por una feature en `src/features/<feature>/data/`. Si varias features usan el mismo dato o estado, colócalo en `src/shared/`.
+- `src/components/ui/` es solo para UI transversal sin dependencia de autenticación, cliente, mesero, administración u otra feature. No muevas ahí componentes específicos de una pantalla.
 - Crea `services/`, `hooks/`, `store/`, `constants/` o `utils/` solo cuando una necesidad real lo justifique.
 
-Dirección de dependencias: **rutas → pantallas de features → componentes de la feature o UI compartida**. Los componentes compartidos no importan features ni rutas; una feature no importa archivos de `src/app/`.
+Dirección de dependencias: **rutas → features → shared o components/ui**. Una feature puede importar sus propios módulos y los módulos compartidos, pero no debe importar otra feature ni archivos de `src/app/`. `shared/` y `components/ui/` no deben importar features ni rutas. Los archivos de `app/` deben limitarse a conectar rutas con pantallas o layouts de features.
 
 Usa el alias `@/` para imports desde `src/`, por ejemplo:
 
 ```js
 import MenuScreen from '@/features/client/screens/MenuScreen';
+```
+
+Ejemplos de módulos compartidos:
+
+```js
+import { menuProducts } from '@/shared/data/menuProducts';
+import { logoutUser } from '@/shared/session/sessionStore';
 ```
 
 ## Interfaz y navegación

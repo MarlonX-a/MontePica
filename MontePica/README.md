@@ -1,95 +1,101 @@
 # MontePica
 
-Aplicación móvil construida con Expo, React Native, Expo Router y NativeWind. El código de la aplicación está en `src/` y se organiza separando navegación, funcionalidades del negocio y componentes visuales reutilizables.
+Aplicación para una cevichería, construida con Expo, React Native, Expo Router y NativeWind. La interfaz y los datos actuales forman un prototipo local; todavía no hay servicios de backend ni almacenamiento persistente.
 
-## Estructura
+## Estructura del código
 
 ```text
 MontePica/
-├── assets/                       # Iconos e imágenes de la aplicación
-│   └── encebollado-manabita.png  # Foto de plato destacado en Inicio
+├── assets/                              # Imágenes e iconos de la aplicación
 ├── src/
-│   ├── app/                       # Rutas de Expo Router
-│   │   ├── _layout.jsx            # Stack raíz; importa los estilos globales
-│   │   ├── index.jsx              # Entrada inicial; redirige al acceso
-│   │   ├── (client)/              # Rutas del cliente y del mesero
-│   │   │   ├── home.jsx           # Ruta /home
-│   │   │   └── waiter.jsx         # Panel local de gestión de pedidos
-│   │   └── (auth)/                # Grupo de navegación de autenticación
-│   │       ├── _layout.jsx        # Stack del grupo (auth)
-│   │       └── login.jsx          # Ruta /login; conecta ruta con pantalla
-│   ├── components/
-│   │   ├── components.md          # Referencia a esta guía
-│   │   └── ui/                    # Piezas visuales transversales
-│   │       └── Title.jsx          # Título y subtítulo configurables
-│   └── features/
-│       ├── client/
-│       │   ├── components/
-│       │   │   └── BottomNavigation.jsx
-│       │   └── screens/
-│       │       └── HomeScreen.jsx
-│       └── auth/                  # Funcionalidad de autenticación
-│           ├── screens/
-│           │   └── LoginScreen.jsx # Composición visual de la pantalla
-│           ├── components/
-│           │   └── LoginForm.jsx  # Campos validados y botón de acceso
-│           └── validators/         # Reglas de validación de auth
-│               ├── loginValidator.js
-│               └── registerValidator.js
-├── global.css                     # Directivas base de Tailwind
-├── app.json                       # Configuración de Expo
-├── babel.config.js                # Babel y preset de NativeWind
-├── jsconfig.json                  # Alias de imports @/ hacia src/
-├── metro.config.js                # Metro integrado con NativeWind
-├── package.json                   # Dependencias y comandos
-└── tailwind.config.js             # Archivos escaneados y preset NativeWind
+│   ├── app/                             # Entradas y layouts de Expo Router
+│   │   ├── _layout.jsx                  # Stack raíz y estilos globales
+│   │   ├── index.jsx                    # Redirección inicial al login
+│   │   ├── (auth)/                      # Rutas /login y /register
+│   │   ├── (client)/                    # /home, /scan-table, /menu, /orders, /product/[id]
+│   │   ├── (waiter)/                    # /waiter
+│   │   └── admin/                       # /admin/products, /admin/tables, /admin/users
+│   ├── components/                      # Guía breve y UI transversal
+│   │   ├── components.md                # Referencia a esta guía
+│   │   └── ui/Title.jsx                 # Título genérico
+│   ├── features/
+│   │   ├── auth/                        # Formularios, pantallas, validadores y authStore
+│   │   ├── client/                      # Inicio, escáner, menú, detalle, pedidos y UI cliente
+│   │   ├── waiter/                      # Bandeja de pedidos de prueba del mesero
+│   │   └── admin/                       # Productos, mesas, usuarios y su estado local
+│   └── shared/
+│       ├── data/menuProducts.js         # Catálogo compartido por cliente y administración
+│       └── session/sessionStore.js      # Usuario actual en memoria y cierre de sesión
+├── global.css                           # Directivas globales de Tailwind
+├── app.json                             # Configuración de Expo y sus plugins
+├── babel.config.js                      # Babel y preset de NativeWind
+├── jsconfig.json                        # Alias @/ hacia src/
+├── metro.config.js                      # Metro integrado con NativeWind
+├── package.json                         # Dependencias y comandos npm
+└── tailwind.config.js                   # Archivos que analiza Tailwind
 ```
 
-Las carpetas `services`, `store`, `hooks`, `constants` y `utils` no existen todavía porque el código actual no las necesita. Si se agrega una función transversal que las justifique, pueden crearse entonces.
+### Responsabilidad de las carpetas
 
-## Cómo llega la app al login
+- `app/` solo declara navegación. Cada archivo de ruta conecta Expo Router con una pantalla o layout de una feature. Los nombres entre paréntesis agrupan rutas sin agregarse a la URL.
+- `features/auth/` valida y procesa localmente el registro y el inicio de sesión. `authStore.js` mantiene la lista de cuentas de demostración en memoria.
+- `features/client/` contiene el recorrido del cliente. `data/orderStore.js` conserva carrito y pedido activo en memoria.
+- `features/waiter/` muestra pedidos de ejemplo y permite cambiar su estado localmente.
+- `features/admin/` muestra y edita productos, mesas y usuarios de demostración dentro de su propio estado local.
+- `shared/` contiene estado o datos que usan varias features. La sesión actual vive en memoria; el catálogo compartido está en `shared/data/menuProducts.js`.
+- `components/ui/` contiene elementos visuales reutilizables que no conocen las reglas de una feature, como `Title.jsx`.
+- `assets/` guarda las imágenes y los iconos locales.
 
-1. `package.json` inicia Expo Router mediante `expo-router/entry`.
-2. Expo Router encuentra `src/app/_layout.jsx`, que carga `global.css` y crea el Stack raíz sin encabezados visibles.
-3. La ruta inicial `src/app/index.jsx` redirige a `/(auth)/login`.
-4. `src/app/(auth)/_layout.jsx` define el Stack del grupo de autenticación y registra la ruta `login`.
-5. `src/app/(auth)/login.jsx` es una entrada pequeña: renderiza `LoginScreen` desde la feature.
-6. `src/features/auth/screens/LoginScreen.jsx` compone el contenedor, el encabezado `Title`, el formulario y los textos inferiores.
-7. `src/features/auth/components/LoginForm.jsx` presenta las etiquetas, los campos editables, los errores de validación y el botón.
-8. `src/features/auth/validators/loginValidator.js` contiene reglas para validar el correo y la contraseña del acceso.
-9. `src/features/auth/validators/registerValidator.js` contiene reglas para validar los datos del registro.
+## Recorrido de navegación
 
-El grupo `(auth)` organiza las rutas de autenticación y no forma parte de la URL. Por eso la ruta de acceso queda como `/login`.
+1. Expo Router toma `src/app/` como raíz; `src/app/_layout.jsx` monta el Stack principal.
+2. `/` redirige a `/login`. Las rutas `/login` y `/register` muestran sus pantallas de autenticación.
+3. El acceso simulado dirige al cliente a `/home` o a un usuario con rol mesero a `/waiter`.
+4. Desde `/home`, **Pedir a domicilio** abre `/menu`; **Para servirse** abre `/scan-table`, donde la mesa se reconoce de forma simulada y luego se continúa al menú.
+5. Desde el menú, elegir un producto abre `/product/[id]`. Agregarlo lleva a `/orders`, donde se puede ajustar el carrito y crear un pedido local para mostrar su seguimiento.
+6. Las rutas `/admin/products`, `/admin/tables` y `/admin/users` muestran la administración de demostración.
 
-La pantalla de inicio del cliente está en `/home`, usa una foto local del encebollado y muestra la barra inferior. La ruta `/orders` muestra el carrito del cliente, permite ajustar cantidades y confirmar la reserva; después de confirmar muestra el seguimiento del pedido. La ruta `/waiter` muestra la bandeja local de pedidos para cuentas con rol mesero, con pedidos de prueba, filtros, acciones de aceptar o rechazar y una vista de detalle. La ruta raíz `/` sigue redirigiendo al inicio de sesión.
+Las rutas conservan sus URLs aunque cambien de grupo. Por ejemplo, `(waiter)/waiter.jsx` sigue siendo `/waiter`.
 
-## Dónde poner código nuevo
+## Dependencias entre módulos
 
-- Una pieza exclusiva del acceso o de autenticación, como un formulario, su estado o una validación, va en `src/features/auth/`.
-- Una pieza visual genérica que sirva a varias funcionalidades, como un título, botón o campo de entrada sin conocimiento del negocio, va en `src/components/`.
-- La pantalla que combina esas piezas va en `features/<nombre>/screens/`; el archivo de `app/` solo conecta la navegación con ella.
-- Clientes HTTP y almacenamiento que sean infraestructura común pueden ir en `src/services/` cuando realmente se incorporen.
+La dirección permitida es:
 
-La dirección de imports debe ser: **rutas → features → componentes compartidos**. Los componentes compartidos no importan pantallas, rutas ni lógica de autenticación.
+```text
+app → features → shared
+              → components/ui
+```
 
-## Configuración
+Una feature puede usar sus propios componentes y datos, además de módulos compartidos. Las features no deben importar otras features. `shared/` y `components/ui/` no deben importar rutas ni código de features. Mantener esta dirección permite reutilizar catálogo y sesión sin que cliente, autenticación, mesero y administración dependan directamente entre sí.
 
-- `package.json` declara Expo SDK 57, React Native, Expo Router y NativeWind, además de los comandos `start`, `android`, `ios` y `web`. No declara un comando de lint ni una suite de pruebas.
-- `app.json` contiene el nombre, iconos, orientación, plataformas y plugin de Expo Router.
-- `jsconfig.json` permite importar desde `src/` con el prefijo `@/`, por ejemplo `@/features/auth/screens/LoginScreen`.
-- `babel.config.js` usa `babel-preset-expo` y el preset de NativeWind para transformar la app.
-- `metro.config.js` integra NativeWind con Metro y señala `global.css` como entrada de estilos.
-- `tailwind.config.js` limita la búsqueda de clases a archivos dentro de `src/` y configura el preset NativeWind.
-- `global.css` incluye las directivas base, componentes y utilidades de Tailwind.
-- `assets/` contiene los iconos de la app usados por `app.json`.
+Para decidir dónde poner código nuevo:
 
-## Estado actual del acceso
+- Un formulario exclusivo de registro pertenece a `features/auth/components/`.
+- Una tarjeta usada solo por el menú pertenece a `features/client/components/`.
+- Un catálogo utilizado por cliente y administración pertenece a `shared/data/`.
+- El usuario actual usado por autenticación y otras pantallas pertenece a `shared/session/`.
+- Un título visual que puede usarse en varias pantallas sin reglas de negocio pertenece a `components/ui/`.
+- Una ruta nueva se declara en `app/`; el JSX de la pantalla se coloca en la feature correspondiente.
 
-El login permite escribir en los campos y valida que el correo no esté vacío y tenga un formato básico válido, y que la contraseña no esté vacía. Los errores aparecen al salir del campo o al pulsar “Ingresar”, y se actualizan mientras se corrige un campo que ya mostró un error. La contraseña se puede mostrar u ocultar. El diseño actual usa un fondo crema y tonos terracota; la imagen superior de la referencia todavía no está incorporada.
+## Estado local y límites actuales
 
-El registro valida nombre, correo, teléfono de 10 dígitos (también acepta el prefijo ecuatoriano `+593`), contraseña de al menos 8 caracteres con una mayúscula y un número, confirmación de contraseña y aceptación de términos. También permite escoger el rol Cliente o Mesero. Las cuentas, el carrito y el pedido activo se almacenan únicamente en memoria mientras la aplicación está abierta: no se envían datos a un servidor ni existe persistencia de sesión. Una cuenta mesero entra al panel `/waiter`, donde puede gestionar pedidos simulados. El botón Perfil de Inicio y Menú cierra la sesión y regresa al login.
+El registro guarda cuentas en memoria durante la ejecución. El inicio de sesión encuentra una cuenta registrada o crea el usuario de demostración actual, y la sesión se conserva en `shared/session/sessionStore.js` mientras la app está abierta. Cerrar sesión limpia ese usuario. No hay autenticación de servidor ni persistencia después de reiniciar la aplicación.
 
-## Comandos
+El catálogo de ceviches y bebidas es una constante compartida; las ediciones de productos que aparecen en administración viven en el estado de administración y no modifican ese catálogo. El carrito y el pedido activo del cliente viven en `orderStore.js`; confirmar el pedido genera un seguimiento local. Los pedidos de la pantalla del mesero son datos de muestra independientes y no se conectan con los pedidos del cliente. Las mesas y usuarios de administración también son simulaciones locales.
+
+El escáner solicita permiso para usar la cámara, pero la detección de Mesa 08 es simulada. No se envían pedidos, pagos ni datos a un servidor.
+
+## Configuración y comandos
+
+- `package.json` declara Expo SDK 57, React Native, Expo Router y NativeWind. Sus scripts son `start`, `android`, `ios` y `web`; no hay comandos de lint ni pruebas unitarias configuradas.
+- `app.json` configura nombre, iconos, plataformas y plugins de Expo.
+- `jsconfig.json` resuelve imports `@/` hacia `src/`.
+- `babel.config.js` usa `babel-preset-expo` y el preset de NativeWind.
+- `metro.config.js` integra NativeWind con Metro y carga `global.css`.
+- `tailwind.config.js` indica a Tailwind qué archivos revisar para encontrar clases.
+- `global.css` activa las capas base, componentes y utilidades de Tailwind.
+
+Desde esta carpeta, inicia el proyecto con:
 
 ```bash
 npx expo start
@@ -98,4 +104,4 @@ npx expo start --ios
 npx expo start --web
 ```
 
-Consulta [AGENTS.md](AGENTS.md) para las reglas de trabajo del proyecto.
+Las reglas de colaboración y mantenimiento del proyecto están en [AGENTS.md](AGENTS.md).

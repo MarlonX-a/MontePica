@@ -8,7 +8,7 @@ export const menuProducts = [
     icon: '🐟',
     detail: '15–20 min',
     availability: '6 porciones',
-    image: require('../../../../assets/ceviche-pescado.jpg'),
+    image: require('../../../assets/ceviche-pescado.jpg'),
   },
   {
     id: 'shrimp-ceviche',
@@ -19,7 +19,7 @@ export const menuProducts = [
     icon: '🍤',
     detail: '15–20 min',
     availability: '8 porciones',
-    image: require('../../../../assets/ceviche-camaron.jpg'),
+    image: require('../../../assets/ceviche-camaron.jpg'),
   },
   {
     id: 'mixed-ceviche',
@@ -30,7 +30,7 @@ export const menuProducts = [
     icon: '🦐',
     detail: '20 min',
     availability: '5 porciones',
-    image: require('../../../../assets/ceviche-mixto.jpg'),
+    image: require('../../../assets/ceviche-mixto.jpg'),
   },
   {
     id: 'passion-fruit-juice',

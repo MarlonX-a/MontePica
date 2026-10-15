@@ -1,5 +1,6 @@
+import { setCurrentUser } from '@/shared/session/sessionStore';
+
 const users = [];
-let currentUser = null;
 
 export function registerUser(user) {
   const normalizedEmail = user.email.trim().toLowerCase();
@@ -25,23 +26,16 @@ export function loginUser(email, password) {
   );
 
   if (registeredUser) {
-    currentUser = registeredUser;
+    setCurrentUser(registeredUser);
     return { ok: true, user: registeredUser };
   }
 
-  currentUser = {
+  const demoUser = {
     name: 'María',
     email: normalizedEmail,
     role: 'client',
   };
+  setCurrentUser(demoUser);
 
-  return { ok: true, user: currentUser };
-}
-
-export function getCurrentUser() {
-  return currentUser;
-}
-
-export function logoutUser() {
-  currentUser = null;
+  return { ok: true, user: demoUser };
 }

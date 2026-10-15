@@ -5,7 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import IconButton from '@/features/client/components/IconButton';
 import SelectableChip from '@/features/client/components/SelectableChip';
-import { getProductPrice, menuProducts } from '@/features/client/data/menuProducts';
+import { getProductPrice, menuProducts } from '@/shared/data/menuProducts';
 import { addToCart } from '@/features/client/data/orderStore';
 
 const spiceOptions = ['Sin ají', 'Suave', 'Medio', 'Fuerte'];

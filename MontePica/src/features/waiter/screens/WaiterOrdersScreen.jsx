@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { logoutUser } from '@/features/auth/data/authStore';
+import { logoutUser } from '@/shared/session/sessionStore';
 
 const initialOrders = [
   {
