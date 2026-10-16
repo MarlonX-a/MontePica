@@ -2,7 +2,10 @@ import { View, Text, Pressable } from 'react-native';
 import { Link, router } from 'expo-router';
 import Title from '@/components/ui/Title';
 import LoginForm from '@/features/auth/components/LoginForm';
-import { loginUser } from '@/features/auth/data/authStore';
+import {
+  demoAdminCredentials,
+  loginUser,
+} from '@/features/auth/data/authStore';
 
 export default function LoginScreen() {
   return (
@@ -16,9 +19,38 @@ export default function LoginScreen() {
       <LoginForm
         onValidSubmit={({ email, password }) => {
           const result = loginUser(email, password);
-          router.replace(result.user.role === 'waiter' ? '/waiter' : '/home');
+          router.replace(
+            result.user.role === 'admin'
+              ? '/admin/dashboard'
+              : result.user.role === 'waiter'
+                ? '/waiter'
+                : '/home',
+          );
         }}
       />
+      <View className="mt-5 rounded-2xl border border-[#eadfd2] bg-white p-4">
+        <Text className="text-center text-xs font-semibold text-[#332d28]">
+          ¿Vas a revisar la administración?
+        </Text>
+        <Text className="mt-1 text-center text-[10px] text-[#8b8178]">
+          Demo: {demoAdminCredentials.email} · {demoAdminCredentials.password}
+        </Text>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => {
+            loginUser(
+              demoAdminCredentials.email,
+              demoAdminCredentials.password,
+            );
+            router.replace('/admin/dashboard');
+          }}
+          className="mt-3 items-center rounded-xl bg-[#2f6f4e] px-4 py-3 active:opacity-80"
+        >
+          <Text className="text-xs font-bold text-white">
+            Entrar como administrador
+          </Text>
+        </Pressable>
+      </View>
       <Text className="mt-5 text-center text-sm text-[#8b8178]">
         ¿Primera vez?
       </Text>

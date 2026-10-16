@@ -119,7 +119,7 @@ export default function HomeScreen() {
 
           <Pressable
             accessibilityRole="button"
-            onPress={() => router.push('/admin/products')}
+            onPress={() => router.push('/admin/dashboard')}
             className="mt-5 flex-row items-center justify-between rounded-2xl border border-[#eadfd2] bg-white px-4 py-4 active:bg-[#fff0e4]"
           >
             <View>

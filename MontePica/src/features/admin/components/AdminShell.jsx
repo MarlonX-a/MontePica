@@ -5,7 +5,8 @@ import { router, usePathname } from 'expo-router';
 import AdminIcon from '@/features/admin/components/AdminIcon';
 
 const tabs = [
-  { label: 'Inicio', icon: 'panel', path: '/home' },
+  { label: 'Panel', icon: 'panel', path: '/admin/dashboard' },
+  { label: 'Inventario', icon: 'products', path: '/admin/inventory' },
   { label: 'Productos', icon: 'products', path: '/admin/products' },
   { label: 'Mesas', icon: 'qr', path: '/admin/tables' },
   { label: 'Usuarios', icon: 'users', path: '/admin/users' },
