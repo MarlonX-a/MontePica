@@ -2,19 +2,22 @@ import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Badge, tones } from '@/features/admin/components/AdminUI';
 import AdminIcon from '@/features/admin/components/AdminIcon';
 
+function getProductStatus(product) {
+  if (!product.visible) return 'Oculto';
+  if (!product.stock) return 'Agotado';
+  if (product.stock <= 3) return 'Stock bajo';
+  return 'Activo';
+}
+
+function getProductTone(product) {
+  if (!product.visible) return 'sand';
+  if (product.stock <= 3) return 'peach';
+  return 'green';
+}
+
 export function ProductCard({ product, onPress }) {
-  const status = !product.visible
-    ? 'Oculto'
-    : !product.stock
-      ? 'Agotado'
-      : product.stock <= 3
-        ? 'Stock bajo'
-        : 'Activo';
-  const tone = !product.visible
-    ? 'sand'
-    : product.stock <= 3
-      ? 'peach'
-      : 'green';
+  const status = getProductStatus(product);
+  const tone = getProductTone(product);
   return (
     <Pressable
       accessibilityRole="button"

@@ -29,9 +29,9 @@ export function useOrderStore() {
 
 export function addToCart({ product, quantity, spice, note, service, table }) {
   const itemKey = `${product.id}-${spice || ''}-${note || ''}`;
-  const existingItem = cartItems.find((item) => item.key === itemKey);
+  const itemExists = cartItems.some((item) => item.key === itemKey);
 
-  if (existingItem) {
+  if (itemExists) {
     cartItems = cartItems.map((item) =>
       item.key === itemKey
         ? { ...item, quantity: item.quantity + quantity }

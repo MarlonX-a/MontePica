@@ -7,6 +7,12 @@ import {
   loginUser,
 } from '@/features/auth/data/authStore';
 
+function getRouteForRole(role) {
+  if (role === 'admin') return '/admin/dashboard';
+  if (role === 'waiter') return '/waiter';
+  return '/home';
+}
+
 export default function LoginScreen() {
   return (
     <View className="flex-1 justify-center bg-[#fff8ef] px-6">
@@ -19,13 +25,7 @@ export default function LoginScreen() {
       <LoginForm
         onValidSubmit={({ email, password }) => {
           const result = loginUser(email, password);
-          router.replace(
-            result.user.role === 'admin'
-              ? '/admin/dashboard'
-              : result.user.role === 'waiter'
-                ? '/waiter'
-                : '/home',
-          );
+          router.replace(getRouteForRole(result.user.role));
         }}
       />
       <View className="mt-5 rounded-2xl border border-[#eadfd2] bg-white p-4">

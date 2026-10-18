@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useMemo, useState } from 'react';
 import {
   initialCategories,
   initialProducts,
@@ -13,22 +13,22 @@ export default function AdminProvider({ children }) {
   const [categories, setCategories] = useState(initialCategories);
   const [tables, setTables] = useState(initialTables);
   const [users, setUsers] = useState(initialUsers);
+  const value = useMemo(
+    () => ({
+      products,
+      setProducts,
+      categories,
+      setCategories,
+      tables,
+      setTables,
+      users,
+      setUsers,
+    }),
+    [products, categories, tables, users],
+  );
 
   return (
-    <AdminContext.Provider
-      value={{
-        products,
-        setProducts,
-        categories,
-        setCategories,
-        tables,
-        setTables,
-        users,
-        setUsers,
-      }}
-    >
-      {children}
-    </AdminContext.Provider>
+    <AdminContext.Provider value={value}>{children}</AdminContext.Provider>
   );
 }
 

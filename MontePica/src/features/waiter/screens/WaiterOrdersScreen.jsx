@@ -205,6 +205,11 @@ function OrderDetail({ order, onBack, onAccept, onReject }) {
   );
 }
 
+function handleLogout() {
+  logoutUser();
+  router.replace('/(auth)/login');
+}
+
 export default function WaiterOrdersScreen() {
   const [orders, setOrders] = useState(initialOrders);
   const [selectedOrderId, setSelectedOrderId] = useState(null);
@@ -225,11 +230,6 @@ export default function WaiterOrdersScreen() {
         order.id === orderId ? { ...order, status } : order,
       ),
     );
-  }
-
-  function handleLogout() {
-    logoutUser();
-    router.replace('/(auth)/login');
   }
 
   if (selectedOrder) {

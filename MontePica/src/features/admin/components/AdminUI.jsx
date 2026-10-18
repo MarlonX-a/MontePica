@@ -13,6 +13,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import AdminIcon from '@/features/admin/components/AdminIcon';
 import { isValidEmail } from '@/shared/validators/emailValidator';
 
+function getKeyboardType(field) {
+  if (field.numeric) return 'decimal-pad';
+  if (field.key === 'email') return 'email-address';
+  return 'default';
+}
+
 export const tones = {
   green: { background: '#deecdf', text: '#477052' },
   peach: { background: '#f6ded4', text: '#a35a45' },
@@ -256,13 +262,7 @@ export function Editor({ title, fields, initial, onSave, onClose, children }) {
                       accessibilityLabel={field.label}
                       value={String(values[field.key] ?? '')}
                       onChangeText={(value) => change(field.key, value)}
-                      keyboardType={
-                        field.numeric
-                          ? 'decimal-pad'
-                          : field.key === 'email'
-                            ? 'email-address'
-                            : 'default'
-                      }
+                      keyboardType={getKeyboardType(field)}
                       autoCapitalize={
                         field.key === 'email' ? 'none' : 'sentences'
                       }
