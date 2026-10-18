@@ -33,18 +33,18 @@ function OrderButton({ icon, title, subtitle, primary, onPress }) {
   );
 }
 
-export default function HomeScreen() {
-  function handleTabPress(tab) {
-    if (tab === 'orders') {
-      router.push('/orders');
-      return;
-    }
-    if (tab === 'profile') {
-      logoutUser();
-      router.replace('/(auth)/login');
-    }
+function handleTabPress(tab) {
+  if (tab === 'orders') {
+    router.push('/orders');
+    return;
   }
+  if (tab === 'profile') {
+    logoutUser();
+    router.replace('/(auth)/login');
+  }
+}
 
+export default function HomeScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff8ef' }}>
       <View className="flex-1 bg-[#fff8ef]">

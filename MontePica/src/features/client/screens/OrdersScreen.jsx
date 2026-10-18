@@ -22,12 +22,12 @@ function QuantityButton({ item, amount }) {
   );
 }
 
+function handleConfirm() {
+  confirmOrder();
+}
+
 function CartView({ items }) {
   const total = getCartTotal();
-
-  function handleConfirm() {
-    confirmOrder();
-  }
 
   return (
     <ScrollView

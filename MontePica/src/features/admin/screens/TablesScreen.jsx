@@ -107,8 +107,11 @@ export default function TablesScreen() {
         value={filter}
         onChange={setFilter}
       />
-      {rows.map((row, index) => (
-        <View key={index} className="mb-3 flex-row items-stretch gap-3">
+      {rows.map((row) => (
+        <View
+          key={row.map((table) => table.id).join('-')}
+          className="mb-3 flex-row items-stretch gap-3"
+        >
           {row.map((table) => (
             <TableCard
               key={table.id}

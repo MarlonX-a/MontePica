@@ -15,9 +15,9 @@ export function loginAsDemoAdmin() {
 
 export function registerUser(user) {
   const normalizedEmail = user.email.trim().toLowerCase();
-  const existingUser = users.find((item) => item.email === normalizedEmail);
+  const userExists = users.some((item) => item.email === normalizedEmail);
 
-  if (existingUser) {
+  if (userExists) {
     return { ok: false, error: 'Ya existe una cuenta con ese correo.' };
   }
 

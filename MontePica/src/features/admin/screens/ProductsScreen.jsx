@@ -12,6 +12,28 @@ import {
   ToggleFilter,
 } from '@/features/admin/components/AdminUI';
 
+function getEditorTitle(editor) {
+  if (editor.type === 'category') {
+    return editor.original ? 'Editar categoría' : 'Nueva categoría';
+  }
+  return editor.item ? 'Editar producto' : 'Nuevo producto';
+}
+
+function getEditorInitialValues(editor, categories) {
+  if (editor.type === 'category') {
+    return { name: editor.original || '' };
+  }
+
+  return {
+    name: '',
+    price: '',
+    stock: '',
+    category: categories[0],
+    ...editor.item,
+    visibility: editor.item?.visible === false ? 'Oculto' : 'Visible',
+  };
+}
+
 export default function ProductsScreen() {
   const { products, setProducts, categories, setCategories } = useAdmin();
   const [tab, setTab] = useState('Productos');
@@ -207,28 +229,8 @@ export default function ProductsScreen() {
       {editor && (
         <Editor
           key={`${editor.type}-${editor.item?.id || editor.original || 'new'}`}
-          title={
-            editor.type === 'category'
-              ? editor.original
-                ? 'Editar categoría'
-                : 'Nueva categoría'
-              : editor.item
-                ? 'Editar producto'
-                : 'Nuevo producto'
-          }
-          initial={
-            editor.type === 'category'
-              ? { name: editor.original || '' }
-              : {
-                  name: '',
-                  price: '',
-                  stock: '',
-                  category: categories[0],
-                  ...editor.item,
-                  visibility:
-                    editor.item?.visible === false ? 'Oculto' : 'Visible',
-                }
-          }
+          title={getEditorTitle(editor)}
+          initial={getEditorInitialValues(editor, categories)}
           fields={fields}
           onSave={save}
           onClose={() => setEditor(null)}
