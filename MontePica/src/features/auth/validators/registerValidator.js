@@ -1,4 +1,4 @@
-import { isValidEmail } from './emailValidator.js';
+import { isValidEmail } from '@/shared/validators/emailValidator';
 
 export function getPasswordRequirements(password) {
   return [

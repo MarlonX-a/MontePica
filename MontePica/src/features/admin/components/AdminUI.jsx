@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AdminIcon from '@/features/admin/components/AdminIcon';
+import { isValidEmail } from '@/shared/validators/emailValidator';
 
 export const tones = {
   green: { background: '#deecdf', text: '#477052' },
@@ -201,7 +202,7 @@ export function Editor({ title, fields, initial, onSave, onClose, children }) {
     }
     if (
       fields.some((field) => field.key === 'email') &&
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleaned.email || '')
+      !isValidEmail(cleaned.email || '')
     ) {
       setError('Ingresa un correo válido.');
       return;

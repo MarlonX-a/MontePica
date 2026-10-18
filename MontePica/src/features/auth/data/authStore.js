@@ -1,10 +1,17 @@
 import { setCurrentUser } from '@/shared/session/sessionStore';
 
 const users = [];
-export const demoAdminCredentials = {
-  email: 'admin@montepica.ec',
-  password: 'montepica',
-};
+
+export function loginAsDemoAdmin() {
+  const adminUser = {
+    name: 'Luis Macías',
+    email: 'admin@montepica.ec',
+    role: 'admin',
+  };
+  setCurrentUser(adminUser);
+
+  return { ok: true, user: adminUser };
+}
 
 export function registerUser(user) {
   const normalizedEmail = user.email.trim().toLowerCase();
@@ -25,18 +32,6 @@ export function registerUser(user) {
 
 export function loginUser(email, password) {
   const normalizedEmail = email.trim().toLowerCase();
-  if (
-    normalizedEmail === demoAdminCredentials.email &&
-    password === demoAdminCredentials.password
-  ) {
-    const adminUser = {
-      name: 'Luis Macías',
-      email: demoAdminCredentials.email,
-      role: 'admin',
-    };
-    setCurrentUser(adminUser);
-    return { ok: true, user: adminUser };
-  }
   const registeredUser = users.find(
     (user) => user.email === normalizedEmail && user.password === password,
   );

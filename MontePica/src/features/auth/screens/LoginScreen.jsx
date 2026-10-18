@@ -3,7 +3,7 @@ import { Link, router } from 'expo-router';
 import Title from '@/components/ui/Title';
 import LoginForm from '@/features/auth/components/LoginForm';
 import {
-  demoAdminCredentials,
+  loginAsDemoAdmin,
   loginUser,
 } from '@/features/auth/data/authStore';
 
@@ -33,15 +33,12 @@ export default function LoginScreen() {
           ¿Vas a revisar la administración?
         </Text>
         <Text className="mt-1 text-center text-[10px] text-[#8b8178]">
-          Demo: {demoAdminCredentials.email} · {demoAdminCredentials.password}
+          Acceso local de demostración al panel administrativo.
         </Text>
         <Pressable
           accessibilityRole="button"
           onPress={() => {
-            loginUser(
-              demoAdminCredentials.email,
-              demoAdminCredentials.password,
-            );
+            loginAsDemoAdmin();
             router.replace('/admin/dashboard');
           }}
           className="mt-3 items-center rounded-xl bg-[#2f6f4e] px-4 py-3 active:opacity-80"
