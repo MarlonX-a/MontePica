@@ -56,7 +56,8 @@ src/
 │   └── admin/                   # administración y estado local
 └── shared/
     ├── data/menuProducts.js     # catálogo usado por cliente y administración
-    └── session/sessionStore.js # usuario actual en memoria
+    ├── session/sessionStore.js # usuario actual en memoria
+    └── validators/              # validaciones puras reutilizadas por features
 ```
 
 Otros archivos importantes:
@@ -74,6 +75,7 @@ Otros archivos importantes:
 - Una pieza propia de una feature que tenga suficiente UI o responsabilidad para entenderse y mantenerse aparte va en `src/features/<feature>/components/`. Por ejemplo, las tarjetas del menú pertenecen a `features/client/components/`.
 - Un componente sencillo que solo se usa dentro de una pantalla puede quedarse definido en esa pantalla. No crees un archivo por cada fragmento pequeño sin una razón clara.
 - Coloca datos locales usados solo por una feature en `src/features/<feature>/data/`. Si varias features usan el mismo dato o estado, colócalo en `src/shared/`.
+- Coloca validadores puros en la feature que los usa. Si varias features comparten la misma regla, muévela a `src/shared/validators/`.
 - `src/components/ui/` es solo para UI transversal sin dependencia de autenticación, cliente, mesero, administración u otra feature. No muevas ahí componentes específicos de una pantalla.
 - Crea `services/`, `hooks/`, `store/`, `constants/` o `utils/` solo cuando una necesidad real lo justifique.
 
@@ -90,6 +92,7 @@ Ejemplos de módulos compartidos:
 ```js
 import { menuProducts } from '@/shared/data/menuProducts';
 import { logoutUser } from '@/shared/session/sessionStore';
+import { isValidEmail } from '@/shared/validators/emailValidator';
 ```
 
 ## Interfaz y navegación

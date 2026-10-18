@@ -25,7 +25,8 @@ MontePica/
 │   │   └── admin/                       # Productos, mesas, usuarios y su estado local
 │   └── shared/
 │       ├── data/menuProducts.js         # Catálogo compartido por cliente y administración
-│       └── session/sessionStore.js      # Usuario actual en memoria y cierre de sesión
+│       ├── session/sessionStore.js      # Usuario actual en memoria y cierre de sesión
+│       └── validators/emailValidator.js # Validación de correo reutilizada
 ├── global.css                           # Directivas globales de Tailwind
 ├── app.json                             # Configuración de Expo y sus plugins
 ├── babel.config.js                      # Babel y preset de NativeWind
@@ -75,11 +76,12 @@ Para decidir dónde poner código nuevo:
 - Un catálogo utilizado por cliente y administración pertenece a `shared/data/`.
 - El usuario actual usado por autenticación y otras pantallas pertenece a `shared/session/`.
 - Un título visual que puede usarse en varias pantallas sin reglas de negocio pertenece a `components/ui/`.
+- Una regla de validación reutilizada por más de una feature pertenece a `shared/validators/`.
 - Una ruta nueva se declara en `app/`; el JSX de la pantalla se coloca en la feature correspondiente.
 
 ## Estado local y límites actuales
 
-El registro guarda cuentas en memoria durante la ejecución. El inicio de sesión encuentra una cuenta registrada o crea el usuario de demostración actual, y la sesión se conserva en `shared/session/sessionStore.js` mientras la app está abierta. Cerrar sesión limpia ese usuario. No hay autenticación de servidor ni persistencia después de reiniciar la aplicación.
+El registro guarda cuentas en memoria durante la ejecución. El inicio de sesión encuentra una cuenta registrada o crea el usuario de demostración cliente. El botón de acceso administrativo crea un usuario de demostración local sin una contraseña fija en el código. La sesión se conserva en `shared/session/sessionStore.js` mientras la app está abierta; cerrar sesión la limpia. No hay autenticación de servidor ni persistencia después de reiniciar la aplicación.
 
 El catálogo de ceviches y bebidas es una constante compartida; las ediciones de productos que aparecen en administración viven en el estado de administración y no modifican ese catálogo. El carrito y el pedido activo del cliente viven en `orderStore.js`; confirmar el pedido genera un seguimiento local. Los pedidos de la pantalla del mesero son datos de muestra independientes y no se conectan con los pedidos del cliente. Las mesas y usuarios de administración también son simulaciones locales.
 
