@@ -5,7 +5,7 @@ Aplicación para una cevichería, construida con Expo, React Native, Expo Router
 ## Estructura del código
 
 ```text
-MontePica/
+./
 ├── assets/                              # Imágenes e iconos de la aplicación
 ├── src/
 │   ├── app/                             # Entradas y layouts de Expo Router
