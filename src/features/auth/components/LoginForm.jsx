@@ -10,9 +10,12 @@ export default function LoginForm({ onValidSubmit }) {
   const [errors, setErrors] = useState({ email: '', password: '' });
   const [touched, setTouched] = useState({ email: false, password: false });
   const [passwordVisible, setPasswordVisible] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   function handleChange(field, value) {
     setValues((currentValues) => ({ ...currentValues, [field]: value }));
+    setSubmitError('');
 
     if (touched[field]) {
       setErrors((currentErrors) => ({
@@ -30,13 +33,34 @@ export default function LoginForm({ onValidSubmit }) {
     }));
   }
 
-  function handleSubmit() {
+  async function handleSubmit() {
+    if (isSubmitting) return;
+
     const nextErrors = validateLoginForm(values);
     setTouched({ email: true, password: true });
     setErrors(nextErrors);
 
-    if (!nextErrors.email && !nextErrors.password) {
-      onValidSubmit?.(values);
+    if (nextErrors.email || nextErrors.password) return;
+
+    setSubmitError('');
+    setIsSubmitting(true);
+
+    try {
+      const result = await onValidSubmit?.(values);
+      setSubmitError(result?.error || '');
+    } catch (error) {
+      const apiMessage = error?.response?.data?.message;
+      const message = Array.isArray(apiMessage)
+        ? apiMessage.join(' ')
+        : apiMessage;
+
+      setSubmitError(
+        typeof message === 'string'
+          ? message
+          : 'No se pudo iniciar sesión. Verifica tus datos e inténtalo de nuevo.',
+      );
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -96,19 +120,26 @@ export default function LoginForm({ onValidSubmit }) {
           {errors.password}
         </Text>
       ) : null}
+      {submitError ? (
+        <Text className="mt-2 text-sm text-red-600" accessibilityRole="alert">
+          {submitError}
+        </Text>
+      ) : null}
       <Text className="mt-3 text-right text-xs font-semibold text-[#b7472a]">
         ¿Olvidaste tu contraseña?
       </Text>
       <Pressable
         onPress={handleSubmit}
+        disabled={isSubmitting}
         accessibilityRole="button"
-        className="mt-5 flex-row items-center justify-center rounded-xl bg-[#b7472a] px-4 py-4"
+        accessibilityState={{ busy: isSubmitting, disabled: isSubmitting }}
+        className={`mt-5 flex-row items-center justify-center rounded-xl bg-[#b7472a] px-4 py-4 ${isSubmitting ? 'opacity-70' : 'active:bg-[#9f3c24]'}`}
       >
-        <Text className="mr-2 text-base text-white">
-          →
-        </Text>
+        {!isSubmitting ? (
+          <Text className="mr-2 text-base text-white">→</Text>
+        ) : null}
         <Text className="text-center text-sm font-bold text-white">
-          Ingresar
+          {isSubmitting ? 'Ingresando...' : 'Ingresar'}
         </Text>
       </Pressable>
     </View>

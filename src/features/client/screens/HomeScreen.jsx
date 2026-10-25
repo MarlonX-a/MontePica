@@ -1,4 +1,4 @@
-import { ImageBackground, Pressable, ScrollView, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import BottomNavigation from '@/features/client/components/BottomNavigation';
@@ -64,13 +64,13 @@ export default function HomeScreen() {
             <CartButton onPress={() => router.push('/orders')} />
           </View>
 
-          <ImageBackground
-            source={require('../../../../assets/encebollado-manabita.png')}
-            imageStyle={{ borderRadius: 20 }}
-            className="h-[280px] justify-end overflow-hidden rounded-[20px]"
-            accessibilityLabel="Encebollado manabita con chifles"
-            resizeMode="cover"
-          >
+          <View className="relative h-[280px] justify-end overflow-hidden rounded-[20px]">
+            <Image
+              source={require('../../../../assets/encebollado-manabita.png')}
+              accessibilityLabel="Encebollado manabita con chifles"
+              resizeMode="cover"
+              className="absolute inset-0 h-full w-full"
+            />
             <View className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1">
               <Text className="text-[10px] font-semibold text-[#8a4a34]">
                 Favorito de la casa
@@ -89,7 +89,7 @@ export default function HomeScreen() {
                 <Text className="text-sm font-bold text-white">$5.50</Text>
               </View>
             </View>
-          </ImageBackground>
+          </View>
 
           <View className="mb-3 mt-5">
             <Text className="text-sm font-semibold text-[#514941]">
