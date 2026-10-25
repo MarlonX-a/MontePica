@@ -9,7 +9,8 @@ import {
 import { Link, router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import RegisterForm from '@/features/auth/components/RegisterForm';
-import { registerUser } from '@/features/auth/data/authStore';
+import { registerWithApi } from '@/features/auth/api/authApi';
+import { setCurrentSession } from '@/shared/session/sessionStore';
 
 export default function RegisterScreen() {
   return (
@@ -64,12 +65,10 @@ export default function RegisterScreen() {
           </View>
 
           <RegisterForm
-            onRegistered={(user) => {
-              const result = registerUser(user);
-              if (result.ok) {
-                router.replace(user.role === 'waiter' ? '/waiter' : '/home');
-              }
-              return result;
+            onRegistered={async (registrationData) => {
+              const session = await registerWithApi(registrationData);
+              setCurrentSession(session);
+              router.replace('/home');
             }}
           />
 

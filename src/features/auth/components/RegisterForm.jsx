@@ -82,12 +82,13 @@ export default function RegisterForm({ onRegistered }) {
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [confirmationVisible, setConfirmationVisible] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
-  const [role, setRole] = useState('client');
   const [submitError, setSubmitError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   function handleChange(field, value) {
     const nextValues = { ...values, [field]: value };
     setValues(nextValues);
+    setSubmitError('');
 
     setErrors((currentErrors) => {
       const nextErrors = { ...currentErrors };
@@ -118,6 +119,7 @@ export default function RegisterForm({ onRegistered }) {
 
   function handleTermsChange(value) {
     setTermsAccepted(value);
+    setSubmitError('');
 
     if (touched.terms) {
       setErrors((currentErrors) => ({
@@ -127,7 +129,9 @@ export default function RegisterForm({ onRegistered }) {
     }
   }
 
-  function handleSubmit() {
+  async function handleSubmit() {
+    if (isSubmitting) return;
+
     setTouched({
       name: true,
       email: true,
@@ -139,9 +143,34 @@ export default function RegisterForm({ onRegistered }) {
     const nextErrors = validateRegisterForm(values, termsAccepted);
     setErrors(nextErrors);
 
-    if (!Object.values(nextErrors).some(Boolean)) {
-      const result = onRegistered?.({ ...values, role });
+    if (Object.values(nextErrors).some(Boolean)) return;
+
+    const { name, email, phone, password } = values;
+    setSubmitError('');
+    setIsSubmitting(true);
+
+    try {
+      const result = await onRegistered?.({
+        name,
+        email,
+        phone,
+        password,
+        termsAccepted,
+      });
       setSubmitError(result?.error || '');
+    } catch (error) {
+      const apiMessage = error?.response?.data?.message;
+      const message = Array.isArray(apiMessage)
+        ? apiMessage.join(' ')
+        : apiMessage;
+
+      setSubmitError(
+        typeof message === 'string'
+          ? message
+          : 'No se pudo crear la cuenta. Inténtalo de nuevo.',
+      );
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -162,35 +191,6 @@ export default function RegisterForm({ onRegistered }) {
         autoCapitalize="words"
       />
 
-      <Text className="mb-2 text-xs font-medium text-[#514941]">
-        Tipo de cuenta
-      </Text>
-      <View className="mb-3 flex-row gap-2">
-        {[
-          { value: 'client', label: 'Cliente' },
-          { value: 'waiter', label: 'Mesero' },
-        ].map((option) => (
-          <Pressable
-            key={option.value}
-            accessibilityRole="radio"
-            accessibilityState={{ selected: role === option.value }}
-            onPress={() => setRole(option.value)}
-            className={`flex-1 rounded-xl border px-4 py-3 ${
-              role === option.value
-                ? 'border-[#b7472a] bg-[#fff0e7]'
-                : 'border-[#eadfd2] bg-white'
-            }`}
-          >
-            <Text
-              className={`text-center text-xs font-semibold ${
-                role === option.value ? 'text-[#b7472a]' : 'text-[#70665e]'
-              }`}
-            >
-              {option.label}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
       <RegisterField
         label="Correo electrónico"
         placeholder="picamonte@gmail.com"
@@ -277,11 +277,17 @@ export default function RegisterForm({ onRegistered }) {
 
       <Pressable
         onPress={handleSubmit}
+        disabled={isSubmitting}
         accessibilityRole="button"
-        className="mt-4 min-h-12 flex-row items-center justify-center rounded-xl bg-[#b7472a] px-4 py-3 active:bg-[#9f3c24]"
+        accessibilityState={{ busy: isSubmitting, disabled: isSubmitting }}
+        className={`mt-4 min-h-12 flex-row items-center justify-center rounded-xl bg-[#b7472a] px-4 py-3 ${isSubmitting ? 'opacity-70' : 'active:bg-[#9f3c24]'}`}
       >
-        <Text className="mr-2 text-base text-white">→</Text>
-        <Text className="text-sm font-bold text-white">Crear cuenta</Text>
+        {!isSubmitting ? (
+          <Text className="mr-2 text-base text-white">→</Text>
+        ) : null}
+        <Text className="text-sm font-bold text-white">
+          {isSubmitting ? 'Creando cuenta...' : 'Crear cuenta'}
+        </Text>
       </Pressable>
     </View>
   );
