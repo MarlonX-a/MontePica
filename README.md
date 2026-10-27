@@ -1,6 +1,6 @@
 # MontePica
 
-Aplicación para una cevichería, construida con Expo, React Native, Expo Router y NativeWind. La interfaz y los datos actuales forman un prototipo local; todavía no hay servicios de backend ni almacenamiento persistente.
+Aplicación para una cevichería, construida con Expo, React Native, Expo Router y NativeWind. El login, el registro y el catálogo del cliente consultan el backend. El carrito, los pedidos y la administración todavía conservan simulaciones locales.
 
 ## Estructura del código
 
@@ -19,13 +19,16 @@ Aplicación para una cevichería, construida con Expo, React Native, Expo Router
 │   │   ├── components.md                # Referencia a esta guía
 │   │   └── ui/Title.jsx                 # Título genérico
 │   ├── features/
-│   │   ├── auth/                        # Formularios, pantallas, validadores y authStore
+│   │   ├── auth/                        # Formularios, pantallas, API y validadores
 │   │   ├── client/                      # Inicio, escáner, menú, detalle, pedidos y UI cliente
+│   │   │   ├── api/catalogApi.js         # Consultas públicas de productos y categorías
+│   │   │   └── data/                    # Mapper del catálogo y orderStore local
 │   │   ├── waiter/                      # Bandeja de pedidos de prueba del mesero
 │   │   └── admin/                       # Productos, mesas, usuarios y su estado local
+│   │       └── data/adminData.js         # Semillas locales aisladas de administración
 │   └── shared/
-│       ├── data/menuProducts.js         # Catálogo compartido por cliente y administración
-│       ├── session/sessionStore.js      # Usuario actual en memoria y cierre de sesión
+│       ├── api/apiClient.js             # Cliente Axios
+│       ├── session/sessionStore.js      # Sesión en memoria y SecureStore nativo
 │       └── validators/emailValidator.js # Validación de correo reutilizada
 ├── global.css                           # Directivas globales de Tailwind
 ├── app.json                             # Configuración de Expo y sus plugins
@@ -39,11 +42,11 @@ Aplicación para una cevichería, construida con Expo, React Native, Expo Router
 ### Responsabilidad de las carpetas
 
 - `app/` solo declara navegación. Cada archivo de ruta conecta Expo Router con una pantalla o layout de una feature. Los nombres entre paréntesis agrupan rutas sin agregarse a la URL.
-- `features/auth/` valida y procesa localmente el registro y el inicio de sesión. `authStore.js` mantiene la lista de cuentas de demostración en memoria.
-- `features/client/` contiene el recorrido del cliente. `data/orderStore.js` conserva carrito y pedido activo en memoria.
+- `features/auth/` contiene los formularios y las llamadas de registro e inicio de sesión al backend.
+- `features/client/` contiene el recorrido del cliente. `api/catalogApi.js` consulta productos y categorías; `data/menuProductMapper.js` adapta los productos para la interfaz. `data/orderStore.js` conserva carrito y pedido activo en memoria.
 - `features/waiter/` muestra pedidos de ejemplo y permite cambiar su estado localmente.
 - `features/admin/` muestra y edita productos, mesas y usuarios de demostración dentro de su propio estado local.
-- `shared/` contiene estado o datos que usan varias features. La sesión actual vive en memoria; el catálogo compartido está en `shared/data/menuProducts.js`.
+- `shared/` contiene módulos transversales como Axios y la sesión. En iOS/Android, SecureStore conserva la sesión entre reinicios; en web solo se mantiene en memoria.
 - `components/ui/` contiene elementos visuales reutilizables que no conocen las reglas de una feature, como `Title.jsx`.
 - `assets/` guarda las imágenes y los iconos locales.
 
@@ -51,9 +54,9 @@ Aplicación para una cevichería, construida con Expo, React Native, Expo Router
 
 1. Expo Router toma `src/app/` como raíz; `src/app/_layout.jsx` monta el Stack principal.
 2. `/` redirige a `/login`. Las rutas `/login` y `/register` muestran sus pantallas de autenticación.
-3. El acceso simulado dirige al cliente a `/home` o a un usuario con rol mesero a `/waiter`.
+3. Login o registro validan la cuenta con el backend; la sesión restaura el destino correspondiente al rol.
 4. Desde `/home`, **Pedir a domicilio** abre `/menu`; **Para servirse** abre `/scan-table`, donde la mesa se reconoce de forma simulada y luego se continúa al menú.
-5. Desde el menú, elegir un producto abre `/product/[id]`. Agregarlo lleva a `/orders`, donde se puede ajustar el carrito y crear un pedido local para mostrar su seguimiento.
+5. El menú obtiene productos y categorías del backend. Elegir un producto abre `/product/[id]`, que consulta el producto por su UUID. Agregarlo lleva a `/orders`, donde el carrito y el seguimiento siguen siendo locales.
 6. Las rutas `/admin/products`, `/admin/tables` y `/admin/users` muestran la administración de demostración.
 
 Las rutas conservan sus URLs aunque cambien de grupo. Por ejemplo, `(waiter)/waiter.jsx` sigue siendo `/waiter`.
@@ -73,7 +76,8 @@ Para decidir dónde poner código nuevo:
 
 - Un formulario exclusivo de registro pertenece a `features/auth/components/`.
 - Una tarjeta usada solo por el menú pertenece a `features/client/components/`.
-- Un catálogo utilizado por cliente y administración pertenece a `shared/data/`.
+- Las llamadas del catálogo del cliente y su adaptación visual pertenecen a `features/client/api/` y `features/client/data/`.
+- Los datos semilla que solo usa administración pertenecen a `features/admin/data/`.
 - El usuario actual usado por autenticación y otras pantallas pertenece a `shared/session/`.
 - Un título visual que puede usarse en varias pantallas sin reglas de negocio pertenece a `components/ui/`.
 - Una regla de validación reutilizada por más de una feature pertenece a `shared/validators/`.
@@ -81,11 +85,11 @@ Para decidir dónde poner código nuevo:
 
 ## Estado local y límites actuales
 
-El registro guarda cuentas en memoria durante la ejecución. El inicio de sesión encuentra una cuenta registrada o crea el usuario de demostración cliente. El botón de acceso administrativo crea un usuario de demostración local sin una contraseña fija en el código. La sesión se conserva en `shared/session/sessionStore.js` mientras la app está abierta; cerrar sesión la limpia. No hay autenticación de servidor ni persistencia después de reiniciar la aplicación.
+El login y el registro llaman al backend. La sesión se conserva en memoria y en SecureStore para iOS/Android; en web se pierde al recargar. `apiClient` todavía no adjunta tokens automáticamente a endpoints protegidos.
 
-El catálogo de ceviches y bebidas es una constante compartida; las ediciones de productos que aparecen en administración viven en el estado de administración y no modifican ese catálogo. El carrito y el pedido activo del cliente viven en `orderStore.js`; confirmar el pedido genera un seguimiento local. Los pedidos de la pantalla del mesero son datos de muestra independientes y no se conectan con los pedidos del cliente. Las mesas y usuarios de administración también son simulaciones locales.
+El catálogo del cliente proviene del backend. La respuesta actual no contiene URL de imágenes ni cantidades disponibles, por lo que la interfaz usa iconos genéricos y no afirma stock. Los datos semilla de administración permanecen locales y no modifican el catálogo del backend. El carrito y el pedido activo del cliente viven en `orderStore.js`; confirmar el pedido genera un seguimiento local. Los pedidos de la pantalla del mesero son datos de muestra independientes y no se conectan con los pedidos del cliente. Las mesas y usuarios de administración también son simulaciones locales.
 
-El escáner solicita permiso para usar la cámara, pero la detección de Mesa 08 es simulada. No se envían pedidos, pagos ni datos a un servidor.
+El escáner solicita permiso para usar la cámara, pero la detección de Mesa 08 es simulada. Los pedidos y pagos no se envían al backend.
 
 ## Configuración y comandos
 

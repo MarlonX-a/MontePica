@@ -23,7 +23,7 @@ export default function LoginScreen() {
       <LoginForm
         onValidSubmit={async (credentials) => {
           const session = await loginWithApi(credentials);
-          setCurrentSession(session);
+          await setCurrentSession(session);
           router.replace(getRouteForRole(session.user?.role?.code));
         }}
       />

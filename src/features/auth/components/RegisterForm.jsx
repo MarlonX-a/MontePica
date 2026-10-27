@@ -164,11 +164,23 @@ export default function RegisterForm({ onRegistered }) {
         ? apiMessage.join(' ')
         : apiMessage;
 
-      setSubmitError(
-        typeof message === 'string'
-          ? message
-          : 'No se pudo crear la cuenta. Inténtalo de nuevo.',
-      );
+      if (error?.code === 'SESSION_STORAGE_FAILED') {
+        setSubmitError(
+          'La cuenta se creó, pero no se pudo guardar la sesión en este dispositivo. Intenta iniciar sesión.',
+        );
+      } else if (typeof message === 'string' && message.trim()) {
+        setSubmitError(message);
+      } else if (error?.request && !error?.response) {
+        setSubmitError(
+          'No se pudo conectar con el servidor. Comprueba que esté activo y que el dispositivo esté en la misma red Wi-Fi.',
+        );
+      } else if (error?.response) {
+        setSubmitError(
+          `El servidor rechazó el registro (HTTP ${error.response.status}). Revisa los datos e inténtalo de nuevo.`,
+        );
+      } else {
+        setSubmitError('No se pudo completar el registro. Inténtalo de nuevo.');
+      }
     } finally {
       setIsSubmitting(false);
     }

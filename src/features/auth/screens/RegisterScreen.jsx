@@ -67,7 +67,15 @@ export default function RegisterScreen() {
           <RegisterForm
             onRegistered={async (registrationData) => {
               const session = await registerWithApi(registrationData);
-              setCurrentSession(session);
+
+              try {
+                await setCurrentSession(session);
+              } catch {
+                const error = new Error('No se pudo guardar la sesión.');
+                error.code = 'SESSION_STORAGE_FAILED';
+                throw error;
+              }
+
               router.replace('/home');
             }}
           />

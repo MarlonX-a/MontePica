@@ -205,8 +205,8 @@ function OrderDetail({ order, onBack, onAccept, onReject }) {
   );
 }
 
-function handleLogout() {
-  logoutUser();
+async function handleLogout() {
+  await logoutUser();
   router.replace('/(auth)/login');
 }
 

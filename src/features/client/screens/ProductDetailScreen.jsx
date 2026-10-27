@@ -1,12 +1,20 @@
-import { useState } from 'react';
-import { Image, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Image,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import IconButton from '@/features/client/components/IconButton';
 import SelectableChip from '@/features/client/components/SelectableChip';
-import { getProductPrice, menuProducts } from '@/shared/data/menuProducts';
 import { addToCart } from '@/features/client/data/orderStore';
+import { getMenuProductById } from '@/features/client/api/catalogApi';
 
 const spiceOptions = ['Sin ají', 'Suave', 'Medio', 'Fuerte'];
 
@@ -29,19 +37,84 @@ function QuantityButton({ label, onPress, children, disabled }) {
 
 export default function ProductDetailScreen() {
   const { id, service, table } = useLocalSearchParams();
+  const productId = Array.isArray(id) ? id[0] : id;
+  const [product, setProduct] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [reloadKey, setReloadKey] = useState(0);
   const [spice, setSpice] = useState('Suave');
   const [quantity, setQuantity] = useState(1);
   const [note, setNote] = useState('');
   const [favorite, setFavorite] = useState(false);
-  const product = menuProducts.find((item) => item.id === id);
 
-  if (!product) {
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadProduct() {
+      setIsLoading(true);
+      setLoadError('');
+
+      try {
+        const loadedProduct = await getMenuProductById(productId);
+        if (isMounted) setProduct(loadedProduct);
+      } catch (error) {
+        const apiMessage = error?.response?.data?.message;
+        const message = Array.isArray(apiMessage)
+          ? apiMessage.join(' ')
+          : apiMessage;
+
+        if (isMounted) {
+          setLoadError(
+            typeof message === 'string' && message.trim()
+              ? message
+              : 'No se pudo cargar el producto. Revisa la conexión e inténtalo de nuevo.',
+          );
+        }
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    }
+
+    if (productId) {
+      loadProduct();
+    } else {
+      setLoadError('No encontramos el identificador del producto.');
+      setIsLoading(false);
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [productId, reloadKey]);
+
+  if (isLoading) {
+    return (
+      <SafeAreaView className="flex-1 items-center justify-center bg-[#fff8ef]">
+        <StatusBar style="dark" />
+        <ActivityIndicator color="#b7472a" />
+        <Text className="mt-3 text-xs text-[#8b8178]">
+          Cargando producto...
+        </Text>
+      </SafeAreaView>
+    );
+  }
+
+  if (loadError || !product) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center bg-[#fff8ef] px-8">
         <StatusBar style="dark" />
         <Text className="text-lg font-bold text-[#332d28]">
-          No encontramos ese producto
+          {loadError || 'No encontramos ese producto.'}
         </Text>
+        {loadError ? (
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => setReloadKey((key) => key + 1)}
+            className="mt-4 rounded-xl bg-[#b7472a] px-5 py-3"
+          >
+            <Text className="font-semibold text-white">Reintentar</Text>
+          </Pressable>
+        ) : null}
         <Pressable onPress={() => router.back()} className="mt-4 rounded-xl bg-[#b7472a] px-5 py-3">
           <Text className="font-semibold text-white">Volver al menú</Text>
         </Pressable>
@@ -50,7 +123,7 @@ export default function ProductDetailScreen() {
   }
 
   const isCeviche = product.category === 'Ceviches';
-  const total = (getProductPrice(product) * quantity).toFixed(2);
+  const total = ((product.priceCents / 100) * quantity).toFixed(2);
 
   return (
     <SafeAreaView className="flex-1 bg-[#fff8ef]">
@@ -109,12 +182,12 @@ export default function ProductDetailScreen() {
               {isCeviche && 'Acompañado con limón y cilantro fresco.'}
             </Text>
 
-            <View className="mt-4 flex-row items-center rounded-lg bg-[#e4efe2] px-3 py-2.5">
-              <View className="mr-2 h-2 w-2 rounded-full bg-[#4d8c58]" />
-              <Text className="flex-1 text-[11px] font-medium text-[#547353]">
-                Disponible ahora
+            <View className="mt-4 flex-row items-center rounded-lg bg-[#f4eee5] px-3 py-2.5">
+              <View className="mr-2 h-2 w-2 rounded-full bg-[#b7472a]" />
+              <Text className="flex-1 text-[11px] font-medium text-[#75695f]">
+                Disponibilidad por confirmar
               </Text>
-              <Text className="text-[10px] text-[#547353]">{product.availability}</Text>
+              <Text className="text-[10px] text-[#75695f]">{product.availability}</Text>
             </View>
 
             {isCeviche && (
