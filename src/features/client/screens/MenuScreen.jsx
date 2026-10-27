@@ -1,27 +1,86 @@
-import { useMemo, useState } from 'react';
-import { ScrollView, Text, TextInput, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BottomNavigation from '@/features/client/components/BottomNavigation';
 import MenuProductCard from '@/features/client/components/MenuProductCard';
 import CartButton from '@/features/client/components/CartButton';
-import { menuProducts } from '@/shared/data/menuProducts';
 import SelectableChip from '@/features/client/components/SelectableChip';
 import { logoutUser } from '@/shared/session/sessionStore';
-
-const categories = ['Todos', 'Ceviches', 'Bebidas'];
+import {
+  getMenuCategories,
+  getMenuProducts,
+} from '@/features/client/api/catalogApi';
 
 export default function MenuScreen() {
   const { service, table } = useLocalSearchParams();
+  const [products, setProducts] = useState([]);
+  const [availableCategories, setAvailableCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('Todos');
   const [search, setSearch] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [reloadKey, setReloadKey] = useState(0);
   const isDineIn = service === 'dine-in';
+  const categories = [
+    'Todos',
+    ...availableCategories.map((category) => category.name),
+  ];
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadCatalog() {
+      setIsLoading(true);
+      setLoadError('');
+
+      try {
+        const [loadedProducts, loadedCategories] = await Promise.all([
+          getMenuProducts(),
+          getMenuCategories(),
+        ]);
+
+        if (isMounted) {
+          setProducts(loadedProducts);
+          setAvailableCategories(loadedCategories);
+        }
+      } catch (error) {
+        const apiMessage = error?.response?.data?.message;
+        const message = Array.isArray(apiMessage)
+          ? apiMessage.join(' ')
+          : apiMessage;
+
+        if (isMounted) {
+          setLoadError(
+            typeof message === 'string' && message.trim()
+              ? message
+              : 'No se pudo cargar el menú. Revisa la conexión e inténtalo de nuevo.',
+          );
+        }
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    }
+
+    loadCatalog();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [reloadKey]);
 
   const visibleProducts = useMemo(() => {
     const normalizedSearch = search.trim().toLocaleLowerCase();
 
-    return menuProducts.filter((product) => {
+    return products.filter((product) => {
       const matchesCategory =
         selectedCategory === 'Todos' || product.category === selectedCategory;
       const matchesSearch =
@@ -32,7 +91,7 @@ export default function MenuScreen() {
 
       return matchesCategory && matchesSearch;
     });
-  }, [search, selectedCategory]);
+  }, [products, search, selectedCategory]);
 
   return (
     <SafeAreaView className="flex-1 bg-[#fff8ef]">
@@ -89,7 +148,9 @@ export default function MenuScreen() {
 
           <View className="mb-3 flex-row items-center justify-between">
             <Text className="text-xs text-[#8b8178]">
-              {visibleProducts.length} productos disponibles
+              {isLoading
+                ? 'Cargando menú...'
+                : `${visibleProducts.length} productos disponibles`}
             </Text>
             <View className="flex-row items-center">
               <View className="mr-1.5 h-2 w-2 rounded-full bg-[#4d8c58]" />
@@ -99,7 +160,29 @@ export default function MenuScreen() {
             </View>
           </View>
 
-          {visibleProducts.length > 0 ? (
+          {isLoading ? (
+            <View className="items-center rounded-2xl bg-white px-5 py-10">
+              <ActivityIndicator color="#b7472a" />
+              <Text className="mt-3 text-xs text-[#8b8178]">
+                Cargando productos...
+              </Text>
+            </View>
+          ) : loadError ? (
+            <View className="items-center rounded-2xl bg-white px-5 py-8">
+              <Text className="text-center text-sm text-[#8b8178]">
+                {loadError}
+              </Text>
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => setReloadKey((key) => key + 1)}
+                className="mt-4 rounded-xl bg-[#b7472a] px-5 py-3"
+              >
+                <Text className="text-xs font-semibold text-white">
+                  Reintentar
+                </Text>
+              </Pressable>
+            </View>
+          ) : visibleProducts.length > 0 ? (
             visibleProducts.map((product) => (
               <MenuProductCard
                 key={product.id}
@@ -126,11 +209,11 @@ export default function MenuScreen() {
 
         <BottomNavigation
           activeTab="menu"
-          onTabPress={(tab) => {
+          onTabPress={async (tab) => {
             if (tab === 'home') router.replace('/home');
             if (tab === 'orders') router.replace('/orders');
             if (tab === 'profile') {
-              logoutUser();
+              await logoutUser();
               router.replace('/(auth)/login');
             }
           }}

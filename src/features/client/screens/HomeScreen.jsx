@@ -33,13 +33,13 @@ function OrderButton({ icon, title, subtitle, primary, onPress }) {
   );
 }
 
-function handleTabPress(tab) {
+async function handleTabPress(tab) {
   if (tab === 'orders') {
     router.push('/orders');
     return;
   }
   if (tab === 'profile') {
-    logoutUser();
+    await logoutUser();
     router.replace('/(auth)/login');
   }
 }

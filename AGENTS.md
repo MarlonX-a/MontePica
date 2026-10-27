@@ -13,17 +13,17 @@ Lee estas instrucciones antes de modificar la aplicación. Mantén los cambios d
 
 ## Proyecto y estado funcional
 
-MontePica es una aplicación móvil para una cevichería. El menú de muestra debe limitarse a ceviches —por ejemplo, pescado, camarón y mixto— y bebidas como jugos, limonada y cola. No agregues platos ajenos a ese catálogo.
+MontePica es una aplicación móvil para una cevichería. El catálogo del cliente se consulta al backend y debe limitarse a ceviches —por ejemplo, pescado, camarón y mixto— y bebidas como jugos, limonada y cola. No agregues platos ajenos a ese catálogo.
 
-La aplicación sigue siendo un prototipo local: no hay backend ni persistencia después de reiniciar la app. La sesión, las cuentas registradas, el carrito, los pedidos y los cambios de administración se mantienen solo en memoria. Conserva este límite hasta que el usuario solicite integrar esos servicios. Los precios, disponibilidad, mesa y productos actuales son datos de muestra.
+El login, el registro y la lectura del catálogo están conectados al backend. La sesión se conserva en memoria y SecureStore en iOS/Android; en web solo vive en memoria. El carrito, los pedidos del cliente y del mesero, y las pantallas de administración todavía usan simulaciones locales independientes. No conviertas esos flujos en llamadas de red hasta que el usuario solicite conectarlos. La API del catálogo todavía no entrega imágenes ni cantidades disponibles; no inventes stock.
 
 Flujo actual:
 
-1. `/` redirige al login.
-2. El login permite entrar al inicio localmente, sin autenticación de servidor.
+1. `/` restaura la sesión y dirige al usuario según su rol; si no hay sesión, abre login.
+2. Login y registro usan la API.
 3. Desde Inicio, **Para servirse** abre el escáner. El escáner muestra una mesa reconocida simulada (Mesa 08) y continúa al menú.
 4. **Pedir a domicilio** abre el menú directamente.
-5. El menú permite buscar y filtrar productos localmente; al tocar una tarjeta abre el detalle del producto.
+5. El menú y el detalle consultan el catálogo del backend. La búsqueda y los filtros se aplican en la app.
 6. En el detalle, picante, nota y cantidad son controles locales. **Agregar** añade el producto al carrito en memoria; confirmar crea un pedido de demostración y muestra su seguimiento local.
 
 La pantalla `/waiter` tiene pedidos de ejemplo propios y no está conectada al carrito ni a los pedidos del cliente. Las pantallas de administración también usan datos locales aislados: los cambios de producto no actualizan el catálogo que ve el cliente.
@@ -50,19 +50,21 @@ src/
 │   ├── components.md
 │   └── ui/Title.jsx
 ├── features/
-│   ├── auth/                    # formularios, pantallas, authStore y validadores
-│   ├── client/                  # pantallas, componentes y orderStore del cliente
+│   ├── auth/                    # formularios, pantallas, API y validadores
+│   ├── client/                  # pantallas, API de catálogo, mapper, componentes y orderStore
 │   ├── waiter/                  # bandeja local del mesero
 │   └── admin/                   # administración y estado local
 └── shared/
-    ├── data/menuProducts.js     # catálogo usado por cliente y administración
-    ├── session/sessionStore.js # usuario actual en memoria
+    ├── api/apiClient.js        # cliente Axios
+    ├── session/sessionStore.js # usuario y tokens; SecureStore en iOS/Android
     └── validators/              # validaciones puras reutilizadas por features
 ```
 
+El catálogo del cliente vive en el backend. `features/client/api/catalogApi.js` consulta productos y categorías; `features/client/data/menuProductMapper.js` adapta productos al formato visual. `features/admin/data/adminData.js` conserva los datos semilla locales e independientes de administración.
+
 Otros archivos importantes:
 
-- `assets/`: iconos e imágenes locales; las fotos de ceviches se usan en el detalle.
+- `assets/`: imágenes locales que todavía usa la administración; el catálogo del cliente usa `imageUrl` del backend cuando esté disponible.
 - `app.json`: configuración de Expo, esquema de enlaces y permisos/plugins.
 - `package.json` y `package-lock.json`: dependencias y comandos npm.
 - `jsconfig.json`: alias `@/` hacia `src/`.
@@ -90,7 +92,7 @@ import MenuScreen from '@/features/client/screens/MenuScreen';
 Ejemplos de módulos compartidos:
 
 ```js
-import { menuProducts } from '@/shared/data/menuProducts';
+import apiClient from '@/shared/api/apiClient';
 import { logoutUser } from '@/shared/session/sessionStore';
 import { isValidEmail } from '@/shared/validators/emailValidator';
 ```
@@ -100,7 +102,8 @@ import { isValidEmail } from '@/shared/validators/emailValidator';
 - Conserva JavaScript/JSX, Expo Router, React Native y NativeWind. Mantén consistencia con los colores crema, terracota y café que ya usa la aplicación.
 - Prioriza layouts móviles y revisa que el contenido funcione en web, iOS y Android. Ten cuidado con safe areas, alturas disponibles, teclado y overlays de cámara.
 - Usa `Pressable` para acciones y agrega etiquetas de accesibilidad cuando no haya texto visible que describa el control.
-- Mantén el menú y la pantalla de detalle conectados al mismo catálogo local.
+- Mantén el menú y la pantalla de detalle conectados al catálogo de la API mediante `catalogApi.js` y el mapper de cliente.
+- El catálogo no informa cantidades disponibles. No muestres stock real a partir de `tracksInventory`, que solo indica si se controla.
 - No agregues una ruta para una pestaña inferior hasta que esa pantalla sea solicitada.
 - El escáner usa `expo-camera`. Respeta sus permisos y no pongas elementos hijos dentro de `CameraView`; superpón el marco como una vista hermana. El reconocimiento de mesa sigue simulado.
 - Conserva las validaciones locales existentes de login y registro. No afirmes que crean cuentas ni autentican usuarios contra un servidor.
