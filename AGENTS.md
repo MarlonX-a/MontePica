@@ -15,7 +15,7 @@ Lee estas instrucciones antes de modificar la aplicación. Mantén los cambios d
 
 MontePica es una aplicación móvil para una cevichería. El catálogo del cliente se consulta al backend y debe limitarse a ceviches —por ejemplo, pescado, camarón y mixto— y bebidas como jugos, limonada y cola. No agregues platos ajenos a ese catálogo.
 
-El login, el registro y la lectura del catálogo están conectados al backend. La sesión se conserva en memoria y SecureStore en iOS/Android; en web solo vive en memoria. El carrito, los pedidos del cliente y del mesero, y las pantallas de administración todavía usan simulaciones locales independientes. No conviertas esos flujos en llamadas de red hasta que el usuario solicite conectarlos. La API del catálogo todavía no entrega imágenes ni cantidades disponibles; no inventes stock.
+El login, el registro, la lectura del catálogo del cliente, la administración de productos/categorías y el inventario diario están conectados al backend. La sesión se conserva en memoria y SecureStore en iOS/Android; en web solo vive en memoria. `apiClient` adjunta el token de acceso a las rutas protegidas. El carrito, los pedidos del cliente y del mesero, el panel, las mesas y los usuarios siguen usando simulaciones locales independientes. No conviertas esos flujos en llamadas de red hasta que el usuario solicite conectarlos. El catálogo no entrega imágenes ni cantidades disponibles; las existencias sí se consultan desde los endpoints diarios de inventario. No deduzcas stock a partir de `tracksInventory`.
 
 Flujo actual:
 
@@ -26,7 +26,11 @@ Flujo actual:
 5. El menú y el detalle consultan el catálogo del backend. La búsqueda y los filtros se aplican en la app.
 6. En el detalle, picante, nota y cantidad son controles locales. **Agregar** añade el producto al carrito en memoria; confirmar crea un pedido de demostración y muestra su seguimiento local.
 
-La pantalla `/waiter` tiene pedidos de ejemplo propios y no está conectada al carrito ni a los pedidos del cliente. Las pantallas de administración también usan datos locales aislados: los cambios de producto no actualizan el catálogo que ve el cliente.
+La pantalla `/waiter` tiene pedidos de ejemplo propios y no está conectada al carrito ni a los pedidos del cliente. El catálogo administrado desde `/admin/products` es el mismo que consulta el cliente; los datos de inventario, panel, mesas y usuarios siguen siendo simulaciones independientes.
+
+La pantalla `/admin/products` consulta productos y categorías protegidos del backend y permite crear o editar ambos recursos. El usuario autenticado debe tener los permisos `catalog.read` y `catalog.write`; los errores de sesión o permisos se muestran en la pantalla. Esa pantalla no usa las existencias ficticias del inventario local. Las demás pantallas administrativas aún pueden mostrar semillas locales y no se sincronizan automáticamente con el catálogo real.
+
+La pantalla `/admin/inventory` consulta la jornada operativa actual y sus existencias (permisos `operations.read` e `inventory.read`). Puede abrir la jornada si la cuenta tiene `operations.open`. Desde una fila se inicializa el stock o se registra un movimiento mediante `/admin/movement`; las operaciones requieren `inventory.initialize`, `inventory.move` o `inventory.adjust` según el tipo. Las solicitudes que modifican stock incluyen `Idempotency-Key`. La imagen del comprobante sigue siendo solo una vista previa local y no se envía.
 
 No conviertas una simulación visual en una llamada de red ni des por confirmados pedidos, pagos o datos persistentes.
 
@@ -53,14 +57,16 @@ src/
 │   ├── auth/                    # formularios, pantallas, API y validadores
 │   ├── client/                  # pantallas, API de catálogo, mapper, componentes y orderStore
 │   ├── waiter/                  # bandeja local del mesero
-│   └── admin/                   # administración y estado local
+│   └── admin/                   # catálogo/inventario conectados y otras pantallas locales
+│       ├── api/                 # APIs administrativas de catálogo e inventario
+│       └── data/                # mappers y datos semilla de pantallas locales
 └── shared/
     ├── api/apiClient.js        # cliente Axios
     ├── session/sessionStore.js # usuario y tokens; SecureStore en iOS/Android
     └── validators/              # validaciones puras reutilizadas por features
 ```
 
-El catálogo del cliente vive en el backend. `features/client/api/catalogApi.js` consulta productos y categorías; `features/client/data/menuProductMapper.js` adapta productos al formato visual. `features/admin/data/adminData.js` conserva los datos semilla locales e independientes de administración.
+El catálogo del cliente vive en el backend. `features/client/api/catalogApi.js` consulta productos y categorías; `features/client/data/menuProductMapper.js` adapta productos al formato visual. La administración usa `features/admin/api/catalogAdminApi.js` y `adminCatalogMapper.js` para gestionar productos/categorías y `features/admin/api/inventoryAdminApi.js` y `inventoryMapper.js` para la jornada y las existencias. `features/admin/data/adminData.js` conserva semillas locales para el panel, mesas y usuarios que aún no están conectados.
 
 Otros archivos importantes:
 
@@ -103,6 +109,8 @@ import { isValidEmail } from '@/shared/validators/emailValidator';
 - Prioriza layouts móviles y revisa que el contenido funcione en web, iOS y Android. Ten cuidado con safe areas, alturas disponibles, teclado y overlays de cámara.
 - Usa `Pressable` para acciones y agrega etiquetas de accesibilidad cuando no haya texto visible que describa el control.
 - Mantén el menú y la pantalla de detalle conectados al catálogo de la API mediante `catalogApi.js` y el mapper de cliente.
+- Mantén `/admin/products` conectado con `catalogAdminApi.js`; las rutas admin requieren un token y permisos otorgados por el backend. No reutilices las semillas de `adminData.js` como catálogo real.
+- Mantén `/admin/inventory` y `/admin/movement` conectados con `inventoryAdminApi.js`; registra movimientos con clave idempotente y muestra cantidades del backend, no datos semilla.
 - El catálogo no informa cantidades disponibles. No muestres stock real a partir de `tracksInventory`, que solo indica si se controla.
 - No agregues una ruta para una pestaña inferior hasta que esa pantalla sea solicitada.
 - El escáner usa `expo-camera`. Respeta sus permisos y no pongas elementos hijos dentro de `CameraView`; superpón el marco como una vista hermana. El reconocimiento de mesa sigue simulado.

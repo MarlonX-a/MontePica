@@ -1,6 +1,6 @@
 # MontePica
 
-Aplicación para una cevichería, construida con Expo, React Native, Expo Router y NativeWind. El login, el registro y el catálogo del cliente consultan el backend. El carrito, los pedidos y la administración todavía conservan simulaciones locales.
+Aplicación para una cevichería, construida con Expo, React Native, Expo Router y NativeWind. El login, el registro, el catálogo del cliente, la gestión administrativa de productos/categorías y el inventario diario consultan el backend. El carrito, los pedidos y otras pantallas administrativas todavía conservan simulaciones locales.
 
 ## Estructura del código
 
@@ -14,7 +14,7 @@ Aplicación para una cevichería, construida con Expo, React Native, Expo Router
 │   │   ├── (auth)/                      # Rutas /login y /register
 │   │   ├── (client)/                    # /home, /scan-table, /menu, /orders, /product/[id]
 │   │   ├── (waiter)/                    # /waiter
-│   │   └── admin/                       # /admin/products, /admin/tables, /admin/users
+│   │   └── admin/                       # /admin/dashboard, products, movement, mesas y usuarios
 │   ├── components/                      # Guía breve y UI transversal
 │   │   ├── components.md                # Referencia a esta guía
 │   │   └── ui/Title.jsx                 # Título genérico
@@ -24,8 +24,9 @@ Aplicación para una cevichería, construida con Expo, React Native, Expo Router
 │   │   │   ├── api/catalogApi.js         # Consultas públicas de productos y categorías
 │   │   │   └── data/                    # Mapper del catálogo y orderStore local
 │   │   ├── waiter/                      # Bandeja de pedidos de prueba del mesero
-│   │   └── admin/                       # Productos, mesas, usuarios y su estado local
-│   │       └── data/adminData.js         # Semillas locales aisladas de administración
+│   │   └── admin/                       # Catálogo e inventario API; otras pantallas demo
+│   │       ├── api/                      # APIs administrativas de catálogo e inventario
+│   │       └── data/                     # Mappers API y semillas de pantallas demo
 │   └── shared/
 │       ├── api/apiClient.js             # Cliente Axios
 │       ├── session/sessionStore.js      # Sesión en memoria y SecureStore nativo
@@ -45,8 +46,8 @@ Aplicación para una cevichería, construida con Expo, React Native, Expo Router
 - `features/auth/` contiene los formularios y las llamadas de registro e inicio de sesión al backend.
 - `features/client/` contiene el recorrido del cliente. `api/catalogApi.js` consulta productos y categorías; `data/menuProductMapper.js` adapta los productos para la interfaz. `data/orderStore.js` conserva carrito y pedido activo en memoria.
 - `features/waiter/` muestra pedidos de ejemplo y permite cambiar su estado localmente.
-- `features/admin/` muestra y edita productos, mesas y usuarios de demostración dentro de su propio estado local.
-- `shared/` contiene módulos transversales como Axios y la sesión. En iOS/Android, SecureStore conserva la sesión entre reinicios; en web solo se mantiene en memoria.
+- `features/admin/` gestiona productos/categorías e inventario diario desde el backend. El panel, las mesas y los usuarios aún usan datos de demostración.
+- `shared/` contiene módulos transversales como Axios y la sesión. Axios agrega el token de acceso al llamar endpoints protegidos. En iOS/Android, SecureStore conserva la sesión entre reinicios; en web solo se mantiene en memoria.
 - `components/ui/` contiene elementos visuales reutilizables que no conocen las reglas de una feature, como `Title.jsx`.
 - `assets/` guarda las imágenes y los iconos locales.
 
@@ -57,7 +58,7 @@ Aplicación para una cevichería, construida con Expo, React Native, Expo Router
 3. Login o registro validan la cuenta con el backend; la sesión restaura el destino correspondiente al rol.
 4. Desde `/home`, **Pedir a domicilio** abre `/menu`; **Para servirse** abre `/scan-table`, donde la mesa se reconoce de forma simulada y luego se continúa al menú.
 5. El menú obtiene productos y categorías del backend. Elegir un producto abre `/product/[id]`, que consulta el producto por su UUID. Agregarlo lleva a `/orders`, donde el carrito y el seguimiento siguen siendo locales.
-6. Las rutas `/admin/products`, `/admin/tables` y `/admin/users` muestran la administración de demostración.
+6. `/admin/products` consulta el catálogo administrativo y permite crear/editar productos y categorías con permisos `catalog.read` y `catalog.write`. `/admin/inventory` consulta la jornada actual y las existencias; `/admin/movement` inicializa o modifica el inventario según los permisos de la cuenta. El panel, las mesas y los usuarios todavía son demostraciones locales.
 
 Las rutas conservan sus URLs aunque cambien de grupo. Por ejemplo, `(waiter)/waiter.jsx` sigue siendo `/waiter`.
 
@@ -77,6 +78,8 @@ Para decidir dónde poner código nuevo:
 - Un formulario exclusivo de registro pertenece a `features/auth/components/`.
 - Una tarjeta usada solo por el menú pertenece a `features/client/components/`.
 - Las llamadas del catálogo del cliente y su adaptación visual pertenecen a `features/client/api/` y `features/client/data/`.
+- Las llamadas protegidas de gestión de productos/categorías pertenecen a `features/admin/api/catalogAdminApi.js`; su adaptación pertenece a `features/admin/data/adminCatalogMapper.js`.
+- La consulta de jornadas, existencias y movimientos pertenece a `features/admin/api/inventoryAdminApi.js`; `features/admin/data/inventoryMapper.js` adapta cada existencia para la pantalla.
 - Los datos semilla que solo usa administración pertenecen a `features/admin/data/`.
 - El usuario actual usado por autenticación y otras pantallas pertenece a `shared/session/`.
 - Un título visual que puede usarse en varias pantallas sin reglas de negocio pertenece a `components/ui/`.
@@ -85,15 +88,15 @@ Para decidir dónde poner código nuevo:
 
 ## Estado local y límites actuales
 
-El login y el registro llaman al backend. La sesión se conserva en memoria y en SecureStore para iOS/Android; en web se pierde al recargar. `apiClient` todavía no adjunta tokens automáticamente a endpoints protegidos.
+El login y el registro llaman al backend. La sesión se conserva en memoria y en SecureStore para iOS/Android; en web se pierde al recargar. `apiClient` adjunta automáticamente el token de acceso a los endpoints protegidos.
 
-El catálogo del cliente proviene del backend. La respuesta actual no contiene URL de imágenes ni cantidades disponibles, por lo que la interfaz usa iconos genéricos y no afirma stock. Los datos semilla de administración permanecen locales y no modifican el catálogo del backend. El carrito y el pedido activo del cliente viven en `orderStore.js`; confirmar el pedido genera un seguimiento local. Los pedidos de la pantalla del mesero son datos de muestra independientes y no se conectan con los pedidos del cliente. Las mesas y usuarios de administración también son simulaciones locales.
+El catálogo del cliente y `/admin/products` usan los mismos productos del backend. `/admin/inventory` muestra existencias reales de la jornada actual; consultar la operación y el inventario requiere `operations.read` e `inventory.read`; abrir la jornada requiere `operations.open`; inicializar requiere `inventory.initialize`; registrar movimientos requiere `inventory.move`; y ajustar un conteo requiere `inventory.adjust`. Las operaciones de escritura usan claves idempotentes. El comprobante de movimiento solo se previsualiza en el dispositivo y no se envía. El catálogo no incluye imágenes ni stock: las cantidades vienen del servicio de inventario diario, no de `tracksInventory`. El carrito y el pedido activo del cliente viven en `orderStore.js`; confirmar el pedido genera un seguimiento local. Los pedidos de la pantalla del mesero son datos de muestra independientes y no se conectan con los pedidos del cliente. El panel, las mesas y los usuarios administrativos todavía son simulaciones locales.
 
 El escáner solicita permiso para usar la cámara, pero la detección de Mesa 08 es simulada. Los pedidos y pagos no se envían al backend.
 
 ## Configuración y comandos
 
-- `package.json` declara Expo SDK 57, React Native, Expo Router y NativeWind. Sus scripts son `start`, `android`, `ios` y `web`; no hay comandos de lint ni pruebas unitarias configuradas.
+- `package.json` declara Expo SDK 58, React Native, Expo Router y NativeWind. Sus scripts son `start`, `android`, `ios` y `web`; no hay comandos de lint ni pruebas unitarias configuradas.
 - `app.json` configura nombre, iconos, plataformas y plugins de Expo.
 - `jsconfig.json` resuelve imports `@/` hacia `src/`.
 - `babel.config.js` usa `babel-preset-expo` y el preset de NativeWind.

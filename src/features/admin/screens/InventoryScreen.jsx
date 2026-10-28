@@ -1,102 +1,247 @@
-import { useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import AdminShell from '@/features/admin/components/AdminShell';
-import { useAdmin } from '@/features/admin/components/AdminProvider';
-import { Chips, Search, Stats } from '@/features/admin/components/AdminUI';
+import { Button, Chips, Empty, Search, Stats } from '@/features/admin/components/AdminUI';
+import {
+  getCurrentOperatingState,
+  getInventoryApiError,
+  getOperatingInventory,
+  openCurrentOperatingDay,
+} from '@/features/admin/api/inventoryAdminApi';
+import { getAdminCategories } from '@/features/admin/api/catalogAdminApi';
+import { mapInventoryItem } from '@/features/admin/data/inventoryMapper';
+import { getCurrentUser } from '@/shared/session/sessionStore';
 
-const filters = ['Todos', 'Platos', 'Bebidas', 'Insumos', 'Bajo'];
-
-function InventoryRow({ product, onPress }) {
-  const low = product.stock <= 3;
+function InventoryRow({ item, onPress }) {
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Registrar movimiento de ${product.name}`}
+      accessibilityLabel={
+        item.initialized
+          ? `Registrar movimiento de ${item.name}`
+          : `Inicializar inventario de ${item.name}`
+      }
       onPress={onPress}
-      className={`mb-2 flex-row items-center rounded-xl px-3 py-3 ${low ? 'bg-[#f6ded4]' : 'bg-white'} active:opacity-70`}
+      className="mb-2 flex-row items-center rounded-xl bg-white px-3 py-3 active:opacity-70"
     >
       <View className="flex-1">
-        <Text className="text-xs font-semibold text-[#332d28]">{product.name}</Text>
-        <Text className={`mt-1 text-[9px] ${low ? 'font-semibold text-[#a35a45]' : 'text-[#8b8178]'}`}>
-          {low ? 'Stock bajo' : product.category}
+        <Text className="text-xs font-semibold text-[#332d28]">{item.name}</Text>
+        <Text className="mt-1 text-[9px] text-[#8b8178]">
+          {item.initialized ? item.category : 'Sin inicializar'}
         </Text>
       </View>
-      <Text className="w-12 text-center text-[10px] text-[#8b8178]">{product.stock + 12}</Text>
-      <Text className={`w-12 text-center text-xs font-bold ${low ? 'text-[#a35a45]' : 'text-[#477052]'}`}>
-        {product.stock}
+      <Text className="w-12 text-center text-[10px] text-[#8b8178]">
+        {item.initialQuantity ?? '—'}
+      </Text>
+      <Text className="w-12 text-center text-xs font-bold text-[#477052]">
+        {item.availableQuantity ?? '—'}
       </Text>
       <Text className="w-12 text-center text-xs font-semibold text-[#456d8a]">
-        {Math.max(0, Math.round(product.stock / 3))}
+        {item.reservedQuantity ?? '—'}
       </Text>
     </Pressable>
   );
 }
 
 export default function InventoryScreen() {
-  const { products } = useAdmin();
+  const [operatingDay, setOperatingDay] = useState(null);
+  const [items, setItems] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('Todos');
-  const lowStock = products.filter((product) => product.stock <= 3).length;
-  const shown = products.filter((product) => {
-    const matchesSearch = product.name.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase());
+  const [loading, setLoading] = useState(true);
+  const [opening, setOpening] = useState(false);
+  const [error, setError] = useState('');
+  const canOpenDay = getCurrentUser()?.permissions?.includes('operations.open');
+
+  const loadInventory = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const state = await getCurrentOperatingState();
+      setOperatingDay(state.operatingDay);
+      if (!state.operatingDay) {
+        setItems([]);
+        setCategories([]);
+        return;
+      }
+
+      const [inventory, apiCategories] = await Promise.all([
+        getOperatingInventory(state.operatingDay.id),
+        getAdminCategories(),
+      ]);
+      setCategories(apiCategories);
+      setItems(inventory.map((item) => mapInventoryItem(item, apiCategories)));
+    } catch (requestError) {
+      setError(getInventoryApiError(requestError));
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadInventory();
+  }, [loadInventory]);
+
+  async function openDay() {
+    setOpening(true);
+    setError('');
+    try {
+      await openCurrentOperatingDay();
+      await loadInventory();
+    } catch (requestError) {
+      setError(getInventoryApiError(requestError));
+    } finally {
+      setOpening(false);
+    }
+  }
+
+  const pendingCount = items.filter((item) => !item.initialized).length;
+  const availableCount = items.reduce(
+    (total, item) => total + (item.availableQuantity || 0),
+    0,
+  );
+  const reservedCount = items.reduce(
+    (total, item) => total + (item.reservedQuantity || 0),
+    0,
+  );
+  const filters = [
+    { value: 'Todos', label: `Todos ${items.length}` },
+    ...categories.map((category) => ({
+      value: category.id,
+      label: category.name,
+    })),
+    { value: 'Pendientes', label: `Sin inicializar ${pendingCount}` },
+  ];
+  const shown = items.filter((item) => {
+    const matchesSearch = item.name
+      .toLocaleLowerCase()
+      .includes(search.trim().toLocaleLowerCase());
     const matchesFilter =
       filter === 'Todos' ||
-      (filter === 'Bajo' && product.stock <= 3) ||
-      product.category === filter;
+      (filter === 'Pendientes'
+        ? !item.initialized
+        : item.categoryId === filter);
     return matchesSearch && matchesFilter;
   });
+  const isOpen = operatingDay?.status === 'open';
+
+  function goToMovement(item) {
+    router.push({
+      pathname: '/admin/movement',
+      params: { dayId: operatingDay.id, productId: item.id },
+    });
+  }
 
   return (
     <AdminShell
       title="Inventario diario"
-      subtitle="Jueves, 1 oct. · Actualizado 11:56"
-      addLabel="Registrar movimiento"
-      onAdd={() => router.push('/admin/movement')}
+      subtitle={
+        operatingDay
+          ? `Jornada ${operatingDay.businessDate} · ${isOpen ? 'Abierta' : 'Cerrada'}`
+          : 'Sin jornada operativa para hoy'
+      }
+      addLabel={
+        isOpen
+          ? 'Registrar movimiento'
+          : operatingDay
+            ? 'Jornada cerrada'
+            : canOpenDay
+              ? 'Abrir jornada'
+              : 'Sin jornada'
+      }
+      onAdd={
+        isOpen
+          ? () => router.push('/admin/movement')
+          : !operatingDay && canOpenDay
+            ? openDay
+            : undefined
+      }
     >
-      <Stats
-        items={[
-          { label: 'Disponibles', value: products.reduce((total, product) => total + product.stock, 0), tone: 'green', note: `${products.length} productos`, icon: 'products' },
-          { label: 'Reservadas', value: '23', tone: 'blue', note: '8 pedidos activos', icon: 'qr' },
-          { label: 'Alertas', value: lowStock, tone: 'peach', note: 'Reponer hoy', icon: 'panel' },
-        ]}
-      />
-      <View className="mb-3 flex-row gap-2">
-        <View className="flex-1">
-          <Search value={search} onChange={setSearch} placeholder="Buscar producto" />
+      {loading ? (
+        <View className="items-center rounded-2xl bg-white px-5 py-10">
+          <ActivityIndicator color="#b7472a" />
+          <Text className="mt-3 text-xs text-[#8b8178]">
+            Consultando inventario del servidor…
+          </Text>
         </View>
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => router.push('/admin/movement')}
-          className="h-12 flex-row items-center rounded-xl bg-[#b7472a] px-3 active:opacity-80"
-        >
-          <Text className="mr-1 text-base text-white">＋</Text>
-          <Text className="text-[10px] font-semibold text-white">Movimiento</Text>
-        </Pressable>
-      </View>
-      <Chips
-        items={filters.map((item) => ({ value: item, label: item }))}
-        value={filter}
-        onChange={setFilter}
-      />
-      <View className="mb-2 flex-row px-3">
-        <Text className="flex-1 text-[9px] font-semibold uppercase text-[#8b8178]">Producto</Text>
-        <Text className="w-12 text-center text-[9px] font-semibold uppercase text-[#8b8178]">Inicial</Text>
-        <Text className="w-12 text-center text-[9px] font-semibold uppercase text-[#8b8178]">Disp.</Text>
-        <Text className="w-12 text-center text-[9px] font-semibold uppercase text-[#8b8178]">Reserv.</Text>
-      </View>
-      {shown.map((product) => (
-        <InventoryRow key={product.id} product={product} onPress={() => router.push({ pathname: '/admin/movement', params: { productId: product.id } })} />
-      ))}
-      {!shown.length ? (
-        <View className="rounded-2xl bg-white px-5 py-8">
-          <Text className="text-center text-sm font-semibold text-[#514941]">No encontramos productos</Text>
+      ) : error ? (
+        <View className="rounded-2xl bg-white p-5">
+          <Text accessibilityRole="alert" className="mb-3 text-sm text-[#b7472a]">
+            {error}
+          </Text>
+          <Button onPress={loadInventory}>Reintentar</Button>
         </View>
-      ) : null}
-      <View className="mt-2 rounded-2xl bg-[#f6ded4] px-4 py-3">
-        <Text className="text-xs font-semibold text-[#a35a45]">{lowStock} productos requieren atención</Text>
-        <Text className="mt-1 text-[10px] text-[#a35a45]">Corrige el stock bajo antes del siguiente servicio.</Text>
-      </View>
+      ) : !operatingDay ? (
+        <View className="rounded-2xl bg-white p-5">
+          <Text className="mb-2 text-sm font-semibold text-[#332d28]">
+            No hay una jornada abierta
+          </Text>
+          <Text className="mb-4 text-xs leading-5 text-[#8b8178]">
+            Abre la jornada de hoy para consultar e inicializar las existencias.
+          </Text>
+          {canOpenDay ? (
+            <Button onPress={openDay}>
+              {opening ? 'Abriendo jornada…' : 'Abrir jornada'}
+            </Button>
+          ) : (
+            <Text className="text-xs text-[#8b8178]">
+              Tu cuenta no tiene permiso para abrir la jornada.
+            </Text>
+          )}
+        </View>
+      ) : (
+        <>
+          <Stats
+            items={[
+              { label: 'Disponibles', value: availableCount, tone: 'green', note: `${items.length} productos`, icon: 'products' },
+              { label: 'Reservadas', value: reservedCount, tone: 'blue', note: 'En la jornada actual', icon: 'qr' },
+              { label: 'Pendientes', value: pendingCount, tone: 'peach', note: 'Sin inicializar', icon: 'panel' },
+            ]}
+          />
+          <View className="mb-3 flex-row gap-2">
+            <View className="flex-1">
+              <Search value={search} onChange={setSearch} placeholder="Buscar producto" />
+            </View>
+            {isOpen ? (
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => router.push('/admin/movement')}
+                className="h-12 flex-row items-center rounded-xl bg-[#b7472a] px-3 active:opacity-80"
+              >
+                <Text className="mr-1 text-base text-white">＋</Text>
+                <Text className="text-[10px] font-semibold text-white">Movimiento</Text>
+              </Pressable>
+            ) : null}
+          </View>
+          <Chips items={filters} value={filter} onChange={setFilter} />
+          <View className="mb-2 flex-row px-3">
+            <Text className="flex-1 text-[9px] font-semibold uppercase text-[#8b8178]">Producto</Text>
+            <Text className="w-12 text-center text-[9px] font-semibold uppercase text-[#8b8178]">Inicial</Text>
+            <Text className="w-12 text-center text-[9px] font-semibold uppercase text-[#8b8178]">Disp.</Text>
+            <Text className="w-12 text-center text-[9px] font-semibold uppercase text-[#8b8178]">Reserv.</Text>
+          </View>
+          {shown.map((item) => (
+            <InventoryRow
+              key={item.id}
+              item={item}
+              onPress={isOpen ? () => goToMovement(item) : undefined}
+            />
+          ))}
+          {!shown.length ? <Empty>No hay productos para mostrar en este filtro.</Empty> : null}
+          {!isOpen ? (
+            <View className="mt-2 rounded-2xl bg-[#fff0c7] px-4 py-3">
+              <Text className="text-xs font-semibold text-[#9c7b31]">
+                La jornada está cerrada
+              </Text>
+              <Text className="mt-1 text-[10px] text-[#9c7b31]">
+                El inventario se puede consultar, pero no modificar.
+              </Text>
+            </View>
+          ) : null}
+        </>
+      )}
     </AdminShell>
   );
 }

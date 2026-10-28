@@ -3,15 +3,12 @@ import { Badge, tones } from '@/features/admin/components/AdminUI';
 import AdminIcon from '@/features/admin/components/AdminIcon';
 
 function getProductStatus(product) {
-  if (!product.visible) return 'Oculto';
-  if (!product.stock) return 'Agotado';
-  if (product.stock <= 3) return 'Stock bajo';
-  return 'Activo';
+  if (!product.active) return 'Inactivo';
+  return product.visible ? 'Visible' : 'Oculto';
 }
 
 function getProductTone(product) {
-  if (!product.visible) return 'sand';
-  if (product.stock <= 3) return 'peach';
+  if (!product.active || !product.visible) return 'sand';
   return 'green';
 }
 
@@ -26,9 +23,9 @@ export function ProductCard({ product, onPress }) {
       className="mb-2 flex-row items-center rounded-2xl bg-white p-3 active:bg-[#fff0e4]"
     >
       <View style={imageStyles.thumbnail}>
-        {product.image ? (
+        {product.image || product.imageUrl ? (
           <Image
-            source={product.image}
+            source={product.image || { uri: product.imageUrl }}
             accessibilityLabel={product.name}
             style={imageStyles.photo}
             resizeMode="cover"
@@ -42,7 +39,7 @@ export function ProductCard({ product, onPress }) {
           {product.name}
         </Text>
         <Text className="mt-1 text-[10px] text-[#8b8178]">
-          {product.category} · {product.stock} disp.
+          {product.category}
         </Text>
         <View className="mt-2 flex-row flex-wrap items-center gap-2">
           <Text className="text-xs font-bold text-[#b7472a]">
