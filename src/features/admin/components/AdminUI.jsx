@@ -170,16 +170,26 @@ export function ToggleFilter({ checked, label, onPress }) {
   );
 }
 
-export function Editor({ title, fields, initial, onSave, onClose, children }) {
+export function Editor({
+  title,
+  fields,
+  initial,
+  onSave,
+  onClose,
+  children,
+  saveHint = 'Los cambios se guardan solo durante esta demostración.',
+}) {
   const [values, setValues] = useState(initial || {});
   const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
 
   function change(key, value) {
     setError('');
     setValues((current) => ({ ...current, [key]: value }));
   }
 
-  function save() {
+  async function save() {
+    if (saving) return;
     const cleaned = Object.fromEntries(
       Object.entries(values).map(([key, value]) => [
         key,
@@ -213,8 +223,15 @@ export function Editor({ title, fields, initial, onSave, onClose, children }) {
       setError('Ingresa un correo válido.');
       return;
     }
-    const result = onSave?.(cleaned);
-    if (typeof result === 'string') setError(result);
+    setSaving(true);
+    try {
+      const result = await onSave?.(cleaned);
+      if (typeof result === 'string') setError(result);
+    } catch {
+      setError('No se pudo guardar. Inténtalo de nuevo.');
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -280,9 +297,13 @@ export function Editor({ title, fields, initial, onSave, onClose, children }) {
                   {error}
                 </Text>
               ) : null}
-              {onSave ? <Button onPress={save}>Guardar cambios</Button> : null}
+              {onSave ? (
+                <Button onPress={save}>
+                  {saving ? 'Guardando…' : 'Guardar cambios'}
+                </Button>
+              ) : null}
               <Text className="mt-3 text-center text-[10px] text-[#8b8178]">
-                Los cambios se guardan solo durante esta demostración.
+                {saveHint}
               </Text>
             </ScrollView>
           </View>
