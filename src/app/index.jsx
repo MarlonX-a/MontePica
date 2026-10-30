@@ -27,7 +27,7 @@ export default function Index() {
       }
     }
 
-    loadSession();
+    void loadSession();
 
     return () => {
       isMounted = false;

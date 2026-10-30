@@ -45,13 +45,54 @@ function getEditorInitialValues(editor, categories) {
     name: '',
     description: '',
     price: '',
-    categoryId: categories[0]?.id || '',
-    visibility: 'Visible',
     ...editor.item,
     categoryId: editor.item?.categoryId || categories[0]?.id || '',
     visibility: editor.item?.visible === false ? 'Oculto' : 'Visible',
     status: editor.item?.active === false ? 'Inactivo' : 'Activo',
   };
+}
+
+async function saveCategory({ editor, values, categories }) {
+  const name = values.name.trim();
+  const isDuplicate = categories.some(
+    (item) =>
+      item.id !== editor.item?.id &&
+      item.name.toLocaleLowerCase() === name.toLocaleLowerCase(),
+  );
+  if (name.toLocaleLowerCase() === 'todos' || isDuplicate) {
+    return 'Usa un nombre de categoría diferente.';
+  }
+
+  const category = editor.item
+    ? await updateAdminCategory(editor.item.id, {
+        name,
+        active: values.status === 'Activa',
+      })
+    : await createAdminCategory({
+        name,
+        active: values.status === 'Activa',
+        sortOrder: categories.length,
+      });
+  return mapAdminCategory(category);
+}
+
+async function saveProduct({ editor, values, categories }) {
+  const selectedCategory = categories.find(
+    (item) => item.id === values.categoryId,
+  );
+  if (!selectedCategory) return 'Selecciona una categoría válida.';
+  if (!editor.item && !selectedCategory.active) {
+    return 'Elige una categoría activa para el producto.';
+  }
+  if (!editor.item && !values.sku.trim()) {
+    return 'Ingresa el SKU del producto.';
+  }
+
+  const payload = getAdminProductPayload(values, categories, editor.item);
+  const product = editor.item
+    ? await updateAdminProduct(editor.item.id, payload)
+    : await createAdminProduct(payload);
+  return mapAdminProduct(product);
 }
 
 export default function ProductsScreen() {
@@ -103,29 +144,12 @@ export default function ProductsScreen() {
   async function save(values) {
     try {
       if (editor.type === 'category') {
-        const name = values.name.trim();
-        if (
-          name.toLocaleLowerCase() === 'todos' ||
-          categories.some(
-            (item) =>
-              item.id !== editor.item?.id &&
-              item.name.toLocaleLowerCase() === name.toLocaleLowerCase(),
-          )
-        ) {
-          return 'Usa un nombre de categoría diferente.';
-        }
-
-        const savedCategory = editor.item
-          ? await updateAdminCategory(editor.item.id, {
-              name,
-              active: values.status === 'Activa',
-            })
-          : await createAdminCategory({
-              name,
-              active: values.status === 'Activa',
-              sortOrder: categories.length,
-            });
-        const mappedCategory = mapAdminCategory(savedCategory);
+        const mappedCategory = await saveCategory({
+          editor,
+          values,
+          categories,
+        });
+        if (typeof mappedCategory === 'string') return mappedCategory;
         setCategories((current) =>
           editor.item
             ? current.map((item) =>
@@ -142,28 +166,8 @@ export default function ProductsScreen() {
         );
         if (categoryId === editor.item?.id) setCategoryId(mappedCategory.id);
       } else {
-        const selectedCategory = categories.find(
-          (item) => item.id === values.categoryId,
-        );
-        if (!selectedCategory) {
-          return 'Selecciona una categoría válida.';
-        }
-        if (!editor.item && !selectedCategory.active) {
-          return 'Elige una categoría activa para el producto.';
-        }
-        if (!editor.item && !values.sku.trim()) {
-          return 'Ingresa el SKU del producto.';
-        }
-
-        const payload = getAdminProductPayload(
-          values,
-          categories,
-          editor.item,
-        );
-        const savedProduct = editor.item
-          ? await updateAdminProduct(editor.item.id, payload)
-          : await createAdminProduct(payload);
-        const mappedProduct = mapAdminProduct(savedProduct);
+        const mappedProduct = await saveProduct({ editor, values, categories });
+        if (typeof mappedProduct === 'string') return mappedProduct;
         setProducts((current) =>
           editor.item
             ? current.map((item) =>
@@ -219,6 +223,98 @@ export default function ProductsScreen() {
           },
         ];
 
+  let catalogContent;
+  if (loading) {
+    catalogContent = (
+      <View className="items-center rounded-2xl bg-white px-5 py-10">
+        <ActivityIndicator color="#b7472a" />
+        <Text className="mt-3 text-xs text-[#8b8178]">
+          Cargando catálogo del servidor…
+        </Text>
+      </View>
+    );
+  } else if (loadError) {
+    catalogContent = (
+      <View className="rounded-2xl bg-white p-5">
+        <Text accessibilityRole="alert" className="mb-3 text-sm text-[#b7472a]">
+          {loadError}
+        </Text>
+        <Button onPress={loadCatalog}>Reintentar</Button>
+      </View>
+    );
+  } else if (tab === 'Productos') {
+    catalogContent = (
+      <>
+        <Search
+          value={search}
+          onChange={setSearch}
+          placeholder="Buscar producto"
+        />
+        <Chips items={filters} value={categoryId} onChange={setCategoryId} />
+        <ToggleFilter
+          checked={visibleOnly}
+          label="Solo productos visibles en el menú"
+          onPress={() => setVisibleOnly((current) => !current)}
+        />
+        {shown.map((product) => (
+          <ProductCard
+            key={product.id}
+            product={product}
+            onPress={() => setEditor({ type: 'product', item: product })}
+          />
+        ))}
+        {!shown.length && <Empty>Prueba con otro nombre o categoría.</Empty>}
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => setTab('Categorías')}
+          className="mt-2 flex-row items-center justify-between rounded-xl bg-[#deecdf] px-3 py-3"
+        >
+          <View>
+            <Text className="text-xs font-medium text-[#477052]">
+              {categories.length} categorías
+            </Text>
+            <Text className="mt-1 text-[9px] text-[#547353]">
+              Organiza los productos de tu carta
+            </Text>
+          </View>
+          <Text className="text-[10px] text-[#477052]">Gestionar →</Text>
+        </Pressable>
+      </>
+    );
+  } else {
+    catalogContent = (
+      <>
+        <Text className="mb-3 text-xs text-[#8b8178]">
+          Organiza tu carta por tipo de producto.
+        </Text>
+        {categories.map((item) => (
+          <View
+            key={item.id}
+            className="mb-3 flex-row items-center rounded-2xl bg-white p-4"
+          >
+            <View className="flex-1">
+              <Text className="text-sm font-semibold text-[#332d28]">
+                {item.name}
+              </Text>
+              <Text className="mt-1 text-[10px] text-[#8b8178]">
+                {item.active ? 'Activa · ' : 'Inactiva · '}
+                {products.filter((product) => product.categoryId === item.id).length}{' '}
+                productos
+              </Text>
+            </View>
+            <Button
+              secondary
+              onPress={() => setEditor({ type: 'category', item })}
+            >
+              Editar
+            </Button>
+          </View>
+        ))}
+        {!categories.length && <Empty>Agrega la primera categoría.</Empty>}
+      </>
+    );
+  }
+
   return (
     <AdminShell
       title="Productos"
@@ -246,88 +342,7 @@ export default function ProductsScreen() {
         ))}
       </View>
 
-      {loading ? (
-        <View className="items-center rounded-2xl bg-white px-5 py-10">
-          <ActivityIndicator color="#b7472a" />
-          <Text className="mt-3 text-xs text-[#8b8178]">
-            Cargando catálogo del servidor…
-          </Text>
-        </View>
-      ) : loadError ? (
-        <View className="rounded-2xl bg-white p-5">
-          <Text accessibilityRole="alert" className="mb-3 text-sm text-[#b7472a]">
-            {loadError}
-          </Text>
-          <Button onPress={loadCatalog}>Reintentar</Button>
-        </View>
-      ) : tab === 'Productos' ? (
-        <>
-          <Search
-            value={search}
-            onChange={setSearch}
-            placeholder="Buscar producto"
-          />
-          <Chips items={filters} value={categoryId} onChange={setCategoryId} />
-          <ToggleFilter
-            checked={visibleOnly}
-            label="Solo productos visibles en el menú"
-            onPress={() => setVisibleOnly((current) => !current)}
-          />
-          {shown.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              onPress={() => setEditor({ type: 'product', item: product })}
-            />
-          ))}
-          {!shown.length && <Empty>Prueba con otro nombre o categoría.</Empty>}
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => setTab('Categorías')}
-            className="mt-2 flex-row items-center justify-between rounded-xl bg-[#deecdf] px-3 py-3"
-          >
-            <View>
-              <Text className="text-xs font-medium text-[#477052]">
-                {categories.length} categorías
-              </Text>
-              <Text className="mt-1 text-[9px] text-[#547353]">
-                Organiza los productos de tu carta
-              </Text>
-            </View>
-            <Text className="text-[10px] text-[#477052]">Gestionar →</Text>
-          </Pressable>
-        </>
-      ) : (
-        <>
-          <Text className="mb-3 text-xs text-[#8b8178]">
-            Organiza tu carta por tipo de producto.
-          </Text>
-          {categories.map((item) => (
-            <View
-              key={item.id}
-              className="mb-3 flex-row items-center rounded-2xl bg-white p-4"
-            >
-              <View className="flex-1">
-                <Text className="text-sm font-semibold text-[#332d28]">
-                  {item.name}
-                </Text>
-                <Text className="mt-1 text-[10px] text-[#8b8178]">
-                  {item.active ? 'Activa · ' : 'Inactiva · '}
-                  {products.filter((product) => product.categoryId === item.id).length}{' '}
-                  productos
-                </Text>
-              </View>
-              <Button
-                secondary
-                onPress={() => setEditor({ type: 'category', item })}
-              >
-                Editar
-              </Button>
-            </View>
-          ))}
-          {!categories.length && <Empty>Agrega la primera categoría.</Empty>}
-        </>
-      )}
+      {catalogContent}
 
       {editor && (
         <Editor
