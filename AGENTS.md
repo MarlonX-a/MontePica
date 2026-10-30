@@ -15,7 +15,7 @@ Lee estas instrucciones antes de modificar la aplicación. Mantén los cambios d
 
 MontePica es una aplicación móvil para una cevichería. El catálogo del cliente se consulta al backend y debe limitarse a ceviches —por ejemplo, pescado, camarón y mixto— y bebidas como jugos, limonada y cola. No agregues platos ajenos a ese catálogo.
 
-El login, el registro, el catálogo del cliente, productos/categorías, inventario diario, usuarios y el listado/creación de mesas están conectados al backend. La sesión se conserva en memoria y SecureStore en iOS/Android; en web solo vive en memoria. `apiClient` adjunta el token de acceso a las rutas protegidas. El carrito, los pedidos del cliente y del mesero y el panel siguen usando simulaciones locales independientes. No conviertas esos flujos en llamadas de red hasta que el usuario solicite conectarlos. El catálogo no entrega imágenes ni cantidades disponibles; las existencias sí se consultan desde los endpoints diarios de inventario. No deduzcas stock a partir de `tracksInventory`.
+El login, el registro, el catálogo del cliente, productos/categorías, inventario diario, usuarios y el listado, creación y edición de mesas están conectados al backend. La sesión se conserva en memoria y SecureStore en iOS/Android; en web solo vive en memoria. `apiClient` adjunta el token de acceso a las rutas protegidas. El carrito, los pedidos del cliente y del mesero y el panel siguen usando simulaciones locales independientes. No conviertas esos flujos en llamadas de red hasta que el usuario solicite conectarlos. El catálogo no entrega imágenes ni cantidades disponibles; las existencias sí se consultan desde los endpoints diarios de inventario. No deduzcas stock a partir de `tracksInventory`.
 
 Flujo actual:
 
@@ -147,7 +147,7 @@ npx expo start --web
 
 `/admin/users` consulta usuarios y roles y permite crear y actualizar cuentas mediante `usersAdminApi.js`. Requiere `users.read` y `roles.read` para la consulta, `users.create` para crear y `users.update` para editar. La contraseña inicial solo se envía al crear; la API controla duplicados y restricciones de rol/estado.
 
-`/admin/tables` consulta y crea mesas reales con `tablesAdminApi.js`. Requiere `tables.read` para listar y `tables.manage` para crear. Solo se envía `{code}` (entre 1 y 40 caracteres sin espacios exteriores); la API normaliza el código y comprueba duplicados. No permite editar capacidad, zona, estado ni generar QR.
+`/admin/tables` consulta, crea y edita mesas reales con `tablesAdminApi.js`. Requiere `tables.read` para listar y `tables.manage` para crear. Solo se envía `{code}` (entre 1 y 40 caracteres sin espacios exteriores); la API normaliza el código y comprueba duplicados. Permite editar el código y activar o desactivar una mesa mediante PATCH, sujeto a `tables.manage`. No se puede desactivar una mesa con visita abierta; el backend comprueba esta restricción. Capacidad, zona y QR permanecen fuera de esta etapa.
 
 `adminTableMapper.js` adapta código, estado activo y visita abierta; una visita no equivale a ocupación física. `useAdminTables.js` coordina carga, cancelación, permisos y creación; `TablesList.jsx` presenta filtros, conteos y páginas de 20 mesas. Se recorren todas las páginas del backend (hasta 100 por solicitud) antes de filtrar. Tras crear, se vuelve a consultar y se muestra la página de la nueva mesa; si falla la recarga, se informa que la creación ya fue confirmada.
 

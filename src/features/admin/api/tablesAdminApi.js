@@ -56,3 +56,13 @@ export function getTablesApiError(error) {
     error.message || 'No se pudo completar la operación. Inténtalo de nuevo.'
   );
 }
+
+export async function getAdminTable(id, signal) {
+  const { data } = await apiClient.get(`/admin/tables/${id}`, { signal });
+  return data;
+}
+
+export async function updateAdminTable(id, changes) {
+  const { data } = await apiClient.patch(`/admin/tables/${id}`, changes);
+  return data;
+}

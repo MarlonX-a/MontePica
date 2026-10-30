@@ -55,7 +55,7 @@ export function ProductCard({ product, onPress }) {
   );
 }
 
-export function TableCard({ table }) {
+export function TableCard({ table, onEdit }) {
   return (
     <View className="flex-1 rounded-2xl border border-[#eadfd2] bg-white p-3">
       <View className="mb-2 flex-row flex-wrap items-center justify-between gap-2">
@@ -72,6 +72,16 @@ export function TableCard({ table }) {
       <Badge tone={table.openVisitId ? 'peach' : 'blue'}>
         {table.visitLabel}
       </Badge>
+      {onEdit && (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Editar mesa ${table.code}`}
+          onPress={onEdit}
+          className="mt-3 min-h-11 justify-center"
+        >
+          <Text className="text-xs font-semibold text-[#b7472a]">Editar</Text>
+        </Pressable>
+      )}
     </View>
   );
 }
