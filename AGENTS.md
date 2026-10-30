@@ -130,6 +130,14 @@ Usa `bunx` en lugar de `npx` solo si el proyecto incorpora un lockfile de Bun.
 
 ## Comprobaciones
 
+### Calidad y buenas prácticas
+
+- Mantén funciones y componentes con responsabilidades claras, nombres descriptivos y validaciones en el lugar adecuado. Evita duplicar lógica, propiedades duplicadas, ternarios anidados innecesarios y promesas sin manejo de errores.
+- Mantén los estados de carga, éxito, error y reintento claros para el usuario; evita presentar datos simulados como reales. No expongas tokens ni contraseñas en logs, código, capturas o documentación.
+- Conserva las puertas de calidad de CI y SonarCloud. Corrige los problemas que introduzca el cambio y no desactives reglas, excluyas código ni reduzcas umbrales para hacer pasar el análisis.
+- Si hay acceso autorizado a SonarCloud, consulta los hallazgos relevantes sin mostrar el token. El resultado publicado corresponde al último análisis: solo afirma que la puerta pasó para una revisión cuando el análisis de esa revisión lo confirme. Si CI o SonarCloud no están disponibles, informa la limitación y los hallazgos pendientes.
+- Revisa el diff, los imports y las dependencias entre features. Para flujos con API comprueba permisos, validación, errores y estados asíncronos; no hagas escrituras de prueba en datos reales sin un entorno de prueba adecuado.
+
 Los scripts actuales de `package.json` son `start`, `android`, `ios` y `web`. No hay scripts de lint ni de pruebas, tampoco una configuración de TypeScript. No inventes resultados de lint, tests o tipos ni los presentes como aprobados.
 
 Para cambios de rutas o JSX, ejecuta una comprobación de bundle apropiada cuando el entorno y las dependencias lo permitan, por ejemplo `npx expo export`. Para cambios pequeños de texto o documentación, revisa el diff y ejecuta `git diff --check`. Si una herramienta no está configurada o falla por el entorno, informa la limitación concreta.
@@ -152,3 +160,31 @@ npx expo start --web
 `adminTableMapper.js` adapta código, estado activo y visita abierta; una visita no equivale a ocupación física. `useAdminTables.js` coordina carga, cancelación, permisos y creación; `TablesList.jsx` presenta filtros, conteos y páginas de 20 mesas. Se recorren todas las páginas del backend (hasta 100 por solicitud) antes de filtrar. Tras crear, se vuelve a consultar y se muestra la página de la nueva mesa; si falla la recarga, se informa que la creación ya fue confirmada.
 
 El panel mantiene sus semillas de mesas independientes. El escáner sigue simulando Mesa 08. Abrir visitas y emitir QR desde administración queda para otra etapa; no se deduce la existencia de un QR de `openVisitId`.
+
+## Actividades y seguimiento
+
+Esta lista sirve para coordinar al equipo, no autoriza implementar todas las tareas a la vez. Antes de iniciar una actividad, revisa el código, el contrato y los avances actuales del backend; trabaja solo en la actividad que solicite el usuario. El backend local puede encontrarse en la carpeta vecina `Backend-Nestjs` y sus contratos pueden cambiar.
+
+Usa `- [ ]` para actividades pendientes y `- [x]` para las terminadas. Marca una actividad como completada únicamente cuando su alcance esté implementado y las comprobaciones aplicables hayan pasado; si falta una prueba real o una puerta de calidad, deja la tarea abierta y anota qué falta. Si una tarea se entrega por etapas, divídela en subtareas concretas y marca solo las terminadas. Actualiza esta guía y el README cuando cambie el estado funcional; no taches trabajo de otra persona sin comprobarlo.
+
+Actividades implementadas en el código actual (las pruebas reales y el análisis de cada revisión se registran por separado):
+
+- [x] Conectar login, registro y consulta del catálogo del cliente al backend.
+- [x] Conectar la gestión administrativa de productos, categorías e inventario diario.
+- [x] Conectar el listado, la creación y la edición de usuarios administrativos.
+- [x] Conectar el listado, la creación y la edición de código/estado de mesas administrativas.
+
+Actividades pendientes:
+
+- [ ] Verificar con el backend y cuentas de prueba autorizadas los flujos ya conectados, incluidos permisos, errores y persistencia. La edición de mesas aún requiere prueba real; documentar resultados y limitaciones por plataforma.
+- [ ] Conectar la apertura y cierre de visitas de mesa en administración, según los endpoints, permisos y reglas vigentes del backend.
+- [ ] Conectar la emisión y presentación de QR reales de visitas; definir con el equipo cómo mostrarlos y usarlos. La emisión de un QR nuevo invalida el anterior y puede cancelar solicitudes pendientes: comprobar el contrato actual antes de implementarlo.
+- [ ] Sustituir el reconocimiento simulado de Mesa 08 por lectura y resolución de QR reales en el escáner del cliente. Revisar autenticación, permisos de cámara, errores y experiencia en web, iOS y Android.
+- [ ] Conectar el flujo de participación en una visita y su gestión administrativa o del mesero, de acuerdo con los permisos y endpoints disponibles y con el alcance solicitado.
+- [ ] Evaluar y conectar los datos operativos disponibles del panel administrativo; conservar explícitamente como simuladas las métricas que no tenga el backend.
+- [ ] Conectar carrito, pedidos del cliente y pedidos del mesero cuando existan contratos de backend adecuados y el usuario solicite esa integración. Mantener los flujos locales identificados hasta entonces.
+- [ ] Revisar búsqueda, filtros y paginación de usuarios administrativos frente al contrato del backend y mostrar el detalle de permisos por rol si se solicita.
+- [ ] Revisar y completar la gestión de sesión con el contrato vigente del backend, incluidos renovación y cierre de sesión remotos cuando corresponda; verificar el comportamiento en web y dispositivos.
+- [ ] Configurar lint y pruebas automatizadas si el equipo solicita incorporarlos; documentar comandos y ejecución en CI. Hasta entonces no afirmar que están configurados o aprobados.
+
+Al finalizar cada actividad, explica en el chat qué archivos y responsabilidades cambiaron, por qué, qué se verificó y qué queda pendiente. No hagas commits, pushes ni despliegues salvo solicitud explícita.
