@@ -76,7 +76,7 @@ export default function ProductDetailScreen() {
     }
 
     if (productId) {
-      loadProduct();
+      void loadProduct();
     } else {
       setLoadError('No encontramos el identificador del producto.');
       setIsLoading(false);

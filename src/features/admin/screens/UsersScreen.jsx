@@ -96,6 +96,18 @@ export default function UsersScreen() {
       (filter === 'Todos' || user.role === filter) &&
       (!activeOnly || user.active),
   );
+  const editorInitial = {
+    ...editor?.item,
+    email: editor?.item?.email || '',
+    initialPassword: '',
+    role:
+      editor?.item?.role ||
+      roles.find((role) => role.code === 'worker')?.name ||
+      roleOptions[0] ||
+      '',
+    name: editor?.item?.givenNames || '',
+    status: editor?.item?.active === false ? 'Suspendido' : 'Activo',
+  };
 
   async function save(values) {
     const selectedRole = roles.find((role) => role.name === values.role);
@@ -138,6 +150,70 @@ export default function UsersScreen() {
     setEditor(null);
   }
 
+  let userContent;
+  if (loading) {
+    userContent = (
+      <View className="items-center rounded-2xl bg-white px-5 py-10">
+        <Text className="text-sm font-semibold text-[#514941]">
+          Cargando usuarios…
+        </Text>
+      </View>
+    );
+  } else if (error) {
+    userContent = (
+      <View className="rounded-2xl bg-white p-4">
+        <Text
+          accessibilityRole="alert"
+          className="mb-3 text-xs text-[#b7472a]"
+        >
+          {error}
+        </Text>
+        <Button onPress={loadUsers}>Reintentar</Button>
+      </View>
+    );
+  } else {
+    userContent = (
+      <>
+        <Stats
+          items={roles.map((role) => ({
+            label: role.code === 'admin' ? 'Admin' : role.name,
+            value: users.filter((user) => user.roleCode === role.code).length,
+            tone: roleTones[role.name] || 'sand',
+          }))}
+        />
+        <Search
+          value={search}
+          onChange={setSearch}
+          placeholder="Nombre o correo"
+        />
+        <Chips
+          items={[
+            { value: 'Todos', label: `Todos ${totalUsers}` },
+            ...roles.map((role) => ({
+              value: role.name,
+              label: `${role.code === 'admin' ? 'Admin' : role.name} ${users.filter((user) => user.roleCode === role.code).length}`,
+            })),
+          ]}
+          value={filter}
+          onChange={setFilter}
+        />
+        <ToggleFilter
+          checked={activeOnly}
+          label="Solo usuarios activos"
+          onPress={() => setActiveOnly((current) => !current)}
+        />
+        {shown.map((user) => (
+          <UserCard
+            key={user.id}
+            user={user}
+            onPress={() => setEditor({ item: user })}
+          />
+        ))}
+        {!shown.length && <Empty>Prueba con otro nombre, correo o rol.</Empty>}
+      </>
+    );
+  }
+
   return (
     <AdminShell
       title="Usuarios y permisos"
@@ -147,62 +223,7 @@ export default function UsersScreen() {
         if (!loading && !error && roleOptions.length) setEditor({});
       }}
     >
-      {loading ? (
-        <View className="items-center rounded-2xl bg-white px-5 py-10">
-          <Text className="text-sm font-semibold text-[#514941]">
-            Cargando usuarios…
-          </Text>
-        </View>
-      ) : error ? (
-        <View className="rounded-2xl bg-white p-4">
-          <Text
-            accessibilityRole="alert"
-            className="mb-3 text-xs text-[#b7472a]"
-          >
-            {error}
-          </Text>
-          <Button onPress={loadUsers}>Reintentar</Button>
-        </View>
-      ) : (
-        <>
-          <Stats
-            items={roles.map((role) => ({
-              label: role.code === 'admin' ? 'Admin' : role.name,
-              value: users.filter((user) => user.roleCode === role.code).length,
-              tone: roleTones[role.name] || 'sand',
-            }))}
-          />
-          <Search
-            value={search}
-            onChange={setSearch}
-            placeholder="Nombre o correo"
-          />
-          <Chips
-            items={[
-              { value: 'Todos', label: `Todos ${totalUsers}` },
-              ...roles.map((role) => ({
-                value: role.name,
-                label: `${role.code === 'admin' ? 'Admin' : role.name} ${users.filter((user) => user.roleCode === role.code).length}`,
-              })),
-            ]}
-            value={filter}
-            onChange={setFilter}
-          />
-          <ToggleFilter
-            checked={activeOnly}
-            label="Solo usuarios activos"
-            onPress={() => setActiveOnly((current) => !current)}
-          />
-          {shown.map((user) => (
-            <UserCard
-              key={user.id}
-              user={user}
-              onPress={() => setEditor({ item: user })}
-            />
-          ))}
-          {!shown.length && <Empty>Prueba con otro nombre, correo o rol.</Empty>}
-        </>
-      )}
+      {userContent}
       {!loading && !error && roles.length > 0 ? (
         <View className="mt-3 rounded-2xl bg-[#f2e8d6] p-3">
           <Text className="mb-3 text-xs font-bold text-[#332d28]">
@@ -237,18 +258,7 @@ export default function UsersScreen() {
         <Editor
           key={editor.item?.id || 'new'}
           title={editor.item ? 'Editar usuario' : 'Nuevo usuario'}
-          initial={{
-            name: '',
-            email: '',
-            initialPassword: '',
-            role:
-              roles.find((role) => role.code === 'worker')?.name ||
-              roleOptions[0] ||
-              '',
-            ...editor.item,
-            name: editor.item?.givenNames || '',
-            status: editor.item?.active === false ? 'Suspendido' : 'Activo',
-          }}
+          initial={editorInitial}
           fields={userFields}
           onSave={save}
           onClose={() => setEditor(null)}

@@ -70,7 +70,7 @@ export default function MenuScreen() {
       }
     }
 
-    loadCatalog();
+    void loadCatalog();
 
     return () => {
       isMounted = false;
@@ -92,6 +92,59 @@ export default function MenuScreen() {
       return matchesCategory && matchesSearch;
     });
   }, [products, search, selectedCategory]);
+
+  const productCountLabel = isLoading
+    ? 'Cargando menú...'
+    : `${visibleProducts.length} productos disponibles`;
+  let catalogContent;
+
+  if (isLoading) {
+    catalogContent = (
+      <View className="items-center rounded-2xl bg-white px-5 py-10">
+        <ActivityIndicator color="#b7472a" />
+        <Text className="mt-3 text-xs text-[#8b8178]">
+          Cargando productos...
+        </Text>
+      </View>
+    );
+  } else if (loadError) {
+    catalogContent = (
+      <View className="items-center rounded-2xl bg-white px-5 py-8">
+        <Text className="text-center text-sm text-[#8b8178]">{loadError}</Text>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => setReloadKey((key) => key + 1)}
+          className="mt-4 rounded-xl bg-[#b7472a] px-5 py-3"
+        >
+          <Text className="text-xs font-semibold text-white">Reintentar</Text>
+        </Pressable>
+      </View>
+    );
+  } else if (visibleProducts.length > 0) {
+    catalogContent = visibleProducts.map((product) => (
+      <MenuProductCard
+        key={product.id}
+        product={product}
+        onPress={() =>
+          router.push({
+            pathname: '/product/[id]',
+            params: { id: product.id, service, table },
+          })
+        }
+      />
+    ));
+  } else {
+    catalogContent = (
+      <View className="items-center rounded-2xl bg-white px-5 py-10">
+        <Text className="text-sm font-semibold text-[#514941]">
+          No encontramos productos
+        </Text>
+        <Text className="mt-1 text-center text-xs text-[#8b8178]">
+          Prueba con otro nombre o categoría.
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-[#fff8ef]">
@@ -148,9 +201,7 @@ export default function MenuScreen() {
 
           <View className="mb-3 flex-row items-center justify-between">
             <Text className="text-xs text-[#8b8178]">
-              {isLoading
-                ? 'Cargando menú...'
-                : `${visibleProducts.length} productos disponibles`}
+              {productCountLabel}
             </Text>
             <View className="flex-row items-center">
               <View className="mr-1.5 h-2 w-2 rounded-full bg-[#4d8c58]" />
@@ -160,51 +211,7 @@ export default function MenuScreen() {
             </View>
           </View>
 
-          {isLoading ? (
-            <View className="items-center rounded-2xl bg-white px-5 py-10">
-              <ActivityIndicator color="#b7472a" />
-              <Text className="mt-3 text-xs text-[#8b8178]">
-                Cargando productos...
-              </Text>
-            </View>
-          ) : loadError ? (
-            <View className="items-center rounded-2xl bg-white px-5 py-8">
-              <Text className="text-center text-sm text-[#8b8178]">
-                {loadError}
-              </Text>
-              <Pressable
-                accessibilityRole="button"
-                onPress={() => setReloadKey((key) => key + 1)}
-                className="mt-4 rounded-xl bg-[#b7472a] px-5 py-3"
-              >
-                <Text className="text-xs font-semibold text-white">
-                  Reintentar
-                </Text>
-              </Pressable>
-            </View>
-          ) : visibleProducts.length > 0 ? (
-            visibleProducts.map((product) => (
-              <MenuProductCard
-                key={product.id}
-                product={product}
-                onPress={() =>
-                  router.push({
-                    pathname: '/product/[id]',
-                    params: { id: product.id, service, table },
-                  })
-                }
-              />
-            ))
-          ) : (
-            <View className="items-center rounded-2xl bg-white px-5 py-10">
-              <Text className="text-sm font-semibold text-[#514941]">
-                No encontramos productos
-              </Text>
-              <Text className="mt-1 text-center text-xs text-[#8b8178]">
-                Prueba con otro nombre o categoría.
-              </Text>
-            </View>
-          )}
+          {catalogContent}
         </ScrollView>
 
         <BottomNavigation
