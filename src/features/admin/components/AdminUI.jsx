@@ -280,8 +280,11 @@ export function Editor({
                       value={String(values[field.key] ?? '')}
                       onChangeText={(value) => change(field.key, value)}
                       keyboardType={getKeyboardType(field)}
+                      secureTextEntry={field.secureTextEntry}
                       autoCapitalize={
-                        field.key === 'email' ? 'none' : 'sentences'
+                        field.key === 'email' || field.secureTextEntry
+                          ? 'none'
+                          : 'sentences'
                       }
                       className="min-h-12 rounded-xl border border-[#eadfd2] bg-white px-4 py-3 text-sm text-[#332d28]"
                     />
