@@ -17,6 +17,7 @@ export default function AdminShell({
   subtitle,
   onAdd,
   addLabel,
+  showAdd = true,
   children,
 }) {
   const pathname = usePathname();
@@ -46,14 +47,16 @@ export default function AdminShell({
                 {subtitle}
               </Text>
             </View>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={addLabel}
-              onPress={onAdd}
-              className="h-11 w-11 items-center justify-center rounded-full bg-white active:bg-[#fff0e4]"
-            >
-              <Text className="text-2xl font-light text-[#b7472a]">＋</Text>
-            </Pressable>
+            {showAdd && (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={addLabel}
+                onPress={onAdd}
+                className="h-11 w-11 items-center justify-center rounded-full bg-white active:bg-[#fff0e4]"
+              >
+                <Text className="text-2xl font-light text-[#b7472a]">＋</Text>
+              </Pressable>
+            )}
           </View>
           {children}
         </ScrollView>
