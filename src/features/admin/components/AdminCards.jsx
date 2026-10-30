@@ -55,52 +55,33 @@ export function ProductCard({ product, onPress }) {
   );
 }
 
-export function TableCard({ table, onEdit, onQR }) {
-  const occupied = table.status === 'Ocupada';
+export function TableCard({ table, onEdit }) {
   return (
-    <View
-      className={`flex-1 rounded-2xl border bg-white p-3 ${occupied ? 'border-[#b7674d]' : 'border-[#eadfd2]'}`}
-    >
+    <View className="flex-1 rounded-2xl border border-[#eadfd2] bg-white p-3">
       <View className="mb-2 flex-row flex-wrap items-center justify-between gap-2">
-        <View
-          className={`h-8 w-8 items-center justify-center rounded-lg ${occupied ? 'bg-[#f6ded4]' : 'bg-[#f2e8d6]'}`}
-        >
-          <AdminIcon name="table" color={occupied ? '#b7674d' : '#988d83'} />
+        <View className="h-8 w-8 items-center justify-center rounded-lg bg-[#f2e8d6]">
+          <AdminIcon name="table" color="#988d83" />
         </View>
-        <Badge tone={occupied ? 'peach' : 'green'}>{table.status}</Badge>
+        <Badge tone={table.active ? 'green' : 'sand'}>
+          {table.statusLabel}
+        </Badge>
       </View>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={`Editar ${table.name}`}
-        onPress={onEdit}
-        className="min-h-12 justify-center py-1"
-      >
-        <Text className="text-sm font-medium text-[#332d28]">{table.name}</Text>
-        <Text className="mt-1 text-[10px] text-[#8b8178]">
-          {table.capacity} personas · {table.zone}
-        </Text>
-      </Pressable>
-      <View className="mt-1 flex-row items-center justify-between">
+      <Text className="my-2 text-sm font-medium text-[#332d28]">
+        {table.code}
+      </Text>
+      <Badge tone={table.openVisitId ? 'peach' : 'blue'}>
+        {table.visitLabel}
+      </Badge>
+      {onEdit && (
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={`Ver QR de ${table.name}`}
-          onPress={onQR}
-          className="min-h-11 flex-row items-center gap-1"
-        >
-          <AdminIcon name="qr" size={15} color="#b7674d" />
-          <Text className="text-[10px] text-[#b7674d]">
-            {table.qr ? 'Ver QR' : 'QR pendiente'}
-          </Text>
-        </Pressable>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={`Opciones de ${table.name}`}
+          accessibilityLabel={`Editar mesa ${table.code}`}
           onPress={onEdit}
-          className="h-11 w-8 items-center justify-center"
+          className="mt-3 min-h-11 justify-center"
         >
-          <Text className="text-lg text-[#988d83]">⋯</Text>
+          <Text className="text-xs font-semibold text-[#b7472a]">Editar</Text>
         </Pressable>
-      </View>
+      )}
     </View>
   );
 }

@@ -15,7 +15,7 @@ Lee estas instrucciones antes de modificar la aplicación. Mantén los cambios d
 
 MontePica es una aplicación móvil para una cevichería. El catálogo del cliente se consulta al backend y debe limitarse a ceviches —por ejemplo, pescado, camarón y mixto— y bebidas como jugos, limonada y cola. No agregues platos ajenos a ese catálogo.
 
-El login, el registro, la lectura del catálogo del cliente, la administración de productos/categorías y el inventario diario están conectados al backend. La sesión se conserva en memoria y SecureStore en iOS/Android; en web solo vive en memoria. `apiClient` adjunta el token de acceso a las rutas protegidas. El carrito, los pedidos del cliente y del mesero, el panel, las mesas y los usuarios siguen usando simulaciones locales independientes. No conviertas esos flujos en llamadas de red hasta que el usuario solicite conectarlos. El catálogo no entrega imágenes ni cantidades disponibles; las existencias sí se consultan desde los endpoints diarios de inventario. No deduzcas stock a partir de `tracksInventory`.
+El login, el registro, el catálogo del cliente, productos/categorías, inventario diario, usuarios y el listado, creación y edición de mesas están conectados al backend. La sesión se conserva en memoria y SecureStore en iOS/Android; en web solo vive en memoria. `apiClient` adjunta el token de acceso a las rutas protegidas. El carrito, los pedidos del cliente y del mesero y el panel siguen usando simulaciones locales independientes. No conviertas esos flujos en llamadas de red hasta que el usuario solicite conectarlos. El catálogo no entrega imágenes ni cantidades disponibles; las existencias sí se consultan desde los endpoints diarios de inventario. No deduzcas stock a partir de `tracksInventory`.
 
 Flujo actual:
 
@@ -26,7 +26,7 @@ Flujo actual:
 5. El menú y el detalle consultan el catálogo del backend. La búsqueda y los filtros se aplican en la app.
 6. En el detalle, picante, nota y cantidad son controles locales. **Agregar** añade el producto al carrito en memoria; confirmar crea un pedido de demostración y muestra su seguimiento local.
 
-La pantalla `/waiter` tiene pedidos de ejemplo propios y no está conectada al carrito ni a los pedidos del cliente. El catálogo administrado desde `/admin/products` es el mismo que consulta el cliente; los datos de inventario, panel, mesas y usuarios siguen siendo simulaciones independientes.
+La pantalla `/waiter` tiene pedidos de ejemplo propios y no está conectada al carrito ni a los pedidos del cliente. El catálogo administrado desde `/admin/products` es el mismo que consulta el cliente; el panel conserva su simulación independiente del catálogo, inventario, usuarios y mesas conectados.
 
 La pantalla `/admin/products` consulta productos y categorías protegidos del backend y permite crear o editar ambos recursos. El usuario autenticado debe tener los permisos `catalog.read` y `catalog.write`; los errores de sesión o permisos se muestran en la pantalla. Esa pantalla no usa las existencias ficticias del inventario local. Las demás pantallas administrativas aún pueden mostrar semillas locales y no se sincronizan automáticamente con el catálogo real.
 
@@ -57,8 +57,9 @@ src/
 │   ├── auth/                    # formularios, pantallas, API y validadores
 │   ├── client/                  # pantallas, API de catálogo, mapper, componentes y orderStore
 │   ├── waiter/                  # bandeja local del mesero
-│   └── admin/                   # catálogo/inventario conectados y otras pantallas locales
-│       ├── api/                 # APIs administrativas de catálogo e inventario
+│   └── admin/                   # catálogo/inventario/usuarios/mesas conectados y otras pantallas locales
+│       ├── api/                 # APIs administrativas de catálogo, inventario, usuarios y mesas
+│       ├── hooks/               # Coordinación y ciclo de solicitudes de mesas
 │       └── data/                # mappers y datos semilla de pantallas locales
 └── shared/
     ├── api/apiClient.js        # cliente Axios
@@ -66,7 +67,7 @@ src/
     └── validators/              # validaciones puras reutilizadas por features
 ```
 
-El catálogo del cliente vive en el backend. `features/client/api/catalogApi.js` consulta productos y categorías; `features/client/data/menuProductMapper.js` adapta productos al formato visual. La administración usa `features/admin/api/catalogAdminApi.js` y `adminCatalogMapper.js` para gestionar productos/categorías y `features/admin/api/inventoryAdminApi.js` y `inventoryMapper.js` para la jornada y las existencias. `features/admin/data/adminData.js` conserva semillas locales para el panel, mesas y usuarios que aún no están conectados.
+El catálogo del cliente vive en el backend. `features/client/api/catalogApi.js` consulta productos y categorías; `features/client/data/menuProductMapper.js` adapta productos al formato visual. La administración usa `features/admin/api/catalogAdminApi.js` y `adminCatalogMapper.js` para gestionar productos/categorías y `features/admin/api/inventoryAdminApi.js` y `inventoryMapper.js` para la jornada y las existencias. `features/admin/data/adminData.js` conserva semillas locales usadas por el panel, que aún no está conectado.
 
 Otros archivos importantes:
 
@@ -114,7 +115,7 @@ import { isValidEmail } from '@/shared/validators/emailValidator';
 - El catálogo no informa cantidades disponibles. No muestres stock real a partir de `tracksInventory`, que solo indica si se controla.
 - No agregues una ruta para una pestaña inferior hasta que esa pantalla sea solicitada.
 - El escáner usa `expo-camera`. Respeta sus permisos y no pongas elementos hijos dentro de `CameraView`; superpón el marco como una vista hermana. El reconocimiento de mesa sigue simulado.
-- Conserva las validaciones locales existentes de login y registro. No afirmes que crean cuentas ni autentican usuarios contra un servidor.
+- Conserva las validaciones de login y registro; sus resultados dependen de la respuesta de la API. No presentes simulaciones locales como autenticación real.
 
 ## Dependencias y APIs de Expo
 
@@ -141,3 +142,13 @@ npx expo start --android
 npx expo start --ios
 npx expo start --web
 ```
+
+## Usuarios y mesas conectados
+
+`/admin/users` consulta usuarios y roles y permite crear y actualizar cuentas mediante `usersAdminApi.js`. Requiere `users.read` y `roles.read` para la consulta, `users.create` para crear y `users.update` para editar. La contraseña inicial solo se envía al crear; la API controla duplicados y restricciones de rol/estado.
+
+`/admin/tables` consulta, crea y edita mesas reales con `tablesAdminApi.js`. Requiere `tables.read` para listar y `tables.manage` para crear. Solo se envía `{code}` (entre 1 y 40 caracteres sin espacios exteriores); la API normaliza el código y comprueba duplicados. Permite editar el código y activar o desactivar una mesa mediante PATCH, sujeto a `tables.manage`. No se puede desactivar una mesa con visita abierta; el backend comprueba esta restricción. Capacidad, zona y QR permanecen fuera de esta etapa.
+
+`adminTableMapper.js` adapta código, estado activo y visita abierta; una visita no equivale a ocupación física. `useAdminTables.js` coordina carga, cancelación, permisos y creación; `TablesList.jsx` presenta filtros, conteos y páginas de 20 mesas. Se recorren todas las páginas del backend (hasta 100 por solicitud) antes de filtrar. Tras crear, se vuelve a consultar y se muestra la página de la nueva mesa; si falla la recarga, se informa que la creación ya fue confirmada.
+
+El panel mantiene sus semillas de mesas independientes. El escáner sigue simulando Mesa 08. Abrir visitas y emitir QR desde administración queda para otra etapa; no se deduce la existencia de un QR de `openVisitId`.

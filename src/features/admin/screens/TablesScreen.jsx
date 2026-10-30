@@ -1,184 +1,62 @@
-import { useState } from 'react';
-import { Text, View } from 'react-native';
+import { Text } from 'react-native';
 import AdminShell from '@/features/admin/components/AdminShell';
-import { useAdmin } from '@/features/admin/components/AdminProvider';
-import { TableCard } from '@/features/admin/components/AdminCards';
-import {
-  Badge,
-  Button,
-  Chips,
-  Editor,
-  Empty,
-  Search,
-  Stats,
-} from '@/features/admin/components/AdminUI';
-import AdminIcon from '@/features/admin/components/AdminIcon';
+import { Button, Editor } from '@/features/admin/components/AdminUI';
+import TablesList from '@/features/admin/components/TablesList';
+import useAdminTables from '@/features/admin/hooks/useAdminTables';
+import { getCurrentUser } from '@/shared/session/sessionStore';
 
-const tableFields = [
-  { key: 'name', label: 'Nombre de la mesa', required: true },
-  {
-    key: 'capacity',
-    label: 'Capacidad',
-    numeric: true,
-    integer: true,
-    min: 1,
-    required: true,
-  },
-  { key: 'zone', label: 'Zona', required: true },
-  { key: 'status', label: 'Estado', options: ['Libre', 'Ocupada'] },
-];
+const tableFields = [{ key: 'code', label: 'Código de mesa', required: true }];
 
 export default function TablesScreen() {
-  const { tables, setTables } = useAdmin();
-  const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState('Todas');
-  const [editor, setEditor] = useState(null);
-  const [qr, setQr] = useState(null);
-  const occupied = tables.filter((table) => table.status === 'Ocupada').length;
-  const pending = tables.filter((table) => !table.qr).length;
-  const free = tables.length - occupied;
-  const shown = tables.filter((table) => {
-    const matchesSearch = table.name
-      .toLocaleLowerCase()
-      .includes(search.trim().toLocaleLowerCase());
-    const matchesFilter =
-      filter === 'Todas' ||
-      (filter === 'Libres' && table.status === 'Libre') ||
-      (filter === 'Ocupadas' && table.status === 'Ocupada') ||
-      (filter === 'QR pendiente' && !table.qr);
-    return matchesSearch && matchesFilter;
-  });
-  const rows = Array.from({ length: Math.ceil(shown.length / 2) }, (_, index) =>
-    shown.slice(index * 2, index * 2 + 2),
-  );
-
-  function save(values) {
-    if (
-      tables.some(
-        (table) =>
-          table.id !== editor.item?.id &&
-          table.name.toLocaleLowerCase() === values.name.toLocaleLowerCase(),
-      )
-    )
-      return 'Ya existe una mesa con ese nombre.';
-    const item = { ...values, capacity: Number(values.capacity) };
-    setTables((current) =>
-      editor.item
-        ? current.map((table) =>
-            table.id === editor.item.id ? { ...table, ...item } : table,
-          )
-        : [...current, { ...item, id: `table-${Date.now()}`, qr: false }],
-    );
-    setEditor(null);
-  }
+  const permissions = getCurrentUser()?.permissions || [];
+  const canRead = permissions.includes('tables.read');
+  const canManage = permissions.includes('tables.manage');
+  const model = useAdminTables(canRead, canManage);
+  const table = model.editing?.table;
+  const status = table?.active ? 'Activa' : 'Inactiva';
+  const initial = table ? { code: table.code, status } : { code: '' };
+  const fields = model.editing && !table ? [] : [...tableFields];
+  if (table) fields.push({ key: 'status', label: 'Estado', options: ['Activa', 'Inactiva'] });
 
   return (
     <AdminShell
-      title="Mesas y QR"
-      subtitle={`${tables.length} mesas · ${occupied} ocupadas`}
+      title="Mesas"
+      subtitle="Listado y creación de mesas"
       addLabel="Agregar mesa"
-      onAdd={() => setEditor({})}
+      showAdd={canRead && canManage && !model.loading && !model.error}
+      onAdd={model.openEditor}
     >
-      <Stats
-        items={[
-          {
-            label: 'Disponibles',
-            value: free,
-            tone: 'green',
-            icon: 'table',
-            note: `${tables.length ? Math.round((free / tables.length) * 100) : 0}% del salón`,
-          },
-          {
-            label: 'Ocupadas',
-            value: occupied,
-            tone: 'peach',
-            note: 'Servicio en salón',
-          },
-        ]}
-      />
-      <Search value={search} onChange={setSearch} placeholder="Buscar mesa" />
-      <Chips
-        items={[
-          { value: 'Todas', label: `Todas ${tables.length}` },
-          { value: 'Libres', label: `Libres ${free}` },
-          { value: 'Ocupadas', label: `Ocupadas ${occupied}` },
-          { value: 'QR pendiente', label: `QR pendiente ${pending}` },
-        ]}
-        value={filter}
-        onChange={setFilter}
-      />
-      {rows.map((row) => (
-        <View
-          key={row.map((table) => table.id).join('-')}
-          className="mb-3 flex-row items-stretch gap-3"
+      {model.notice ? (
+        <Text
+          accessibilityRole="alert"
+          className="mb-3 rounded-xl bg-[#deecdf] p-3 text-xs leading-5 text-[#477052]"
         >
-          {row.map((table) => (
-            <TableCard
-              key={table.id}
-              table={table}
-              onEdit={() => setEditor({ item: table })}
-              onQR={() => setQr(table)}
-            />
-          ))}
-          {row.length === 1 ? <View className="flex-1" /> : null}
-        </View>
-      ))}
-      {!shown.length && (
-        <Empty>No hay mesas que coincidan con estos filtros.</Empty>
-      )}
-      <View className="mt-1 flex-row items-center gap-2 rounded-xl bg-[#f2e8d6] px-3 py-3">
-        <AdminIcon name="qr" size={18} color="#a35a45" />
-        <Text className="flex-1 text-[10px] leading-4 text-[#8b8178]">
-          Toca una mesa para editarla o consulta su preparación QR.
+          {model.notice}
         </Text>
-      </View>
-      {editor && (
+      ) : null}
+      <TablesList model={model} />
+      {model.editorOpen && (
         <Editor
-          key={editor.item?.id || 'new'}
-          title={editor.item ? 'Editar mesa' : 'Nueva mesa'}
-          initial={{
-            name: '',
-            capacity: '4',
-            zone: 'Salón',
-            status: 'Libre',
-            ...editor.item,
-          }}
-          fields={tableFields}
-          onSave={save}
-          onClose={() => setEditor(null)}
-        />
-      )}
-      {qr && (
-        <Editor title={qr.name} fields={[]} onClose={() => setQr(null)}>
-          <View className="mb-4 items-center rounded-2xl bg-white p-6">
-            <View className="mb-4 h-16 w-16 items-center justify-center rounded-2xl bg-[#f2e8d6]">
-              <AdminIcon name="qr" size={38} color="#b7472a" />
-            </View>
-            <Text className="mb-2 text-base font-semibold text-[#332d28]">
-              Preparación del código QR
-            </Text>
-            <Badge tone={qr.qr ? 'green' : 'yellow'}>
-              {qr.qr ? 'Preparado · demo' : 'Pendiente'}
-            </Badge>
-            <Text className="mt-4 text-center text-xs leading-5 text-[#8b8178]">
-              La generación e impresión del QR estarán disponibles cuando se
-              conecte el menú público.
-            </Text>
-          </View>
-          {!qr.qr && (
-            <Button
-              onPress={() => {
-                setTables((current) =>
-                  current.map((table) =>
-                    table.id === qr.id ? { ...table, qr: true } : table,
-                  ),
-                );
-                setQr((current) => ({ ...current, qr: true }));
-              }}
-            >
-              Marcar preparado en demo
-            </Button>
-          )}
+          key={model.editing?.table?.id || (model.editing ? 'loading' : 'new')}
+          title={model.editing ? 'Editar mesa' : 'Nueva mesa'}
+          initial={initial}
+          fields={fields}
+          onSave={
+            model.editing && !model.editing.table ? undefined : model.saveTable
+          }
+          onClose={model.closeEditor}
+          saveHint="Se guardarán los cambios en el backend."
+        >
+          {model.detailLoading && <Text>Cargando mesa…</Text>}
+          {model.detailError ? (
+            <>
+              <Text accessibilityRole="alert">{model.detailError}</Text>
+              <Button onPress={model.retryDetail}>Reintentar</Button>
+            </>
+          ) : null}
+          {model.editing?.table?.openVisitId ? (
+            <Text>No se puede desactivar una mesa con visita abierta.</Text>
+          ) : null}
         </Editor>
       )}
     </AdminShell>
