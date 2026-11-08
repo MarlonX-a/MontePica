@@ -1,6 +1,6 @@
 # MontePica
 
-Aplicación para una cevichería, construida con Expo, React Native, Expo Router y NativeWind. El login, el registro, el catálogo del cliente y la gestión administrativa de productos/categorías, inventario, usuarios y mesas consultan el backend. El carrito, los pedidos y otras pantallas administrativas todavía conservan simulaciones locales.
+Aplicación para una cevichería, construida con Expo, React Native, Expo Router y NativeWind. El login, el registro, el catálogo del cliente y la gestión administrativa de productos/categorías, inventario, usuarios, mesas y visitas consultan el backend. El carrito, los pedidos y otras pantallas administrativas todavía conservan simulaciones locales.
 
 ## Estructura del código
 
@@ -24,9 +24,10 @@ Aplicación para una cevichería, construida con Expo, React Native, Expo Router
 │   │   │   ├── api/catalogApi.js         # Consultas públicas de productos y categorías
 │   │   │   └── data/                    # Mapper del catálogo y orderStore local
 │   │   ├── waiter/                      # Bandeja de pedidos de prueba del mesero
-│   │   └── admin/                       # Catálogo, inventario, usuarios y mesas API; panel demo
-│   │       ├── api/                      # APIs administrativas de catálogo, inventario, usuarios y mesas
-│   │       ├── hooks/                    # Coordinación de solicitudes de mesas
+│   │   └── admin/                       # Catálogo, inventario, usuarios, mesas/visitas API; panel demo
+│   │       ├── api/                      # APIs administrativas de catálogo, inventario, usuarios, mesas y visitas
+│   │       ├── components/               # Tarjetas, listas y modal de visita administrativa
+│   │       ├── hooks/                    # Coordinación de solicitudes de mesas y visitas
 │   │       └── data/                     # Mappers API y semillas de pantallas demo
 │   └── shared/
 │       ├── api/apiClient.js             # Cliente Axios
@@ -47,7 +48,7 @@ Aplicación para una cevichería, construida con Expo, React Native, Expo Router
 - `features/auth/` contiene los formularios y las llamadas de registro e inicio de sesión al backend.
 - `features/client/` contiene el recorrido del cliente. `api/catalogApi.js` consulta productos y categorías; `data/menuProductMapper.js` adapta los productos para la interfaz. `data/orderStore.js` conserva carrito y pedido activo en memoria.
 - `features/waiter/` muestra pedidos de ejemplo y permite cambiar su estado localmente.
-- `features/admin/` gestiona productos/categorías e inventario diario desde el backend. El panel conserva datos de demostración independientes.
+- `features/admin/` gestiona productos/categorías, inventario diario, usuarios, mesas y visitas desde el backend. El panel conserva datos de demostración independientes.
 - `shared/` contiene módulos transversales como Axios y la sesión. Axios agrega el token de acceso al llamar endpoints protegidos. En iOS/Android, SecureStore conserva la sesión entre reinicios; en web solo se mantiene en memoria.
 - `components/ui/` contiene elementos visuales reutilizables que no conocen las reglas de una feature, como `Title.jsx`.
 - `assets/` guarda las imágenes y los iconos locales.
@@ -81,6 +82,7 @@ Para decidir dónde poner código nuevo:
 - Las llamadas del catálogo del cliente y su adaptación visual pertenecen a `features/client/api/` y `features/client/data/`.
 - Las llamadas protegidas de gestión de productos/categorías pertenecen a `features/admin/api/catalogAdminApi.js`; su adaptación pertenece a `features/admin/data/adminCatalogMapper.js`.
 - La consulta de jornadas, existencias y movimientos pertenece a `features/admin/api/inventoryAdminApi.js`; `features/admin/data/inventoryMapper.js` adapta cada existencia para la pantalla.
+- La apertura, consulta y cierre de visitas administrativas pertenece a `features/admin/api/visitsAdminApi.js`; su coordinación vive en `features/admin/hooks/useAdminVisits.js` y el modal propio en `features/admin/components/TableVisitModal.jsx`.
 - Los datos semilla que solo usa administración pertenecen a `features/admin/data/`.
 - El usuario actual usado por autenticación y otras pantallas pertenece a `shared/session/`.
 - Un título visual que puede usarse en varias pantallas sin reglas de negocio pertenece a `components/ui/`.
@@ -92,6 +94,8 @@ Para decidir dónde poner código nuevo:
 El login y el registro llaman al backend. La sesión se conserva en memoria y en SecureStore para iOS/Android; en web se pierde al recargar. `apiClient` adjunta automáticamente el token de acceso a los endpoints protegidos.
 
 El catálogo del cliente y `/admin/products` usan los mismos productos del backend. `/admin/inventory` muestra existencias reales de la jornada actual; consultar la operación y el inventario requiere `operations.read` e `inventory.read`; abrir la jornada requiere `operations.open`; inicializar requiere `inventory.initialize`; registrar movimientos requiere `inventory.move`; y ajustar un conteo requiere `inventory.adjust`. Las operaciones de escritura usan claves idempotentes. El comprobante de movimiento solo se previsualiza en el dispositivo y no se envía. El catálogo no incluye imágenes ni stock: las cantidades vienen del servicio de inventario diario, no de `tracksInventory`. El carrito y el pedido activo del cliente viven en `orderStore.js`; confirmar el pedido genera un seguimiento local. Los pedidos de la pantalla del mesero son datos de muestra independientes y no se conectan con los pedidos del cliente. El panel administrativo conserva su simulación local.
+
+`/admin/tables` permite abrir y cerrar la visita actual de una mesa. Abrir requiere `visits.manage`, mesa activa sin visita y una jornada abierta. Consultar fechas requiere `visits.read`; gestionar visitas no exige `tables.manage`. Cerrar requiere confirmación, finaliza participaciones y falla si hay consumos pendientes; la solicitud lleva una clave idempotente reutilizable ante reintentos. QR e ingreso de clientes a la visita aún no están conectados.
 
 El escáner solicita permiso para usar la cámara, pero la detección de Mesa 08 es simulada. Los pedidos y pagos no se envían al backend.
 
@@ -120,8 +124,10 @@ Las reglas de colaboración y mantenimiento del proyecto están en [AGENTS.md](A
 
 `/admin/users` consulta usuarios y roles y permite crear y actualizar cuentas mediante `usersAdminApi.js`. Requiere `users.read` y `roles.read` para la consulta, `users.create` para crear y `users.update` para editar. La contraseña inicial solo se envía al crear; la API controla duplicados y restricciones de rol/estado.
 
-`/admin/tables` consulta, crea y edita mesas reales con `tablesAdminApi.js`. Requiere `tables.read` para listar y `tables.manage` para crear. Solo se envía `{code}` (entre 1 y 40 caracteres sin espacios exteriores); la API normaliza el código y comprueba duplicados. Permite editar el código y activar o desactivar una mesa mediante PATCH, sujeto a `tables.manage`. No se puede desactivar una mesa con visita abierta; el backend comprueba esta restricción. Capacidad, zona y QR permanecen fuera de esta etapa.
+`/admin/tables` consulta, crea y edita mesas reales con `tablesAdminApi.js`. Requiere `tables.read` para listar y consultar una mesa, y `tables.manage` para crear o editarla. Solo se envía `{code}` (entre 1 y 40 caracteres sin espacios exteriores); la API normaliza el código y comprueba duplicados. Permite editar el código y activar o desactivar una mesa mediante PATCH. No se puede desactivar una mesa con visita abierta; el backend vuelve a comprobar esta restricción. Capacidad, zona y QR no forman parte de la gestión actual.
 
-`adminTableMapper.js` adapta código, estado activo y visita abierta; una visita no equivale a ocupación física. `useAdminTables.js` coordina carga, cancelación, permisos y creación; `TablesList.jsx` presenta filtros, conteos y páginas de 20 mesas. Se recorren todas las páginas del backend (hasta 100 por solicitud) antes de filtrar. Tras crear, se vuelve a consultar y se muestra la página de la nueva mesa; si falla la recarga, se informa que la creación ya fue confirmada.
+`adminTableMapper.js` adapta código, estado activo y visita abierta; una visita no equivale a ocupación física. `useAdminTables.js` coordina carga, edición, cancelación, permisos y recargas; `TablesList.jsx` presenta filtros, conteos y páginas de 20 mesas. Se recorren todas las páginas del backend (hasta 100 por solicitud) antes de filtrar. Tras crear o editar, se vuelve a consultar y se muestra la página de la mesa; si falla la recarga, se informa que el cambio ya fue confirmado.
 
-El panel mantiene sus semillas de mesas independientes. El escáner sigue simulando Mesa 08. Abrir visitas y emitir QR desde administración queda para otra etapa; no se deduce la existencia de un QR de `openVisitId`.
+La acción **Visita** consulta nuevamente la mesa y abre un modal con su estado. `visitsAdminApi.js` llama a la API; `useAdminVisits.js` coordina consulta, apertura, cierre, permisos e idempotencia; `TableVisitModal.jsx` presenta el detalle y la confirmación de cierre. `tables.read` permite consultar la mesa, `visits.read` permite ver estado y fechas de la visita, y `visits.manage` permite abrirla o cerrarla, sin requerir `tables.manage`. La apertura solo se permite en una mesa activa sin visita y el backend exige una jornada operativa abierta. El cierre finaliza participaciones y el backend lo rechaza si hay consumos pendientes. Los cierres envían una clave `Idempotency-Key`; los reintentos del mismo cierre reutilizan esa clave. Tras abrir o cerrar se actualiza el listado sin perder búsqueda ni filtros. La emisión de QR, el historial y la gestión de participantes siguen pendientes.
+
+El panel mantiene sus semillas de mesas independientes. El escáner sigue simulando Mesa 08. La existencia de una visita no se interpreta como un QR emitido; QR y participación del cliente siguen sin conectarse.

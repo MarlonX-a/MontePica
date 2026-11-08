@@ -7,10 +7,30 @@ import {
   getTablesApiError,
 } from '@/features/admin/api/tablesAdminApi';
 import {
+  filterAdminTables,
   getTablePage,
   mapAdminTable,
+  TABLES_PAGE_SIZE,
   validateTableCode,
 } from '@/features/admin/data/adminTableMapper';
+
+function getPageAfterReload(
+  mapped,
+  focusId,
+  preservePage,
+  pageRef,
+  searchRef,
+  filterRef,
+) {
+  if (!preservePage) return getTablePage(mapped, focusId);
+  const filtered = filterAdminTables(
+    mapped,
+    searchRef.current,
+    filterRef.current,
+  );
+  const pageCount = Math.max(1, Math.ceil(filtered.length / TABLES_PAGE_SIZE));
+  return Math.min(pageRef.current, pageCount);
+}
 
 export default function useAdminTables(canRead, canManage) {
   const [tables, setTables] = useState([]);
@@ -29,9 +49,15 @@ export default function useAdminTables(canRead, canManage) {
   const request = useRef(null);
   const creating = useRef(false);
   const focusTable = useRef(null);
+  const pageRef = useRef(page);
+  const searchRef = useRef(search);
+  const filterRef = useRef(filter);
+  pageRef.current = page;
+  searchRef.current = search;
+  filterRef.current = filter;
 
   const reload = useCallback(
-    async (focusId = focusTable.current) => {
+    async (focusId = focusTable.current, { preservePage = false } = {}) => {
       request.current?.abort();
       const controller = new AbortController();
       request.current = controller;
@@ -47,7 +73,16 @@ export default function useAdminTables(canRead, canManage) {
         if (!mounted.current || controller.signal.aborted) return;
         const mapped = data.map(mapAdminTable);
         setTables(mapped);
-        setPage(getTablePage(mapped, focusId));
+        setPage(
+          getPageAfterReload(
+            mapped,
+            focusId,
+            preservePage,
+            pageRef,
+            searchRef,
+            filterRef,
+          ),
+        );
         focusTable.current = null;
         return true;
       } catch (requestError) {

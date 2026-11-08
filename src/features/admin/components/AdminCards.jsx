@@ -55,7 +55,7 @@ export function ProductCard({ product, onPress }) {
   );
 }
 
-export function TableCard({ table, onEdit }) {
+export function TableCard({ table, onEdit, onVisit }) {
   return (
     <View className="flex-1 rounded-2xl border border-[#eadfd2] bg-white p-3">
       <View className="mb-2 flex-row flex-wrap items-center justify-between gap-2">
@@ -72,16 +72,34 @@ export function TableCard({ table, onEdit }) {
       <Badge tone={table.openVisitId ? 'peach' : 'blue'}>
         {table.visitLabel}
       </Badge>
-      {onEdit && (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={`Editar mesa ${table.code}`}
-          onPress={onEdit}
-          className="mt-3 min-h-11 justify-center"
-        >
-          <Text className="text-xs font-semibold text-[#b7472a]">Editar</Text>
-        </Pressable>
-      )}
+      {onEdit || onVisit ? (
+        <View className="mt-3 flex-row gap-2">
+          {onVisit ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Ver visita de mesa ${table.code}`}
+              onPress={onVisit}
+              className="min-h-10 flex-1 items-center justify-center rounded-lg bg-[#f2e8d6] px-2"
+            >
+              <Text className="text-[10px] font-semibold text-[#b7472a]">
+                Visita
+              </Text>
+            </Pressable>
+          ) : null}
+          {onEdit ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Editar mesa ${table.code}`}
+              onPress={onEdit}
+              className="min-h-10 flex-1 items-center justify-center rounded-lg bg-[#f2e8d6] px-2"
+            >
+              <Text className="text-[10px] font-semibold text-[#b7472a]">
+                Editar
+              </Text>
+            </Pressable>
+          ) : null}
+        </View>
+      ) : null}
     </View>
   );
 }

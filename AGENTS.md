@@ -57,9 +57,10 @@ src/
 │   ├── auth/                    # formularios, pantallas, API y validadores
 │   ├── client/                  # pantallas, API de catálogo, mapper, componentes y orderStore
 │   ├── waiter/                  # bandeja local del mesero
-│   └── admin/                   # catálogo/inventario/usuarios/mesas conectados y otras pantallas locales
-│       ├── api/                 # APIs administrativas de catálogo, inventario, usuarios y mesas
-│       ├── hooks/               # Coordinación y ciclo de solicitudes de mesas
+│   └── admin/                   # catálogo/inventario/usuarios/mesas/visitas conectados y otras pantallas locales
+│       ├── api/                 # APIs administrativas de catálogo, inventario, usuarios, mesas y visitas
+│       ├── components/          # UI administrativa, listas y modal de visitas
+│       ├── hooks/               # Coordinación de solicitudes de mesas y visitas
 │       └── data/                # mappers y datos semilla de pantallas locales
 └── shared/
     ├── api/apiClient.js        # cliente Axios
@@ -155,11 +156,13 @@ npx expo start --web
 
 `/admin/users` consulta usuarios y roles y permite crear y actualizar cuentas mediante `usersAdminApi.js`. Requiere `users.read` y `roles.read` para la consulta, `users.create` para crear y `users.update` para editar. La contraseña inicial solo se envía al crear; la API controla duplicados y restricciones de rol/estado.
 
-`/admin/tables` consulta, crea y edita mesas reales con `tablesAdminApi.js`. Requiere `tables.read` para listar y `tables.manage` para crear. Solo se envía `{code}` (entre 1 y 40 caracteres sin espacios exteriores); la API normaliza el código y comprueba duplicados. Permite editar el código y activar o desactivar una mesa mediante PATCH, sujeto a `tables.manage`. No se puede desactivar una mesa con visita abierta; el backend comprueba esta restricción. Capacidad, zona y QR permanecen fuera de esta etapa.
+`/admin/tables` consulta, crea y edita mesas reales con `tablesAdminApi.js`. Requiere `tables.read` para listar y consultar y `tables.manage` para crear o editar. Solo se envía `{code}` (entre 1 y 40 caracteres sin espacios exteriores); la API normaliza el código y comprueba duplicados. Permite editar el código y activar o desactivar una mesa mediante PATCH. No se puede desactivar una mesa con visita abierta; el backend vuelve a comprobar esta restricción. Capacidad, zona y QR no forman parte de la gestión actual.
 
-`adminTableMapper.js` adapta código, estado activo y visita abierta; una visita no equivale a ocupación física. `useAdminTables.js` coordina carga, cancelación, permisos y creación; `TablesList.jsx` presenta filtros, conteos y páginas de 20 mesas. Se recorren todas las páginas del backend (hasta 100 por solicitud) antes de filtrar. Tras crear, se vuelve a consultar y se muestra la página de la nueva mesa; si falla la recarga, se informa que la creación ya fue confirmada.
+`adminTableMapper.js` adapta código, estado activo y visita abierta; una visita no equivale a ocupación física. `useAdminTables.js` coordina carga, edición, cancelación, permisos y recargas; `TablesList.jsx` presenta filtros, conteos y páginas de 20 mesas. Se recorren todas las páginas del backend (hasta 100 por solicitud) antes de filtrar. Tras crear o editar, se vuelve a consultar y se muestra la página de la mesa; si falla la recarga, se informa que el cambio ya fue confirmado.
 
-El panel mantiene sus semillas de mesas independientes. El escáner sigue simulando Mesa 08. Abrir visitas y emitir QR desde administración queda para otra etapa; no se deduce la existencia de un QR de `openVisitId`.
+La acción **Visita** consulta nuevamente la mesa y abre un modal dentro de `/admin/tables`. `visitsAdminApi.js` contiene las solicitudes de visitas; `useAdminVisits.js` coordina consultas, operaciones, permisos, cancelación y claves idempotentes; `TableVisitModal.jsx` presenta el estado, las fechas disponibles y la confirmación de cierre. `tables.read` permite consultar la mesa; `visits.read` permite consultar el detalle, y `visits.manage` permite abrir o cerrar sin requerir `tables.manage`. La apertura requiere una mesa activa sin visita y una jornada operativa abierta. El cierre finaliza participaciones y el backend lo rechaza si hay consumos pendientes. Un cierre reintentado conserva su `Idempotency-Key`. Después de una operación se actualiza el listado conservando búsqueda y filtros; si falla la consulta posterior, se ofrece reintentar solo la lectura.
+
+El panel mantiene sus semillas de mesas independientes. El escáner sigue simulando Mesa 08. Emitir QR, consultar historial y gestionar participantes queda pendiente; no se deduce la existencia de un QR de `openVisitId`.
 
 ## Actividades y seguimiento
 
@@ -177,7 +180,7 @@ Actividades implementadas en el código actual (las pruebas reales y el análisi
 Actividades pendientes:
 
 - [ ] Verificar con el backend y cuentas de prueba autorizadas los flujos ya conectados, incluidos permisos, errores y persistencia. La edición de mesas aún requiere prueba real; documentar resultados y limitaciones por plataforma.
-- [ ] Conectar la apertura y cierre de visitas de mesa en administración, según los endpoints, permisos y reglas vigentes del backend.
+- [ ] Verificar apertura y cierre de visitas en backend con cuentas de prueba: mesa activa/inactiva, visita existente, jornada cerrada, cierre con consumos pendientes, permisos, errores y reintento idempotente. El código de interfaz y API ya está implementado; falta la prueba real y el análisis de calidad de esta revisión.
 - [ ] Conectar la emisión y presentación de QR reales de visitas; definir con el equipo cómo mostrarlos y usarlos. La emisión de un QR nuevo invalida el anterior y puede cancelar solicitudes pendientes: comprobar el contrato actual antes de implementarlo.
 - [ ] Sustituir el reconocimiento simulado de Mesa 08 por lectura y resolución de QR reales en el escáner del cliente. Revisar autenticación, permisos de cámara, errores y experiencia en web, iOS y Android.
 - [ ] Conectar el flujo de participación en una visita y su gestión administrativa o del mesero, de acuerdo con los permisos y endpoints disponibles y con el alcance solicitado.
