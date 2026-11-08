@@ -1,12 +1,18 @@
-import { useEffect, useState } from "react";
-import { CameraView, useCameraPermissions } from "expo-camera";
-import { router } from "expo-router";
-import { StatusBar } from "expo-status-bar";
-import { Pressable, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import IconButton from "@/features/client/components/IconButton";
-
-const MOCK_SCANNED_TABLE = "Mesa 08";
+import { useCallback, useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { CameraView, useCameraPermissions } from 'expo-camera';
+import { router, useFocusEffect } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import IconButton from '@/features/client/components/IconButton';
+import useTableQrScanner from '@/features/client/hooks/useTableQrScanner';
+import { logoutUser } from '@/shared/session/sessionStore';
 
 function ScannerHeader({ showTorch, torchEnabled, onToggleTorch }) {
   return (
@@ -22,7 +28,7 @@ function ScannerHeader({ showTorch, torchEnabled, onToggleTorch }) {
       <Text className="text-base font-semibold text-white">Escanear mesa</Text>
       {showTorch ? (
         <IconButton
-          label={torchEnabled ? "Apagar linterna" : "Encender linterna"}
+          label={torchEnabled ? 'Apagar linterna' : 'Encender linterna'}
           onPress={onToggleTorch}
           className="h-11 w-11 items-center justify-center rounded-full bg-white/10"
           textClassName="text-xl text-white"
@@ -46,7 +52,6 @@ function ScanFrame() {
 
 function PermissionMessage({ permission, onRequest }) {
   const canAskAgain = permission?.canAskAgain ?? true;
-
   return (
     <View className="flex-1 items-center justify-center bg-[#1c1a18] px-8">
       <Text className="mb-3 text-4xl text-white">⌖</Text>
@@ -73,22 +78,167 @@ function PermissionMessage({ permission, onRequest }) {
   );
 }
 
+function ResultPanel({ scanner, cameraError, onContinue, onRetryCamera }) {
+  if (cameraError) {
+    return (
+      <View className="rounded-[24px] bg-[#fff8ef] p-5">
+        <Text accessibilityRole="alert" className="text-sm text-[#b7472a]">
+          {cameraError}
+        </Text>
+        <ActionButton label="Reintentar cámara" onPress={onRetryCamera} />
+      </View>
+    );
+  }
+  if (scanner.status === 'resolving') {
+    return (
+      <View className="items-center rounded-[24px] bg-[#fff8ef] p-6">
+        <ActivityIndicator color="#b7472a" />
+        <Text className="mt-3 text-sm font-semibold text-[#332d28]">
+          Consultando mesa…
+        </Text>
+      </View>
+    );
+  }
+  if (scanner.status === 'resolved' && scanner.table) {
+    return (
+      <View className="rounded-[24px] bg-[#fff8ef] p-5">
+        <Text className="text-[10px] font-semibold tracking-wide text-[#477052]">
+          QR RECONOCIDO
+        </Text>
+        <Text className="mt-1 text-xl font-bold text-[#332d28]">
+          {scanner.table.tableCode}
+        </Text>
+        <Text className="mt-2 text-xs leading-5 text-[#8b8178]">
+          Mesa validada. Aún debes solicitar el ingreso para participar del
+          servicio.
+        </Text>
+        <ActionButton label="Continuar al menú" onPress={onContinue} />
+        <ActionButton
+          label="Escanear otro QR"
+          secondary
+          onPress={scanner.scanAnother}
+        />
+      </View>
+    );
+  }
+  if (scanner.status === 'error') {
+    return (
+      <View className="rounded-[24px] bg-[#fff8ef] p-5">
+        <Text
+          accessibilityRole="alert"
+          className="text-sm leading-5 text-[#b7472a]"
+        >
+          {scanner.error}
+        </Text>
+        {scanner.errorStatus === 401 ? (
+          <ActionButton
+            label="Volver a iniciar sesión"
+            onPress={async () => {
+              await logoutUser();
+              router.replace('/login');
+            }}
+          />
+        ) : null}
+        {!scanner.errorStatus || scanner.errorStatus >= 500 ? (
+          <ActionButton label="Reintentar consulta" onPress={scanner.retry} />
+        ) : null}
+        <ActionButton
+          label="Escanear otro QR"
+          secondary
+          onPress={scanner.scanAnother}
+        />
+      </View>
+    );
+  }
+  return (
+    <View className="items-center rounded-[24px] bg-[#fff8ef] p-6">
+      <Text className="text-[10px] font-semibold tracking-wide text-[#8b8178]">
+        BUSCANDO QR
+      </Text>
+      <Text className="mt-2 text-center text-base font-bold text-[#332d28]">
+        Alinea el código QR dentro del marco
+      </Text>
+      <Text className="mt-1 text-center text-xs leading-5 text-[#8b8178]">
+        La cámara validará la mesa con el servidor.
+      </Text>
+    </View>
+  );
+}
+
+function ActionButton({ label, onPress, secondary = false }) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      onPress={onPress}
+      className={`mt-3 min-h-11 items-center justify-center rounded-xl px-4 ${secondary ? 'bg-[#f2e8d6]' : 'bg-[#b7472a]'}`}
+    >
+      <Text
+        className={`text-xs font-semibold ${secondary ? 'text-[#b7472a]' : 'text-white'}`}
+      >
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
 export default function TableScannerScreen() {
   const [permission, requestPermission] = useCameraPermissions();
   const [torchEnabled, setTorchEnabled] = useState(false);
+  const [focused, setFocused] = useState(false);
+  const [cameraError, setCameraError] = useState('');
+  const [cameraKey, setCameraKey] = useState(0);
+  const scanner = useTableQrScanner();
+
+  useFocusEffect(
+    useCallback(() => {
+      scanner.activate();
+      setFocused(true);
+      return () => {
+        setFocused(false);
+        setTorchEnabled(false);
+        scanner.cancel();
+      };
+    }, [scanner.activate, scanner.cancel]),
+  );
 
   useEffect(() => {
-    requestPermission();
+    requestPermission().catch(() => {
+      setCameraError('No se pudo solicitar acceso a la cámara.');
+    });
   }, [requestPermission]);
+
+  function requestCameraPermission() {
+    requestPermission().catch(() => {
+      setCameraError('No se pudo solicitar acceso a la cámara.');
+    });
+  }
+
+  function continueToMenu() {
+    if (scanner.status !== 'resolved' || !scanner.table) return;
+    const { tableCode } = scanner.table;
+    scanner.clearAfterContinue();
+    router.push({
+      pathname: '/menu',
+      params: { service: 'dine-in', table: tableCode },
+    });
+  }
 
   if (!permission?.granted) {
     return (
       <SafeAreaView className="flex-1 bg-[#1c1a18]">
         <StatusBar style="light" />
         <ScannerHeader showTorch={false} />
+        {cameraError ? (
+          <Text
+            accessibilityRole="alert"
+            className="px-8 text-center text-sm text-red-300"
+          >
+            {cameraError}
+          </Text>
+        ) : null}
         <PermissionMessage
           permission={permission}
-          onRequest={requestPermission}
+          onRequest={requestCameraPermission}
         />
       </SafeAreaView>
     );
@@ -103,69 +253,52 @@ export default function TableScannerScreen() {
           torchEnabled={torchEnabled}
           onToggleTorch={() => setTorchEnabled((enabled) => !enabled)}
         />
-
         <View className="relative flex-1 overflow-hidden">
-          <CameraView
-            style={{ flex: 1 }}
-            facing="back"
-            enableTorch={torchEnabled}
-          />
-          <View
-            pointerEvents="none"
-            style={[
-              StyleSheet.absoluteFill,
-              {
-                backgroundColor: "rgba(0, 0, 0, 0.2)",
-              },
-            ]}
-            className="items-center justify-center px-5"
-          >
-            <ScanFrame />
-            <Text className="mt-5 text-center text-sm text-white">
-              Código QR de tu mesa reconocido.
-            </Text>
-          </View>
-        </View>
-
-        <View className="px-5 pb-4 pt-3">
-          <View className="rounded-[24px] bg-[#fff8ef] px-4 pb-4 pt-4">
-            <View className="mb-4 flex-row items-center">
-              <View
-                className="mr-3 h-11 w-11 items-center justify-center rounded-full bg-[#dcebdc]"
-              >
-                <Text className="text-xl text-[#34704f]">✓</Text>
-              </View>
-              <View className="flex-1">
-                <Text className="text-[10px] font-semibold tracking-wide text-[#8b8178]">
-                  CÓDIGO RECONOCIDO
-                </Text>
-                <Text
-                  className="mt-0.5 text-lg font-bold text-[#332d28]"
-                  numberOfLines={1}
-                >
-                  {MOCK_SCANNED_TABLE}
-                </Text>
-                <Text className="mt-0.5 text-xs text-[#8b8178]">
-                  Salón principal · 4 personas
-                </Text>
-              </View>
-            </View>
-
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Continuar al menú"
-              onPress={() =>
-                router.push({
-                  pathname: "/menu",
-                  params: { service: "dine-in", table: MOCK_SCANNED_TABLE },
-                })
+          {focused && !cameraError ? (
+            <CameraView
+              key={cameraKey}
+              style={{ flex: 1 }}
+              facing="back"
+              enableTorch={torchEnabled}
+              barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
+              onBarcodeScanned={
+                scanner.status === 'scanning'
+                  ? (result) => void scanner.resolve(result.data)
+                  : undefined
               }
-              className="h-12 flex-row items-center justify-center rounded-xl bg-[#b7472a]"
+              onMountError={({ message }) => {
+                setCameraError(message || 'No se pudo iniciar la cámara.');
+              }}
+            />
+          ) : null}
+          {!cameraError ? (
+            <View
+              pointerEvents="none"
+              style={[
+                StyleSheet.absoluteFill,
+                { backgroundColor: 'rgba(0, 0, 0, 0.2)' },
+              ]}
+              className="items-center justify-center px-5"
             >
-              <Text className="mr-2 text-white">→</Text>
-              <Text className="font-bold text-white">Continuar al menú</Text>
-            </Pressable>
-          </View>
+              <ScanFrame />
+              <Text className="mt-5 text-center text-sm text-white">
+                {scanner.status === 'resolving'
+                  ? 'Validando código QR…'
+                  : 'Apunta al código QR de tu mesa.'}
+              </Text>
+            </View>
+          ) : null}
+        </View>
+        <View className="px-5 pb-4 pt-3">
+          <ResultPanel
+            scanner={scanner}
+            cameraError={cameraError}
+            onContinue={continueToMenu}
+            onRetryCamera={() => {
+              setCameraError('');
+              setCameraKey((key) => key + 1);
+            }}
+          />
         </View>
       </View>
     </SafeAreaView>

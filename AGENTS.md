@@ -21,7 +21,7 @@ Flujo actual:
 
 1. `/` restaura la sesión y dirige al usuario según su rol; si no hay sesión, abre login.
 2. Login y registro usan la API.
-3. Desde Inicio, **Para servirse** abre el escáner. El escáner muestra una mesa reconocida simulada (Mesa 08) y continúa al menú.
+3. Desde Inicio, **Para servirse** abre el escáner. La cámara lee un QR y la app consulta `POST /table-access/resolve`; si el backend lo acepta, muestra el código de mesa real y permite continuar al menú. Resolver el QR no crea una participación ni aprueba el ingreso.
 4. **Pedir a domicilio** abre el menú directamente.
 5. El menú y el detalle consultan el catálogo del backend. La búsqueda y los filtros se aplican en la app.
 6. En el detalle, picante, nota y cantidad son controles locales. **Agregar** añade el producto al carrito en memoria; confirmar crea un pedido de demostración y muestra su seguimiento local.
@@ -55,7 +55,7 @@ src/
 │   └── ui/Title.jsx
 ├── features/
 │   ├── auth/                    # formularios, pantallas, API y validadores
-│   ├── client/                  # pantallas, API de catálogo, mapper, componentes y orderStore
+│   ├── client/                  # pantallas, APIs, hook del escáner, mapper, componentes y orderStore
 │   ├── waiter/                  # bandeja local del mesero
 │   └── admin/                   # catálogo/inventario/usuarios/mesas/visitas conectados y otras pantallas locales
 │       ├── api/                 # APIs administrativas de catálogo, inventario, usuarios, mesas y visitas
@@ -68,7 +68,7 @@ src/
     └── validators/              # validaciones puras reutilizadas por features
 ```
 
-El catálogo del cliente vive en el backend. `features/client/api/catalogApi.js` consulta productos y categorías; `features/client/data/menuProductMapper.js` adapta productos al formato visual. La administración usa `features/admin/api/catalogAdminApi.js` y `adminCatalogMapper.js` para gestionar productos/categorías y `features/admin/api/inventoryAdminApi.js` y `inventoryMapper.js` para la jornada y las existencias. `features/admin/data/adminData.js` conserva semillas locales usadas por el panel, que aún no está conectado.
+El catálogo del cliente vive en el backend. `features/client/api/catalogApi.js` consulta productos y categorías; `features/client/api/tableAccessApi.js` resuelve el token leído por el escáner; `features/client/hooks/useTableQrScanner.js` coordina estados, eventos repetidos, reintentos y cancelación. `features/client/data/menuProductMapper.js` adapta productos al formato visual. La administración usa `features/admin/api/catalogAdminApi.js` y `adminCatalogMapper.js` para gestionar productos/categorías y `features/admin/api/inventoryAdminApi.js` y `inventoryMapper.js` para la jornada y las existencias. `features/admin/data/adminData.js` conserva semillas locales usadas por el panel, que aún no está conectado.
 
 Otros archivos importantes:
 
@@ -115,7 +115,7 @@ import { isValidEmail } from '@/shared/validators/emailValidator';
 - Mantén `/admin/inventory` y `/admin/movement` conectados con `inventoryAdminApi.js`; registra movimientos con clave idempotente y muestra cantidades del backend, no datos semilla.
 - El catálogo no informa cantidades disponibles. No muestres stock real a partir de `tracksInventory`, que solo indica si se controla.
 - No agregues una ruta para una pestaña inferior hasta que esa pantalla sea solicitada.
-- El escáner usa `expo-camera`. Respeta sus permisos y no pongas elementos hijos dentro de `CameraView`; superpón el marco como una vista hermana. El reconocimiento de mesa sigue simulado.
+- El escáner usa `expo-camera` y solicita solo simbologías QR. Respeta sus permisos y no pongas elementos hijos dentro de `CameraView`; superpón el marco como una vista hermana. `tableAccessApi.js` envía el contenido leído sin transformarlo como `qrToken`; el token se mantiene en memoria y se limpia al reiniciar, continuar, perder foco o desmontar. La resolución valida QR/mesa, pero no solicita participación ni autoriza pedidos. No uses una mesa simulada cuando la cámara o el backend fallen.
 - Conserva las validaciones de login y registro; sus resultados dependen de la respuesta de la API. No presentes simulaciones locales como autenticación real.
 
 ## Dependencias y APIs de Expo
@@ -164,7 +164,7 @@ La acción **Visita** consulta nuevamente la mesa y abre un modal dentro de `/ad
 
 `useAdminVisitQr.js` comprueba la mesa y la visita antes de emitir; `TableVisitQr.jsx` genera el código localmente a partir del `qrToken` devuelto. La API entrega el token una sola vez. El estado del token vive únicamente en memoria y se limpia al cambiar mesa o visita, cerrar el modal, cerrar la visita o desmontar la pantalla. La emisión requiere confirmación porque invalida el QR anterior y cancela las solicitudes de participación pendientes. Ante un resultado incierto no se reintenta automáticamente, se oculta el QR anterior y se solicita actualizar la mesa antes de emitir otro. No se asegura que el QR siga vigente si otro administrador lo reemplaza.
 
-El panel mantiene sus semillas de mesas independientes. El escáner sigue simulando Mesa 08; todavía no resuelve QR reales ni permite gestionar participantes. No se deduce que exista un QR a partir de `openVisitId`.
+El panel mantiene sus semillas de mesas independientes. El escáner del cliente resuelve QR reales mediante `/table-access/resolve`; la mesa real se pasa al menú, pero aún no se crea participación ni se gestionan participantes. No se deduce que exista un QR a partir de `openVisitId`.
 
 ## Actividades y seguimiento
 
@@ -184,8 +184,8 @@ Actividades pendientes:
 - [ ] Verificar con el backend y cuentas de prueba autorizadas los flujos ya conectados, incluidos permisos, errores y persistencia. La edición de mesas aún requiere prueba real; documentar resultados y limitaciones por plataforma.
 - [ ] Verificar apertura y cierre de visitas en backend con cuentas de prueba: mesa activa/inactiva, visita existente, jornada cerrada, cierre con consumos pendientes, permisos, errores y reintento idempotente. El código de interfaz y API ya está implementado; falta la prueba real y el análisis de calidad de esta revisión.
 - [ ] Probar la emisión y renovación de QR con backend y cuentas de prueba autorizadas, incluidos permisos, errores, invalidación del token anterior y cancelación de solicitudes pendientes. La implementación administrativa está en el código; falta la prueba real y el análisis de calidad de esta revisión.
-- [ ] Sustituir el reconocimiento simulado de Mesa 08 por lectura y resolución de QR reales en el escáner del cliente. Revisar autenticación, permisos de cámara, errores y experiencia en web, iOS y Android.
-- [ ] Conectar el flujo de participación en una visita y su gestión administrativa o del mesero, de acuerdo con los permisos y endpoints disponibles y con el alcance solicitado.
+- [ ] Probar la resolución de QR con backend y cuentas/dispositivos de prueba autorizados: QR válido, inválido, renovado, visita cerrada, mesa inactiva, permisos, errores y pérdida de conexión. Verificar cámara en web, iOS y Android y documentar qué plataformas se probaron; la implementación está en el código, falta esta verificación real y el análisis de calidad de la revisión.
+- [ ] Conectar la solicitud de participación del cliente después de resolver un QR, conforme al contrato, permisos y estados vigentes del backend. Resolver QR por sí solo no registra participación.
 - [ ] Evaluar y conectar los datos operativos disponibles del panel administrativo; conservar explícitamente como simuladas las métricas que no tenga el backend.
 - [ ] Conectar carrito, pedidos del cliente y pedidos del mesero cuando existan contratos de backend adecuados y el usuario solicite esa integración. Mantener los flujos locales identificados hasta entonces.
 - [ ] Revisar búsqueda, filtros y paginación de usuarios administrativos frente al contrato del backend y mostrar el detalle de permisos por rol si se solicita.

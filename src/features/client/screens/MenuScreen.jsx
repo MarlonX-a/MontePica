@@ -30,6 +30,10 @@ export default function MenuScreen() {
   const [loadError, setLoadError] = useState('');
   const [reloadKey, setReloadKey] = useState(0);
   const isDineIn = service === 'dine-in';
+  let serviceLabel = 'Pedido a domicilio';
+  if (isDineIn) {
+    serviceLabel = table ? `${table} · Servicio en salón` : 'Servicio en salón';
+  }
   const categories = [
     'Todos',
     ...availableCategories.map((category) => category.name),
@@ -152,14 +156,23 @@ export default function MenuScreen() {
       <View className="flex-1">
         <ScrollView
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: 16 }}
+          contentContainerStyle={{
+            paddingHorizontal: 20,
+            paddingTop: 12,
+            paddingBottom: 16,
+          }}
         >
           <View className="mb-4 flex-row items-center justify-between">
             <View>
               <Text className="text-2xl font-bold text-[#332d28]">Menú</Text>
               <Text className="mt-0.5 text-[11px] text-[#8b8178]">
-                {isDineIn ? `${table || 'Mesa 08'} · Servicio en salón` : 'Pedido a domicilio'}
+                {serviceLabel}
               </Text>
+              {isDineIn ? (
+                <Text className="mt-1 text-[10px] text-[#a35a45]">
+                  Reconocer la mesa no confirma tu ingreso al servicio.
+                </Text>
+              ) : null}
             </View>
             <CartButton onPress={() => router.push('/orders')} />
           </View>
@@ -200,9 +213,7 @@ export default function MenuScreen() {
           </ScrollView>
 
           <View className="mb-3 flex-row items-center justify-between">
-            <Text className="text-xs text-[#8b8178]">
-              {productCountLabel}
-            </Text>
+            <Text className="text-xs text-[#8b8178]">{productCountLabel}</Text>
             <View className="flex-row items-center">
               <View className="mr-1.5 h-2 w-2 rounded-full bg-[#4d8c58]" />
               <Text className="text-[10px] font-semibold text-[#547353]">
