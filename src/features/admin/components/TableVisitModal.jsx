@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/features/admin/components/AdminUI';
+import VisitParticipants from '@/features/admin/components/VisitParticipants';
 import TableVisitQr from '@/features/admin/components/TableVisitQr';
 
 function formatDate(value) {
@@ -74,10 +75,11 @@ function VisitDetails({ visit, loading, error, onRetry }) {
   );
 }
 
-export default function TableVisitModal({ model, qr }) {
+export default function TableVisitModal({ model, qr, canManageParticipants }) {
+  const [participantsBusy, setParticipantsBusy] = useState(false);
   const [confirmClose, setConfirmClose] = useState(false);
   const table = model.selectedTable;
-  const isBusy = model.saving || qr.issuing;
+  const isBusy = model.saving || qr.issuing || participantsBusy;
   const hasOpenVisit = Boolean(table?.openVisitId);
   const canOpen =
     model.canManageVisits &&
@@ -199,7 +201,7 @@ export default function TableVisitModal({ model, qr }) {
                       model={{
                         ...qr,
                         canManageVisits: model.canManageVisits,
-                        saving: model.saving,
+                        saving: isBusy,
                       }}
                       table={table}
                       visitId={table.openVisitId}
@@ -219,14 +221,14 @@ export default function TableVisitModal({ model, qr }) {
               ) : null}
 
               {canOpen ? (
-                <ActionButton onPress={model.openVisit} disabled={model.saving}>
+                <ActionButton onPress={model.openVisit} disabled={isBusy}>
                   {model.saving ? 'Abriendo visita…' : 'Abrir visita'}
                 </ActionButton>
               ) : null}
               {canClose && !confirmClose ? (
                 <ActionButton
                   onPress={() => setConfirmClose(true)}
-                  disabled={model.saving}
+                  disabled={isBusy}
                   secondary
                 >
                   Cerrar visita
@@ -245,7 +247,7 @@ export default function TableVisitModal({ model, qr }) {
                     </ActionButton>
                     <ActionButton
                       onPress={() => setConfirmClose(false)}
-                      disabled={model.saving}
+                      disabled={isBusy}
                       secondary
                     >
                       Cancelar
@@ -284,10 +286,19 @@ export default function TableVisitModal({ model, qr }) {
                   </Button>
                 </View>
               ) : null}
-              <Text className="mt-3 text-center text-[10px] text-[#8b8178]">
-                El código QR y la participación de clientes todavía no se
-                gestionan aquí.
-              </Text>
+              {hasOpenVisit &&
+              canManageParticipants &&
+              !model.tableError &&
+              !model.tableLoading &&
+              !visitChanged ? (
+                <VisitParticipants
+                  key={table.openVisitId}
+                  visitId={table.openVisitId}
+                  externalBusy={model.saving || qr.issuing}
+                  onBusy={setParticipantsBusy}
+                  refreshKey={qr.qr?.qrVersion || qr.uncertain}
+                />
+              ) : null}
             </ScrollView>
           </View>
         </View>

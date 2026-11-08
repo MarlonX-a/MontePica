@@ -75,6 +75,7 @@ export default function TableVisitQr({ model, table, visitId }) {
           </Text>
           <View className="mt-3 gap-2">
             <Button
+              disabled={model.issuing || model.saving}
               onPress={async () => {
                 const issued = await model.issue();
                 if (issued) setConfirming(false);

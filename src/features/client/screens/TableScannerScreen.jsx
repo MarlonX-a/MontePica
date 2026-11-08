@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -12,6 +13,8 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import IconButton from '@/features/client/components/IconButton';
 import useTableQrScanner from '@/features/client/hooks/useTableQrScanner';
+import useVisitParticipation from '@/features/client/hooks/useVisitParticipation';
+import VisitParticipationPanel from '@/features/client/components/VisitParticipationPanel';
 import { logoutUser } from '@/shared/session/sessionStore';
 
 function ScannerHeader({ showTorch, torchEnabled, onToggleTorch }) {
@@ -78,7 +81,13 @@ function PermissionMessage({ permission, onRequest }) {
   );
 }
 
-function ResultPanel({ scanner, cameraError, onContinue, onRetryCamera }) {
+function ResultPanel({
+  scanner,
+  participation,
+  cameraError,
+  onContinue,
+  onRetryCamera,
+}) {
   if (cameraError) {
     return (
       <View className="rounded-[24px] bg-[#fff8ef] p-5">
@@ -101,24 +110,12 @@ function ResultPanel({ scanner, cameraError, onContinue, onRetryCamera }) {
   }
   if (scanner.status === 'resolved' && scanner.table) {
     return (
-      <View className="rounded-[24px] bg-[#fff8ef] p-5">
-        <Text className="text-[10px] font-semibold tracking-wide text-[#477052]">
-          QR RECONOCIDO
-        </Text>
-        <Text className="mt-1 text-xl font-bold text-[#332d28]">
-          {scanner.table.tableCode}
-        </Text>
-        <Text className="mt-2 text-xs leading-5 text-[#8b8178]">
-          Mesa validada. Aún debes solicitar el ingreso para participar del
-          servicio.
-        </Text>
-        <ActionButton label="Continuar al menú" onPress={onContinue} />
-        <ActionButton
-          label="Escanear otro QR"
-          secondary
-          onPress={scanner.scanAnother}
-        />
-      </View>
+      <VisitParticipationPanel
+        key={scanner.table.visitId}
+        scanner={scanner}
+        participation={participation}
+        onContinue={onContinue}
+      />
     );
   }
   if (scanner.status === 'error') {
@@ -188,6 +185,10 @@ export default function TableScannerScreen() {
   const [cameraError, setCameraError] = useState('');
   const [cameraKey, setCameraKey] = useState(0);
   const scanner = useTableQrScanner();
+  const participation = useVisitParticipation(
+    focused ? scanner.table?.visitId : null,
+    scanner.clearAfterContinue,
+  );
 
   useFocusEffect(
     useCallback(() => {
@@ -289,9 +290,18 @@ export default function TableScannerScreen() {
             </View>
           ) : null}
         </View>
-        <View className="px-5 pb-4 pt-3">
+        <ScrollView
+          style={{ maxHeight: '60%' }}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{
+            paddingHorizontal: 20,
+            paddingBottom: 16,
+            paddingTop: 12,
+          }}
+        >
           <ResultPanel
             scanner={scanner}
+            participation={participation}
             cameraError={cameraError}
             onContinue={continueToMenu}
             onRetryCamera={() => {
@@ -299,7 +309,7 @@ export default function TableScannerScreen() {
               setCameraKey((key) => key + 1);
             }}
           />
-        </View>
+        </ScrollView>
       </View>
     </SafeAreaView>
   );

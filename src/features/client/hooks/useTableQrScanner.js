@@ -106,6 +106,14 @@ export default function useTableQrScanner() {
     request.current = null;
   }, []);
 
+  const withResolvedQr = useCallback(
+    (callback, alias) => {
+      if (!table?.visitId || !token.current) return false;
+      return callback(table.visitId, token.current, alias);
+    },
+    [table],
+  );
+
   return {
     status,
     table,
@@ -117,5 +125,6 @@ export default function useTableQrScanner() {
     cancel,
     scanAnother,
     clearAfterContinue,
+    withResolvedQr,
   };
 }

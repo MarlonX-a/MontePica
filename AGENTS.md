@@ -164,7 +164,7 @@ La acción **Visita** consulta nuevamente la mesa y abre un modal dentro de `/ad
 
 `useAdminVisitQr.js` comprueba la mesa y la visita antes de emitir; `TableVisitQr.jsx` genera el código localmente a partir del `qrToken` devuelto. La API entrega el token una sola vez. El estado del token vive únicamente en memoria y se limpia al cambiar mesa o visita, cerrar el modal, cerrar la visita o desmontar la pantalla. La emisión requiere confirmación porque invalida el QR anterior y cancela las solicitudes de participación pendientes. Ante un resultado incierto no se reintenta automáticamente, se oculta el QR anterior y se solicita actualizar la mesa antes de emitir otro. No se asegura que el QR siga vigente si otro administrador lo reemplaza.
 
-El panel mantiene sus semillas de mesas independientes. El escáner del cliente resuelve QR reales mediante `/table-access/resolve`; la mesa real se pasa al menú, pero aún no se crea participación ni se gestionan participantes. No se deduce que exista un QR a partir de `openVisitId`.
+El panel mantiene sus semillas de mesas independientes. El escáner del cliente resuelve QR reales mediante `/table-access/resolve`; la mesa real se pasa al menú, pero permite solicitar participación explícita y consultar su estado; la gestión administrativa sigue pendiente. No se deduce que exista un QR a partir de `openVisitId`.
 
 ## Actividades y seguimiento
 
@@ -185,7 +185,9 @@ Actividades pendientes:
 - [ ] Verificar apertura y cierre de visitas en backend con cuentas de prueba: mesa activa/inactiva, visita existente, jornada cerrada, cierre con consumos pendientes, permisos, errores y reintento idempotente. El código de interfaz y API ya está implementado; falta la prueba real y el análisis de calidad de esta revisión.
 - [ ] Probar la emisión y renovación de QR con backend y cuentas de prueba autorizadas, incluidos permisos, errores, invalidación del token anterior y cancelación de solicitudes pendientes. La implementación administrativa está en el código; falta la prueba real y el análisis de calidad de esta revisión.
 - [ ] Probar la resolución de QR con backend y cuentas/dispositivos de prueba autorizados: QR válido, inválido, renovado, visita cerrada, mesa inactiva, permisos, errores y pérdida de conexión. Verificar cámara en web, iOS y Android y documentar qué plataformas se probaron; la implementación está en el código, falta esta verificación real y el análisis de calidad de la revisión.
-- [ ] Conectar la solicitud de participación del cliente después de resolver un QR, conforme al contrato, permisos y estados vigentes del backend. Resolver QR por sí solo no registra participación.
+- [ ] Verificar solicitudes de participación del cliente con backend y dispositivos de prueba. La implementación está conectada; faltan pruebas reales y SonarCloud de esta revisión. Resolver QR por sí solo no registra participación.
+- [ ] Verificar aprobación/rechazo administrativos con backend y dispositivos; la implementación está conectada.
+- [ ] Implementar cancelación voluntaria y finalización cuando se solicite.
 - [ ] Evaluar y conectar los datos operativos disponibles del panel administrativo; conservar explícitamente como simuladas las métricas que no tenga el backend.
 - [ ] Conectar carrito, pedidos del cliente y pedidos del mesero cuando existan contratos de backend adecuados y el usuario solicite esa integración. Mantener los flujos locales identificados hasta entonces.
 - [ ] Revisar búsqueda, filtros y paginación de usuarios administrativos frente al contrato del backend y mostrar el detalle de permisos por rol si se solicita.
@@ -193,3 +195,26 @@ Actividades pendientes:
 - [ ] Configurar lint y pruebas automatizadas si el equipo solicita incorporarlos; documentar comandos y ejecución en CI. Hasta entonces no afirmar que están configurados o aprobados.
 
 Al finalizar cada actividad, explica en el chat qué archivos y responsabilidades cambiaron, por qué, qué se verificó y qué queda pendiente. No hagas commits, pushes ni despliegues salvo solicitud explícita.
+
+
+## Participación del cliente desde el escáner
+
+Después de resolver el QR, el escáner consulta las participaciones propias por páginas de hasta 100 y busca la visita reconocida. Si existe una, muestra su estado real y permite actualizarla con `GET /me/participants/:id`. Si no existe, permite solicitar ingreso con un alias de 1 a 80 caracteres y `POST /visits/:id/participants`, enviando `{qrToken, alias}` e `Idempotency-Key`.
+
+`participationApi.js` contiene las llamadas Axios; `useVisitParticipation.js` coordina consulta, envío, bloqueo y respuestas obsoletas; `VisitParticipationPanel.jsx` presenta formulario y estados dentro del escáner. El hook del escáner conserva el QR solo en memoria y lo limpia al confirmar una participación, reiniciar, continuar o abandonar. Ante resultado incierto se conserva la clave y el alias para un reintento explícito; abandonar no revierte un envío recibido por el servidor. No hay consultas periódicas.
+
+Ver menú permite explorar el catálogo; los pedidos permanecen locales. La consulta, aprobación y rechazo administrativos están conectados; la cancelación voluntaria y finalización siguen pendientes. La implementación del cliente requiere pruebas reales con backend y dispositivos y un análisis SonarCloud correspondiente a esta revisión.
+
+Comprobaciones de esta etapa: Expo Export completó bundles web, iOS y Android; `git diff --check` pasó. Las comprobaciones aisladas con API simulada verificaron paginación, alias vacío, bloqueo de envíos simultáneos, reintento con cuerpo/clave idénticos, actualización de estado y respuesta posterior al desmontaje. No se probaron cámaras físicas ni escrituras contra el backend. SonarCloud consultado: último análisis del 30 de octubre de 2026, correspondiente a otra revisión; no confirma esta entrega. Lint, suite de pruebas y tipos siguen sin configuración.
+
+
+## Aprobación y rechazo de participantes
+
+El modal de visita de `/admin/tables` consulta y decide solicitudes con `participants.manage`, además de `tables.read` para entrar a la pantalla. No requiere `visits.read`, `visits.manage` ni `tables.manage` para esas acciones. Usa `participantsAdminApi.js`, `useAdminParticipants.js` y `VisitParticipants.jsx`: API, coordinación y presentación respectivamente. Muestra páginas de 20, filtros por estado y actualización manual. Aprobar envía `{}`; rechazar exige un motivo de 1 a 500 caracteres sin espacios exteriores. Ambos envíos llevan `Idempotency-Key`.
+
+Los resultados inciertos conservan clave y cuerpo para reintento explícito. La reconciliación recorre páginas sin filtro antes de mostrar el estado encontrado; no atribuye el resultado a una escritura no confirmada. Durante el envío se bloquean cierre del modal y escrituras de visita/QR. Una recarga fallida después de confirmar la decisión solo requiere reintentar la consulta. Emitir QR refresca participantes; cambiar/cerrar visita desmonta la sección y cancela consultas. El cliente actualiza su estado manualmente desde el escáner.
+
+- [ ] Verificar aprobación/rechazo con backend y cuentas de prueba, incluidos errores, concurrencia, QR renovado y plataformas físicas; confirmar SonarCloud de esta revisión.
+- [ ] Conectar finalización de participaciones, cancelación voluntaria y pedidos reales cuando se solicite.
+
+Verificación administrativa de esta entrega: bundles web, iOS y Android exportados correctamente y `git diff --check` sin errores. Comprobaciones aisladas con API simulada: consulta filtrada, motivo vacío, bloqueo de envíos repetidos, reintento con la misma clave, recarga tras confirmación y respuesta posterior al desmontaje. No se realizaron escrituras reales ni pruebas con dispositivos. SonarCloud devuelve OK para el análisis del 30 de octubre de 2026, de otra revisión; la puerta actual queda pendiente. Lint, suite de pruebas y tipos no están configurados.

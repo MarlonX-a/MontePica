@@ -54,7 +54,11 @@ export default function TablesScreen() {
         </Text>
       ) : null}
       <TablesList model={{ ...model, openVisitDetails: visits.selectTable }} />
-      <TableVisitModal model={visits} qr={visitQr} />
+      <TableVisitModal
+        model={visits}
+        qr={visitQr}
+        canManageParticipants={permissions.includes('participants.manage')}
+      />
       {model.editorOpen && (
         <Editor
           key={model.editing?.table?.id || (model.editing ? 'loading' : 'new')}

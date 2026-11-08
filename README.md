@@ -99,7 +99,7 @@ El catálogo del cliente y `/admin/products` usan los mismos productos del backe
 
 `/admin/tables` permite abrir y cerrar la visita actual de una mesa, y emitir un QR para la visita abierta. Abrir y emitir QR requieren `visits.manage`, mesa activa y jornada abierta. Consultar fechas requiere `visits.read`; gestionar visitas no exige `tables.manage`. Cerrar requiere confirmación, finaliza participaciones y falla si hay consumos pendientes; la solicitud lleva una clave idempotente reutilizable ante reintentos. Para emitir un QR se confirma que se invalidará el anterior y se cancelarán las solicitudes de participación pendientes. El token QR se conserva solo en memoria mientras el modal permanece abierto y se codifica localmente; la API entrega ese token una sola vez.
 
-`/scan-table` lee únicamente códigos QR y envía el contenido leído como `qrToken` a `POST /table-access/resolve` con la sesión actual. La respuesta muestra el `tableCode` real y permite abrir `/menu` con el servicio en salón. Resolver el QR solo valida la mesa y su visita: no crea una participación ni confirma el ingreso. El token permanece en memoria durante la consulta y no se incluye en la navegación. La participación del cliente y los pedidos/pagos siguen sin conectarse al backend.
+`/scan-table` lee únicamente códigos QR y envía el contenido leído como `qrToken` a `POST /table-access/resolve` con la sesión actual. La respuesta muestra el `tableCode` real y permite abrir `/menu` con el servicio en salón. Resolver el QR solo valida la mesa y su visita: no crea una participación ni confirma el ingreso. El token permanece en memoria durante la consulta y no se incluye en la navegación. El cliente puede solicitar participación explícitamente y consultar su estado; los pedidos y pagos siguen locales.
 
 ## Configuración y comandos
 
@@ -132,4 +132,27 @@ Las reglas de colaboración y mantenimiento del proyecto están en [AGENTS.md](A
 
 La acción **Visita** consulta nuevamente la mesa y abre un modal con su estado. `visitsAdminApi.js` llama a la API; `useAdminVisits.js` coordina consulta, apertura, cierre, permisos e idempotencia; `TableVisitModal.jsx` presenta el detalle y la confirmación de cierre. `tables.read` permite consultar la mesa, `visits.read` permite ver estado y fechas de la visita, y `visits.manage` permite abrirla o cerrarla, sin requerir `tables.manage`. La apertura solo se permite en una mesa activa sin visita y el backend exige una jornada operativa abierta. El cierre finaliza participaciones y el backend lo rechaza si hay consumos pendientes. Los cierres envían una clave `Idempotency-Key`; los reintentos del mismo cierre reutilizan esa clave. Tras abrir o cerrar se actualiza el listado sin perder búsqueda ni filtros. La emisión de QR, el historial y la gestión de participantes siguen pendientes.
 
-El panel mantiene sus semillas de mesas independientes. El escáner resuelve QR reales mediante el backend, pero la existencia de una visita no se interpreta como permiso de ingreso: resolver el QR no crea una participación. La participación del cliente sigue pendiente.
+El panel mantiene sus semillas de mesas independientes. El escáner resuelve QR reales mediante el backend, pero la existencia de una visita no se interpreta como permiso de ingreso: resolver el QR no crea una participación. La aprobación y el rechazo están conectados en el modal administrativo; la cancelación voluntaria sigue pendiente.
+
+
+## Participación del cliente desde el escáner
+
+Después de resolver el QR, el escáner consulta las participaciones propias por páginas de hasta 100 y busca la visita reconocida. Si existe una, muestra su estado real y permite actualizarla con `GET /me/participants/:id`. Si no existe, permite solicitar ingreso con un alias de 1 a 80 caracteres y `POST /visits/:id/participants`, enviando `{qrToken, alias}` e `Idempotency-Key`.
+
+`participationApi.js` contiene las llamadas Axios; `useVisitParticipation.js` coordina consulta, envío, bloqueo y respuestas obsoletas; `VisitParticipationPanel.jsx` presenta formulario y estados dentro del escáner. El hook del escáner conserva el QR solo en memoria y lo limpia al confirmar una participación, reiniciar, continuar o abandonar. Ante resultado incierto se conserva la clave y el alias para un reintento explícito; abandonar no revierte un envío recibido por el servidor. No hay consultas periódicas.
+
+Ver menú permite explorar el catálogo; los pedidos permanecen locales. La consulta, aprobación y rechazo administrativos están conectados; la cancelación voluntaria y finalización siguen pendientes. La implementación del cliente requiere pruebas reales con backend y dispositivos y un análisis SonarCloud correspondiente a esta revisión.
+
+Comprobaciones de esta etapa: Expo Export completó bundles web, iOS y Android; `git diff --check` pasó. Las comprobaciones aisladas con API simulada verificaron paginación, alias vacío, bloqueo de envíos simultáneos, reintento con cuerpo/clave idénticos, actualización de estado y respuesta posterior al desmontaje. No se probaron cámaras físicas ni escrituras contra el backend. SonarCloud consultado: último análisis del 30 de octubre de 2026, correspondiente a otra revisión; no confirma esta entrega. Lint, suite de pruebas y tipos siguen sin configuración.
+
+
+## Aprobación y rechazo de participantes
+
+El modal de visita de `/admin/tables` consulta y decide solicitudes con `participants.manage`, además de `tables.read` para entrar a la pantalla. No requiere `visits.read`, `visits.manage` ni `tables.manage` para esas acciones. Usa `participantsAdminApi.js`, `useAdminParticipants.js` y `VisitParticipants.jsx`: API, coordinación y presentación respectivamente. Muestra páginas de 20, filtros por estado y actualización manual. Aprobar envía `{}`; rechazar exige un motivo de 1 a 500 caracteres sin espacios exteriores. Ambos envíos llevan `Idempotency-Key`.
+
+Los resultados inciertos conservan clave y cuerpo para reintento explícito. La reconciliación recorre páginas sin filtro antes de mostrar el estado encontrado; no atribuye el resultado a una escritura no confirmada. Durante el envío se bloquean cierre del modal y escrituras de visita/QR. Una recarga fallida después de confirmar la decisión solo requiere reintentar la consulta. Emitir QR refresca participantes; cambiar/cerrar visita desmonta la sección y cancela consultas. El cliente actualiza su estado manualmente desde el escáner.
+
+- [ ] Verificar aprobación/rechazo con backend y cuentas de prueba, incluidos errores, concurrencia, QR renovado y plataformas físicas; confirmar SonarCloud de esta revisión.
+- [ ] Conectar finalización de participaciones, cancelación voluntaria y pedidos reales cuando se solicite.
+
+Verificación administrativa de esta entrega: bundles web, iOS y Android exportados correctamente y `git diff --check` sin errores. Comprobaciones aisladas con API simulada: consulta filtrada, motivo vacío, bloqueo de envíos repetidos, reintento con la misma clave, recarga tras confirmación y respuesta posterior al desmontaje. No se realizaron escrituras reales ni pruebas con dispositivos. SonarCloud devuelve OK para el análisis del 30 de octubre de 2026, de otra revisión; la puerta actual queda pendiente. Lint, suite de pruebas y tipos no están configurados.
