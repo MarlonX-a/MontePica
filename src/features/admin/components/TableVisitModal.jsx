@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/features/admin/components/AdminUI';
+import TableVisitQr from '@/features/admin/components/TableVisitQr';
 
 function formatDate(value) {
   if (!value) return '—';
@@ -73,9 +74,10 @@ function VisitDetails({ visit, loading, error, onRetry }) {
   );
 }
 
-export default function TableVisitModal({ model }) {
+export default function TableVisitModal({ model, qr }) {
   const [confirmClose, setConfirmClose] = useState(false);
   const table = model.selectedTable;
+  const isBusy = model.saving || qr.issuing;
   const hasOpenVisit = Boolean(table?.openVisitId);
   const canOpen =
     model.canManageVisits &&
@@ -94,13 +96,19 @@ export default function TableVisitModal({ model }) {
     !visitChanged &&
     !model.tableError &&
     !model.tableLoading;
+  function requestClose() {
+    if (isBusy) return;
+    qr.clear();
+    setConfirmClose(false);
+    model.close();
+  }
 
   return (
     <Modal
       visible={model.visible}
       transparent
       animationType="fade"
-      onRequestClose={model.close}
+      onRequestClose={requestClose}
     >
       <SafeAreaView className="flex-1 bg-black/40">
         <View className="flex-1 justify-center px-5 py-4">
@@ -118,14 +126,11 @@ export default function TableVisitModal({ model }) {
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="Cerrar detalle de visita"
-                accessibilityState={{ disabled: model.saving }}
-                disabled={model.saving}
-                onPress={() => {
-                  setConfirmClose(false);
-                  model.close();
-                }}
+                accessibilityState={{ disabled: isBusy }}
+                disabled={isBusy}
+                onPress={requestClose}
                 className="h-11 w-11 items-center justify-center rounded-full bg-white"
-                style={{ opacity: model.saving ? 0.5 : 1 }}
+                style={{ opacity: isBusy ? 0.5 : 1 }}
               >
                 <Text className="text-xl text-[#b7472a]">×</Text>
               </Pressable>
@@ -189,6 +194,17 @@ export default function TableVisitModal({ model }) {
                       para consultar sus fechas y detalles.
                     </Text>
                   )}
+                  {hasOpenVisit ? (
+                    <TableVisitQr
+                      model={{
+                        ...qr,
+                        canManageVisits: model.canManageVisits,
+                        saving: model.saving,
+                      }}
+                      table={table}
+                      visitId={table.openVisitId}
+                    />
+                  ) : null}
                 </>
               ) : null}
 
@@ -224,10 +240,7 @@ export default function TableVisitModal({ model }) {
                     cuenta.
                   </Text>
                   <View className="mt-3 gap-2">
-                    <ActionButton
-                      onPress={model.closeVisit}
-                      disabled={model.saving}
-                    >
+                    <ActionButton onPress={model.closeVisit} disabled={isBusy}>
                       {model.saving ? 'Cerrando visita…' : 'Confirmar cierre'}
                     </ActionButton>
                     <ActionButton

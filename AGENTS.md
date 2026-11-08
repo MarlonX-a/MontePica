@@ -59,8 +59,8 @@ src/
 │   ├── waiter/                  # bandeja local del mesero
 │   └── admin/                   # catálogo/inventario/usuarios/mesas/visitas conectados y otras pantallas locales
 │       ├── api/                 # APIs administrativas de catálogo, inventario, usuarios, mesas y visitas
-│       ├── components/          # UI administrativa, listas y modal de visitas
-│       ├── hooks/               # Coordinación de solicitudes de mesas y visitas
+│       ├── components/          # UI administrativa, listas, modal de visitas y QR
+│       ├── hooks/               # Coordinación de solicitudes de mesas, visitas y QR
 │       └── data/                # mappers y datos semilla de pantallas locales
 └── shared/
     ├── api/apiClient.js        # cliente Axios
@@ -160,9 +160,11 @@ npx expo start --web
 
 `adminTableMapper.js` adapta código, estado activo y visita abierta; una visita no equivale a ocupación física. `useAdminTables.js` coordina carga, edición, cancelación, permisos y recargas; `TablesList.jsx` presenta filtros, conteos y páginas de 20 mesas. Se recorren todas las páginas del backend (hasta 100 por solicitud) antes de filtrar. Tras crear o editar, se vuelve a consultar y se muestra la página de la mesa; si falla la recarga, se informa que el cambio ya fue confirmado.
 
-La acción **Visita** consulta nuevamente la mesa y abre un modal dentro de `/admin/tables`. `visitsAdminApi.js` contiene las solicitudes de visitas; `useAdminVisits.js` coordina consultas, operaciones, permisos, cancelación y claves idempotentes; `TableVisitModal.jsx` presenta el estado, las fechas disponibles y la confirmación de cierre. `tables.read` permite consultar la mesa; `visits.read` permite consultar el detalle, y `visits.manage` permite abrir o cerrar sin requerir `tables.manage`. La apertura requiere una mesa activa sin visita y una jornada operativa abierta. El cierre finaliza participaciones y el backend lo rechaza si hay consumos pendientes. Un cierre reintentado conserva su `Idempotency-Key`. Después de una operación se actualiza el listado conservando búsqueda y filtros; si falla la consulta posterior, se ofrece reintentar solo la lectura.
+La acción **Visita** consulta nuevamente la mesa y abre un modal dentro de `/admin/tables`. `visitsAdminApi.js` contiene las solicitudes; `useAdminVisits.js` coordina consulta, apertura y cierre; `TableVisitModal.jsx` presenta los datos y confirmaciones. `tables.read` permite consultar la mesa; `visits.read` permite consultar el detalle, y `visits.manage` permite abrir, cerrar y emitir QR sin requerir `tables.manage`. La apertura requiere una mesa activa sin visita y una jornada operativa abierta. El cierre finaliza participaciones y el backend lo rechaza si hay consumos pendientes. Un cierre reintentado conserva su `Idempotency-Key`. Después de abrir o cerrar se actualiza el listado conservando búsqueda y filtros.
 
-El panel mantiene sus semillas de mesas independientes. El escáner sigue simulando Mesa 08. Emitir QR, consultar historial y gestionar participantes queda pendiente; no se deduce la existencia de un QR de `openVisitId`.
+`useAdminVisitQr.js` comprueba la mesa y la visita antes de emitir; `TableVisitQr.jsx` genera el código localmente a partir del `qrToken` devuelto. La API entrega el token una sola vez. El estado del token vive únicamente en memoria y se limpia al cambiar mesa o visita, cerrar el modal, cerrar la visita o desmontar la pantalla. La emisión requiere confirmación porque invalida el QR anterior y cancela las solicitudes de participación pendientes. Ante un resultado incierto no se reintenta automáticamente, se oculta el QR anterior y se solicita actualizar la mesa antes de emitir otro. No se asegura que el QR siga vigente si otro administrador lo reemplaza.
+
+El panel mantiene sus semillas de mesas independientes. El escáner sigue simulando Mesa 08; todavía no resuelve QR reales ni permite gestionar participantes. No se deduce que exista un QR a partir de `openVisitId`.
 
 ## Actividades y seguimiento
 
@@ -181,7 +183,7 @@ Actividades pendientes:
 
 - [ ] Verificar con el backend y cuentas de prueba autorizadas los flujos ya conectados, incluidos permisos, errores y persistencia. La edición de mesas aún requiere prueba real; documentar resultados y limitaciones por plataforma.
 - [ ] Verificar apertura y cierre de visitas en backend con cuentas de prueba: mesa activa/inactiva, visita existente, jornada cerrada, cierre con consumos pendientes, permisos, errores y reintento idempotente. El código de interfaz y API ya está implementado; falta la prueba real y el análisis de calidad de esta revisión.
-- [ ] Conectar la emisión y presentación de QR reales de visitas; definir con el equipo cómo mostrarlos y usarlos. La emisión de un QR nuevo invalida el anterior y puede cancelar solicitudes pendientes: comprobar el contrato actual antes de implementarlo.
+- [ ] Probar la emisión y renovación de QR con backend y cuentas de prueba autorizadas, incluidos permisos, errores, invalidación del token anterior y cancelación de solicitudes pendientes. La implementación administrativa está en el código; falta la prueba real y el análisis de calidad de esta revisión.
 - [ ] Sustituir el reconocimiento simulado de Mesa 08 por lectura y resolución de QR reales en el escáner del cliente. Revisar autenticación, permisos de cámara, errores y experiencia en web, iOS y Android.
 - [ ] Conectar el flujo de participación en una visita y su gestión administrativa o del mesero, de acuerdo con los permisos y endpoints disponibles y con el alcance solicitado.
 - [ ] Evaluar y conectar los datos operativos disponibles del panel administrativo; conservar explícitamente como simuladas las métricas que no tenga el backend.

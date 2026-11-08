@@ -26,8 +26,8 @@ Aplicación para una cevichería, construida con Expo, React Native, Expo Router
 │   │   ├── waiter/                      # Bandeja de pedidos de prueba del mesero
 │   │   └── admin/                       # Catálogo, inventario, usuarios, mesas/visitas API; panel demo
 │   │       ├── api/                      # APIs administrativas de catálogo, inventario, usuarios, mesas y visitas
-│   │       ├── components/               # Tarjetas, listas y modal de visita administrativa
-│   │       ├── hooks/                    # Coordinación de solicitudes de mesas y visitas
+│   │       ├── components/               # Tarjetas, listas, modal de visita y QR administrativo
+│   │       ├── hooks/                    # Coordinación de solicitudes de mesas, visitas y QR
 │   │       └── data/                     # Mappers API y semillas de pantallas demo
 │   └── shared/
 │       ├── api/apiClient.js             # Cliente Axios
@@ -83,6 +83,7 @@ Para decidir dónde poner código nuevo:
 - Las llamadas protegidas de gestión de productos/categorías pertenecen a `features/admin/api/catalogAdminApi.js`; su adaptación pertenece a `features/admin/data/adminCatalogMapper.js`.
 - La consulta de jornadas, existencias y movimientos pertenece a `features/admin/api/inventoryAdminApi.js`; `features/admin/data/inventoryMapper.js` adapta cada existencia para la pantalla.
 - La apertura, consulta y cierre de visitas administrativas pertenece a `features/admin/api/visitsAdminApi.js`; su coordinación vive en `features/admin/hooks/useAdminVisits.js` y el modal propio en `features/admin/components/TableVisitModal.jsx`.
+- La emisión y el estado temporal del QR viven en `features/admin/hooks/useAdminVisitQr.js`; `features/admin/components/TableVisitQr.jsx` lo genera localmente con `react-native-qrcode-svg`.
 - Los datos semilla que solo usa administración pertenecen a `features/admin/data/`.
 - El usuario actual usado por autenticación y otras pantallas pertenece a `shared/session/`.
 - Un título visual que puede usarse en varias pantallas sin reglas de negocio pertenece a `components/ui/`.
@@ -95,7 +96,7 @@ El login y el registro llaman al backend. La sesión se conserva en memoria y en
 
 El catálogo del cliente y `/admin/products` usan los mismos productos del backend. `/admin/inventory` muestra existencias reales de la jornada actual; consultar la operación y el inventario requiere `operations.read` e `inventory.read`; abrir la jornada requiere `operations.open`; inicializar requiere `inventory.initialize`; registrar movimientos requiere `inventory.move`; y ajustar un conteo requiere `inventory.adjust`. Las operaciones de escritura usan claves idempotentes. El comprobante de movimiento solo se previsualiza en el dispositivo y no se envía. El catálogo no incluye imágenes ni stock: las cantidades vienen del servicio de inventario diario, no de `tracksInventory`. El carrito y el pedido activo del cliente viven en `orderStore.js`; confirmar el pedido genera un seguimiento local. Los pedidos de la pantalla del mesero son datos de muestra independientes y no se conectan con los pedidos del cliente. El panel administrativo conserva su simulación local.
 
-`/admin/tables` permite abrir y cerrar la visita actual de una mesa. Abrir requiere `visits.manage`, mesa activa sin visita y una jornada abierta. Consultar fechas requiere `visits.read`; gestionar visitas no exige `tables.manage`. Cerrar requiere confirmación, finaliza participaciones y falla si hay consumos pendientes; la solicitud lleva una clave idempotente reutilizable ante reintentos. QR e ingreso de clientes a la visita aún no están conectados.
+`/admin/tables` permite abrir y cerrar la visita actual de una mesa, y emitir un QR para la visita abierta. Abrir y emitir QR requieren `visits.manage`, mesa activa y jornada abierta. Consultar fechas requiere `visits.read`; gestionar visitas no exige `tables.manage`. Cerrar requiere confirmación, finaliza participaciones y falla si hay consumos pendientes; la solicitud lleva una clave idempotente reutilizable ante reintentos. Para emitir un QR se confirma que se invalidará el anterior y se cancelarán las solicitudes de participación pendientes. El token QR se conserva solo en memoria mientras el modal permanece abierto y se codifica localmente; la API entrega ese token una sola vez. El escáner aún no resuelve QR reales ni permite que clientes se unan a la visita.
 
 El escáner solicita permiso para usar la cámara, pero la detección de Mesa 08 es simulada. Los pedidos y pagos no se envían al backend.
 

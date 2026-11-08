@@ -5,6 +5,7 @@ import TablesList from '@/features/admin/components/TablesList';
 import TableVisitModal from '@/features/admin/components/TableVisitModal';
 import useAdminTables from '@/features/admin/hooks/useAdminTables';
 import useAdminVisits from '@/features/admin/hooks/useAdminVisits';
+import useAdminVisitQr from '@/features/admin/hooks/useAdminVisitQr';
 import { getCurrentUser } from '@/shared/session/sessionStore';
 
 const tableFields = [{ key: 'code', label: 'Código de mesa', required: true }];
@@ -19,6 +20,11 @@ export default function TablesScreen() {
     canReadVisits: permissions.includes('visits.read'),
     canManageVisits: permissions.includes('visits.manage'),
     reloadTables: model.reload,
+  });
+  const visitQr = useAdminVisitQr({
+    table: visits.selectedTable,
+    visitId: visits.selectedTable?.openVisitId,
+    onRefreshTable: visits.retryTable,
   });
   const table = model.editing?.table;
   const status = table?.active ? 'Activa' : 'Inactiva';
@@ -48,7 +54,7 @@ export default function TablesScreen() {
         </Text>
       ) : null}
       <TablesList model={{ ...model, openVisitDetails: visits.selectTable }} />
-      <TableVisitModal model={visits} />
+      <TableVisitModal model={visits} qr={visitQr} />
       {model.editorOpen && (
         <Editor
           key={model.editing?.table?.id || (model.editing ? 'loading' : 'new')}

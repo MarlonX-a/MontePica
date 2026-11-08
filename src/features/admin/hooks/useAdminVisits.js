@@ -112,6 +112,7 @@ export default function useAdminVisits({
           setVisitError('');
           setVisitLoading(false);
         }
+        return true;
       } catch (error) {
         if (
           mounted.current &&
@@ -120,6 +121,7 @@ export default function useAdminVisits({
         ) {
           setTableError(getTablesApiError(error));
         }
+        return false;
       } finally {
         if (
           mounted.current &&
@@ -308,7 +310,7 @@ export default function useAdminVisits({
     close,
     openVisit,
     closeVisit,
-    retryTable: () => void refreshSelectedTable(),
+    retryTable: () => refreshSelectedTable(),
     retryVisit: () => {
       if (selectedTable?.openVisitId) void loadVisit(selectedTable.openVisitId);
     },

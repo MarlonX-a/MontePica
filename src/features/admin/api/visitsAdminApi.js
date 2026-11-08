@@ -19,6 +19,11 @@ export async function closeAdminVisit(visitId, idempotencyKey) {
   return data;
 }
 
+export async function issueAdminVisitQr(visitId) {
+  const { data } = await apiClient.post(`/admin/visits/${visitId}/qr`);
+  return data;
+}
+
 export function getVisitsApiError(error) {
   const message = error.response?.data?.message;
   if (Array.isArray(message)) return message.join(' ');
