@@ -2,7 +2,10 @@ import { Text } from 'react-native';
 import AdminShell from '@/features/admin/components/AdminShell';
 import { Button, Editor } from '@/features/admin/components/AdminUI';
 import TablesList from '@/features/admin/components/TablesList';
+import TableVisitModal from '@/features/admin/components/TableVisitModal';
 import useAdminTables from '@/features/admin/hooks/useAdminTables';
+import useAdminVisits from '@/features/admin/hooks/useAdminVisits';
+import useAdminVisitQr from '@/features/admin/hooks/useAdminVisitQr';
 import { getCurrentUser } from '@/shared/session/sessionStore';
 
 const tableFields = [{ key: 'code', label: 'Código de mesa', required: true }];
@@ -12,11 +15,27 @@ export default function TablesScreen() {
   const canRead = permissions.includes('tables.read');
   const canManage = permissions.includes('tables.manage');
   const model = useAdminTables(canRead, canManage);
+  const visits = useAdminVisits({
+    canReadTables: canRead,
+    canReadVisits: permissions.includes('visits.read'),
+    canManageVisits: permissions.includes('visits.manage'),
+    reloadTables: model.reload,
+  });
+  const visitQr = useAdminVisitQr({
+    table: visits.selectedTable,
+    visitId: visits.selectedTable?.openVisitId,
+    onRefreshTable: visits.retryTable,
+  });
   const table = model.editing?.table;
   const status = table?.active ? 'Activa' : 'Inactiva';
   const initial = table ? { code: table.code, status } : { code: '' };
   const fields = model.editing && !table ? [] : [...tableFields];
-  if (table) fields.push({ key: 'status', label: 'Estado', options: ['Activa', 'Inactiva'] });
+  if (table)
+    fields.push({
+      key: 'status',
+      label: 'Estado',
+      options: ['Activa', 'Inactiva'],
+    });
 
   return (
     <AdminShell
@@ -34,7 +53,12 @@ export default function TablesScreen() {
           {model.notice}
         </Text>
       ) : null}
-      <TablesList model={model} />
+      <TablesList model={{ ...model, openVisitDetails: visits.selectTable }} />
+      <TableVisitModal
+        model={visits}
+        qr={visitQr}
+        canManageParticipants={permissions.includes('participants.manage')}
+      />
       {model.editorOpen && (
         <Editor
           key={model.editing?.table?.id || (model.editing ? 'loading' : 'new')}

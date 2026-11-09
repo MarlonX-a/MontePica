@@ -29,7 +29,15 @@ function PageButton({ label, disabled, onPress }) {
   );
 }
 
-function TableResults({ tables, search, filter, page, setPage, onEdit }) {
+function TableResults({
+  tables,
+  search,
+  filter,
+  page,
+  setPage,
+  onEdit,
+  onVisit,
+}) {
   const shown = filterAdminTables(tables, search, filter);
   const pages = Math.max(1, Math.ceil(shown.length / TABLES_PAGE_SIZE));
   const currentPage = Math.min(page, pages);
@@ -55,6 +63,7 @@ function TableResults({ tables, search, filter, page, setPage, onEdit }) {
               key={table.id}
               table={table}
               onEdit={onEdit ? () => onEdit(table) : undefined}
+              onVisit={onVisit ? () => onVisit(table) : undefined}
             />
           ))}
           {row.length === 1 && <View className="flex-1" />}
@@ -143,6 +152,7 @@ export default function TablesList({ model }) {
         page={model.page}
         setPage={model.setPage}
         onEdit={model.canManage ? model.openEdit : undefined}
+        onVisit={model.openVisitDetails}
       />
     </>
   );

@@ -21,7 +21,7 @@ Flujo actual:
 
 1. `/` restaura la sesión y dirige al usuario según su rol; si no hay sesión, abre login.
 2. Login y registro usan la API.
-3. Desde Inicio, **Para servirse** abre el escáner. El escáner muestra una mesa reconocida simulada (Mesa 08) y continúa al menú.
+3. Desde Inicio, **Para servirse** abre el escáner. La cámara lee un QR y la app consulta `POST /table-access/resolve`; si el backend lo acepta, muestra el código de mesa real y permite continuar al menú. Resolver el QR no crea una participación ni aprueba el ingreso.
 4. **Pedir a domicilio** abre el menú directamente.
 5. El menú y el detalle consultan el catálogo del backend. La búsqueda y los filtros se aplican en la app.
 6. En el detalle, picante, nota y cantidad son controles locales. **Agregar** añade el producto al carrito en memoria; confirmar crea un pedido de demostración y muestra su seguimiento local.
@@ -55,11 +55,12 @@ src/
 │   └── ui/Title.jsx
 ├── features/
 │   ├── auth/                    # formularios, pantallas, API y validadores
-│   ├── client/                  # pantallas, API de catálogo, mapper, componentes y orderStore
+│   ├── client/                  # pantallas, APIs, hook del escáner, mapper, componentes y orderStore
 │   ├── waiter/                  # bandeja local del mesero
-│   └── admin/                   # catálogo/inventario/usuarios/mesas conectados y otras pantallas locales
-│       ├── api/                 # APIs administrativas de catálogo, inventario, usuarios y mesas
-│       ├── hooks/               # Coordinación y ciclo de solicitudes de mesas
+│   └── admin/                   # catálogo/inventario/usuarios/mesas/visitas conectados y otras pantallas locales
+│       ├── api/                 # APIs administrativas de catálogo, inventario, usuarios, mesas y visitas
+│       ├── components/          # UI administrativa, listas, modal de visitas y QR
+│       ├── hooks/               # Coordinación de solicitudes de mesas, visitas y QR
 │       └── data/                # mappers y datos semilla de pantallas locales
 └── shared/
     ├── api/apiClient.js        # cliente Axios
@@ -67,7 +68,7 @@ src/
     └── validators/              # validaciones puras reutilizadas por features
 ```
 
-El catálogo del cliente vive en el backend. `features/client/api/catalogApi.js` consulta productos y categorías; `features/client/data/menuProductMapper.js` adapta productos al formato visual. La administración usa `features/admin/api/catalogAdminApi.js` y `adminCatalogMapper.js` para gestionar productos/categorías y `features/admin/api/inventoryAdminApi.js` y `inventoryMapper.js` para la jornada y las existencias. `features/admin/data/adminData.js` conserva semillas locales usadas por el panel, que aún no está conectado.
+El catálogo del cliente vive en el backend. `features/client/api/catalogApi.js` consulta productos y categorías; `features/client/api/tableAccessApi.js` resuelve el token leído por el escáner; `features/client/hooks/useTableQrScanner.js` coordina estados, eventos repetidos, reintentos y cancelación. `features/client/data/menuProductMapper.js` adapta productos al formato visual. La administración usa `features/admin/api/catalogAdminApi.js` y `adminCatalogMapper.js` para gestionar productos/categorías y `features/admin/api/inventoryAdminApi.js` y `inventoryMapper.js` para la jornada y las existencias. `features/admin/data/adminData.js` conserva semillas locales usadas por el panel, que aún no está conectado.
 
 Otros archivos importantes:
 
@@ -114,7 +115,7 @@ import { isValidEmail } from '@/shared/validators/emailValidator';
 - Mantén `/admin/inventory` y `/admin/movement` conectados con `inventoryAdminApi.js`; registra movimientos con clave idempotente y muestra cantidades del backend, no datos semilla.
 - El catálogo no informa cantidades disponibles. No muestres stock real a partir de `tracksInventory`, que solo indica si se controla.
 - No agregues una ruta para una pestaña inferior hasta que esa pantalla sea solicitada.
-- El escáner usa `expo-camera`. Respeta sus permisos y no pongas elementos hijos dentro de `CameraView`; superpón el marco como una vista hermana. El reconocimiento de mesa sigue simulado.
+- El escáner usa `expo-camera` y solicita solo simbologías QR. Respeta sus permisos y no pongas elementos hijos dentro de `CameraView`; superpón el marco como una vista hermana. `tableAccessApi.js` envía el contenido leído sin transformarlo como `qrToken`; el token se mantiene en memoria y se limpia al reiniciar, continuar, perder foco o desmontar. La resolución valida QR/mesa, pero no solicita participación ni autoriza pedidos. No uses una mesa simulada cuando la cámara o el backend fallen.
 - Conserva las validaciones de login y registro; sus resultados dependen de la respuesta de la API. No presentes simulaciones locales como autenticación real.
 
 ## Dependencias y APIs de Expo
@@ -155,11 +156,15 @@ npx expo start --web
 
 `/admin/users` consulta usuarios y roles y permite crear y actualizar cuentas mediante `usersAdminApi.js`. Requiere `users.read` y `roles.read` para la consulta, `users.create` para crear y `users.update` para editar. La contraseña inicial solo se envía al crear; la API controla duplicados y restricciones de rol/estado.
 
-`/admin/tables` consulta, crea y edita mesas reales con `tablesAdminApi.js`. Requiere `tables.read` para listar y `tables.manage` para crear. Solo se envía `{code}` (entre 1 y 40 caracteres sin espacios exteriores); la API normaliza el código y comprueba duplicados. Permite editar el código y activar o desactivar una mesa mediante PATCH, sujeto a `tables.manage`. No se puede desactivar una mesa con visita abierta; el backend comprueba esta restricción. Capacidad, zona y QR permanecen fuera de esta etapa.
+`/admin/tables` consulta, crea y edita mesas reales con `tablesAdminApi.js`. Requiere `tables.read` para listar y consultar y `tables.manage` para crear o editar. Solo se envía `{code}` (entre 1 y 40 caracteres sin espacios exteriores); la API normaliza el código y comprueba duplicados. Permite editar el código y activar o desactivar una mesa mediante PATCH. No se puede desactivar una mesa con visita abierta; el backend vuelve a comprobar esta restricción. Capacidad, zona y QR no forman parte de la gestión actual.
 
-`adminTableMapper.js` adapta código, estado activo y visita abierta; una visita no equivale a ocupación física. `useAdminTables.js` coordina carga, cancelación, permisos y creación; `TablesList.jsx` presenta filtros, conteos y páginas de 20 mesas. Se recorren todas las páginas del backend (hasta 100 por solicitud) antes de filtrar. Tras crear, se vuelve a consultar y se muestra la página de la nueva mesa; si falla la recarga, se informa que la creación ya fue confirmada.
+`adminTableMapper.js` adapta código, estado activo y visita abierta; una visita no equivale a ocupación física. `useAdminTables.js` coordina carga, edición, cancelación, permisos y recargas; `TablesList.jsx` presenta filtros, conteos y páginas de 20 mesas. Se recorren todas las páginas del backend (hasta 100 por solicitud) antes de filtrar. Tras crear o editar, se vuelve a consultar y se muestra la página de la mesa; si falla la recarga, se informa que el cambio ya fue confirmado.
 
-El panel mantiene sus semillas de mesas independientes. El escáner sigue simulando Mesa 08. Abrir visitas y emitir QR desde administración queda para otra etapa; no se deduce la existencia de un QR de `openVisitId`.
+La acción **Visita** consulta nuevamente la mesa y abre un modal dentro de `/admin/tables`. `visitsAdminApi.js` contiene las solicitudes; `useAdminVisits.js` coordina consulta, apertura y cierre; `TableVisitModal.jsx` presenta los datos y confirmaciones. `tables.read` permite consultar la mesa; `visits.read` permite consultar el detalle, y `visits.manage` permite abrir, cerrar y emitir QR sin requerir `tables.manage`. La apertura requiere una mesa activa sin visita y una jornada operativa abierta. El cierre finaliza participaciones y el backend lo rechaza si hay consumos pendientes. Un cierre reintentado conserva su `Idempotency-Key`. Después de abrir o cerrar se actualiza el listado conservando búsqueda y filtros.
+
+`useAdminVisitQr.js` comprueba la mesa y la visita antes de emitir; `TableVisitQr.jsx` genera el código localmente a partir del `qrToken` devuelto. La API entrega el token una sola vez. El estado del token vive únicamente en memoria y se limpia al cambiar mesa o visita, cerrar el modal, cerrar la visita o desmontar la pantalla. La emisión requiere confirmación porque invalida el QR anterior y cancela las solicitudes de participación pendientes. Ante un resultado incierto no se reintenta automáticamente, se oculta el QR anterior y se solicita actualizar la mesa antes de emitir otro. No se asegura que el QR siga vigente si otro administrador lo reemplaza.
+
+El panel mantiene sus semillas de mesas independientes. El escáner del cliente resuelve QR reales mediante `/table-access/resolve`; la mesa real se pasa al menú, pero permite solicitar participación explícita y consultar su estado; la gestión administrativa sigue pendiente. No se deduce que exista un QR a partir de `openVisitId`.
 
 ## Actividades y seguimiento
 
@@ -177,10 +182,12 @@ Actividades implementadas en el código actual (las pruebas reales y el análisi
 Actividades pendientes:
 
 - [ ] Verificar con el backend y cuentas de prueba autorizadas los flujos ya conectados, incluidos permisos, errores y persistencia. La edición de mesas aún requiere prueba real; documentar resultados y limitaciones por plataforma.
-- [ ] Conectar la apertura y cierre de visitas de mesa en administración, según los endpoints, permisos y reglas vigentes del backend.
-- [ ] Conectar la emisión y presentación de QR reales de visitas; definir con el equipo cómo mostrarlos y usarlos. La emisión de un QR nuevo invalida el anterior y puede cancelar solicitudes pendientes: comprobar el contrato actual antes de implementarlo.
-- [ ] Sustituir el reconocimiento simulado de Mesa 08 por lectura y resolución de QR reales en el escáner del cliente. Revisar autenticación, permisos de cámara, errores y experiencia en web, iOS y Android.
-- [ ] Conectar el flujo de participación en una visita y su gestión administrativa o del mesero, de acuerdo con los permisos y endpoints disponibles y con el alcance solicitado.
+- [ ] Verificar apertura y cierre de visitas en backend con cuentas de prueba: mesa activa/inactiva, visita existente, jornada cerrada, cierre con consumos pendientes, permisos, errores y reintento idempotente. El código de interfaz y API ya está implementado; falta la prueba real y el análisis de calidad de esta revisión.
+- [ ] Probar la emisión y renovación de QR con backend y cuentas de prueba autorizadas, incluidos permisos, errores, invalidación del token anterior y cancelación de solicitudes pendientes. La implementación administrativa está en el código; falta la prueba real y el análisis de calidad de esta revisión.
+- [ ] Probar la resolución de QR con backend y cuentas/dispositivos de prueba autorizados: QR válido, inválido, renovado, visita cerrada, mesa inactiva, permisos, errores y pérdida de conexión. Verificar cámara en web, iOS y Android y documentar qué plataformas se probaron; la implementación está en el código, falta esta verificación real y el análisis de calidad de la revisión.
+- [ ] Verificar solicitudes de participación del cliente con backend y dispositivos de prueba. La implementación está conectada; faltan pruebas reales y SonarCloud de esta revisión. Resolver QR por sí solo no registra participación.
+- [ ] Verificar aprobación/rechazo administrativos con backend y dispositivos; la implementación está conectada.
+- [ ] Implementar cancelación voluntaria y finalización cuando se solicite.
 - [ ] Evaluar y conectar los datos operativos disponibles del panel administrativo; conservar explícitamente como simuladas las métricas que no tenga el backend.
 - [ ] Conectar carrito, pedidos del cliente y pedidos del mesero cuando existan contratos de backend adecuados y el usuario solicite esa integración. Mantener los flujos locales identificados hasta entonces.
 - [ ] Revisar búsqueda, filtros y paginación de usuarios administrativos frente al contrato del backend y mostrar el detalle de permisos por rol si se solicita.
@@ -188,3 +195,26 @@ Actividades pendientes:
 - [ ] Configurar lint y pruebas automatizadas si el equipo solicita incorporarlos; documentar comandos y ejecución en CI. Hasta entonces no afirmar que están configurados o aprobados.
 
 Al finalizar cada actividad, explica en el chat qué archivos y responsabilidades cambiaron, por qué, qué se verificó y qué queda pendiente. No hagas commits, pushes ni despliegues salvo solicitud explícita.
+
+
+## Participación del cliente desde el escáner
+
+Después de resolver el QR, el escáner consulta las participaciones propias por páginas de hasta 100 y busca la visita reconocida. Si existe una, muestra su estado real y permite actualizarla con `GET /me/participants/:id`. Si no existe, permite solicitar ingreso con un alias de 1 a 80 caracteres y `POST /visits/:id/participants`, enviando `{qrToken, alias}` e `Idempotency-Key`.
+
+`participationApi.js` contiene las llamadas Axios; `useVisitParticipation.js` coordina consulta, envío, bloqueo y respuestas obsoletas; `VisitParticipationPanel.jsx` presenta formulario y estados dentro del escáner. El hook del escáner conserva el QR solo en memoria y lo limpia al confirmar una participación, reiniciar, continuar o abandonar. Ante resultado incierto se conserva la clave y el alias para un reintento explícito; abandonar no revierte un envío recibido por el servidor. No hay consultas periódicas.
+
+Ver menú permite explorar el catálogo; los pedidos permanecen locales. La consulta, aprobación y rechazo administrativos están conectados; la cancelación voluntaria y finalización siguen pendientes. La implementación del cliente requiere pruebas reales con backend y dispositivos y un análisis SonarCloud correspondiente a esta revisión.
+
+Comprobaciones de esta etapa: Expo Export completó bundles web, iOS y Android; `git diff --check` pasó. Las comprobaciones aisladas con API simulada verificaron paginación, alias vacío, bloqueo de envíos simultáneos, reintento con cuerpo/clave idénticos, actualización de estado y respuesta posterior al desmontaje. No se probaron cámaras físicas ni escrituras contra el backend. SonarCloud consultado: último análisis del 30 de octubre de 2026, correspondiente a otra revisión; no confirma esta entrega. Lint, suite de pruebas y tipos siguen sin configuración.
+
+
+## Aprobación y rechazo de participantes
+
+El modal de visita de `/admin/tables` consulta y decide solicitudes con `participants.manage`, además de `tables.read` para entrar a la pantalla. No requiere `visits.read`, `visits.manage` ni `tables.manage` para esas acciones. Usa `participantsAdminApi.js`, `useAdminParticipants.js` y `VisitParticipants.jsx`: API, coordinación y presentación respectivamente. Muestra páginas de 20, filtros por estado y actualización manual. Aprobar envía `{}`; rechazar exige un motivo de 1 a 500 caracteres sin espacios exteriores. Ambos envíos llevan `Idempotency-Key`.
+
+Los resultados inciertos conservan clave y cuerpo para reintento explícito. La reconciliación recorre páginas sin filtro antes de mostrar el estado encontrado; no atribuye el resultado a una escritura no confirmada. Durante el envío se bloquean cierre del modal y escrituras de visita/QR. Una recarga fallida después de confirmar la decisión solo requiere reintentar la consulta. Emitir QR refresca participantes; cambiar/cerrar visita desmonta la sección y cancela consultas. El cliente actualiza su estado manualmente desde el escáner.
+
+- [ ] Verificar aprobación/rechazo con backend y cuentas de prueba, incluidos errores, concurrencia, QR renovado y plataformas físicas; confirmar SonarCloud de esta revisión.
+- [ ] Conectar finalización de participaciones, cancelación voluntaria y pedidos reales cuando se solicite.
+
+Verificación administrativa de esta entrega: bundles web, iOS y Android exportados correctamente y `git diff --check` sin errores. Comprobaciones aisladas con API simulada: consulta filtrada, motivo vacío, bloqueo de envíos repetidos, reintento con la misma clave, recarga tras confirmación y respuesta posterior al desmontaje. No se realizaron escrituras reales ni pruebas con dispositivos. SonarCloud devuelve OK para el análisis del 30 de octubre de 2026, de otra revisión; la puerta actual queda pendiente. Lint, suite de pruebas y tipos no están configurados.
