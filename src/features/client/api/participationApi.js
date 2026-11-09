@@ -28,3 +28,12 @@ export function getParticipationError(error) {
     ? message.join(' ')
     : message || 'No se pudo consultar la participación.';
 }
+
+export async function leaveMyParticipation(id, key) {
+  const { data } = await apiClient.post(
+    `/me/participants/${id}/leave`,
+    {},
+    { headers: { 'Idempotency-Key': key } },
+  );
+  return data;
+}

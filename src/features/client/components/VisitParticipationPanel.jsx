@@ -28,6 +28,74 @@ function Button({ label, onPress, disabled = false }) {
     </Pressable>
   );
 }
+function LeaveControls({ participation: p }) {
+  const blocked = p.loading || p.saving;
+  const active = ['pending', 'approved'].includes(p.participant?.status);
+  const pending = p.participant?.status === 'pending';
+  return (
+    <>
+      {p.notice ? (
+        <Text accessibilityRole="alert" className="mt-2 text-xs text-[#477052]">
+          {p.notice}
+        </Text>
+      ) : null}
+      {p.leaveUncertain ? (
+        <>
+          <Text className="mt-3 text-xs text-[#b7472a]">
+            La salida no está confirmada. Consulta el estado o reintenta con la
+            misma clave. Si la solicitud ya fue aprobada, la salida finalizará
+            esa participación.
+          </Text>
+          <Button
+            label="Consultar estado"
+            disabled={blocked}
+            onPress={p.refresh}
+          />
+          <Button
+            label="Reintentar salida"
+            disabled={blocked}
+            onPress={p.leave}
+          />
+        </>
+      ) : null}
+      {active &&
+      !blocked &&
+      !p.error &&
+      !p.leaveUncertain &&
+      !p.leaveConfirmation ? (
+        <Button
+          label={pending ? 'Cancelar solicitud' : 'Salir de la mesa'}
+          onPress={p.prepareLeave}
+        />
+      ) : null}
+      {p.leaveConfirmation ? (
+        <View className="mt-3 rounded-xl border border-[#eadfd2] p-3">
+          <Text className="text-sm text-[#332d28]">
+            {p.leaveConfirmation.status === 'pending'
+              ? '¿Cancelar tu solicitud? Si el personal la aprueba mientras se procesa la cancelación, se finalizará tu participación.'
+              : '¿Salir de la mesa? Se finalizará tu participación y su cuenta de consumo.'}
+          </Text>
+          <Text className="mt-2 text-xs text-[#8b8178]">
+            El servidor rechazará la salida si hay consumos pendientes. No
+            podrás solicitar nuevamente ingreso en esta misma visita.
+          </Text>
+          <Button
+            label="Confirmar salida"
+            disabled={blocked}
+            onPress={p.leave}
+          />
+          <Button label="Volver" disabled={blocked} onPress={p.cancelLeave} />
+        </View>
+      ) : null}
+      {['cancelled', 'finished'].includes(p.participant?.status) ? (
+        <Text className="mt-2 text-xs text-[#8b8178]">
+          El backend conserva esta participación. No se puede solicitar
+          nuevamente ingreso en la misma visita.
+        </Text>
+      ) : null}
+    </>
+  );
+}
 export default function VisitParticipationPanel({
   scanner,
   participation: p,
@@ -100,6 +168,7 @@ export default function VisitParticipationPanel({
           />
         </>
       ) : null}
+      <LeaveControls participation={p} />
       <Button
         label={
           p.participant ? 'Actualizar estado' : 'Consultar participaciones'
@@ -110,13 +179,14 @@ export default function VisitParticipationPanel({
       {p.errorStatus === 401 ? (
         <Button
           label="Volver al login"
+          disabled={blocked}
           onPress={async () => {
             await logoutUser();
             router.replace('/login');
           }}
         />
       ) : null}
-      {[400, 404].includes(p.errorStatus) ? (
+      {p.errorKind !== 'leave' && [400, 404].includes(p.errorStatus) ? (
         <Text className="mt-2 text-xs text-[#b7472a]">
           Escanea el QR vigente de la mesa.
         </Text>
