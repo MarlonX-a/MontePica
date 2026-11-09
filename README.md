@@ -132,7 +132,7 @@ Las reglas de colaboración y mantenimiento del proyecto están en [AGENTS.md](A
 
 La acción **Visita** consulta nuevamente la mesa y abre un modal con su estado. `visitsAdminApi.js` llama a la API; `useAdminVisits.js` coordina consulta, apertura, cierre, permisos e idempotencia; `TableVisitModal.jsx` presenta el detalle y la confirmación de cierre. `tables.read` permite consultar la mesa, `visits.read` permite ver estado y fechas de la visita, y `visits.manage` permite abrirla o cerrarla, sin requerir `tables.manage`. La apertura solo se permite en una mesa activa sin visita y el backend exige una jornada operativa abierta. El cierre finaliza participaciones y el backend lo rechaza si hay consumos pendientes. Los cierres envían una clave `Idempotency-Key`; los reintentos del mismo cierre reutilizan esa clave. Tras abrir o cerrar se actualiza el listado sin perder búsqueda ni filtros. La emisión de QR, el historial y la gestión de participantes siguen pendientes.
 
-El panel mantiene sus semillas de mesas independientes. El escáner resuelve QR reales mediante el backend, pero la existencia de una visita no se interpreta como permiso de ingreso: resolver el QR no crea una participación. La aprobación y el rechazo están conectados en el modal administrativo; la cancelación voluntaria sigue pendiente.
+El panel mantiene sus semillas de mesas independientes. El escáner resuelve QR reales mediante el backend, pero la existencia de una visita no se interpreta como permiso de ingreso: resolver el QR no crea una participación. La aprobación y el rechazo están conectados en el modal administrativo; la salida voluntaria del cliente está conectada.
 
 
 ## Participación del cliente desde el escáner
@@ -141,7 +141,7 @@ Después de resolver el QR, el escáner consulta las participaciones propias por
 
 `participationApi.js` contiene las llamadas Axios; `useVisitParticipation.js` coordina consulta, envío, bloqueo y respuestas obsoletas; `VisitParticipationPanel.jsx` presenta formulario y estados dentro del escáner. El hook del escáner conserva el QR solo en memoria y lo limpia al confirmar una participación, reiniciar, continuar o abandonar. Ante resultado incierto se conserva la clave y el alias para un reintento explícito; abandonar no revierte un envío recibido por el servidor. No hay consultas periódicas.
 
-Ver menú permite explorar el catálogo; los pedidos permanecen locales. La consulta, aprobación y rechazo administrativos están conectados; la cancelación voluntaria y finalización siguen pendientes. La implementación del cliente requiere pruebas reales con backend y dispositivos y un análisis SonarCloud correspondiente a esta revisión.
+Ver menú permite explorar el catálogo; los pedidos permanecen locales. La consulta, aprobación y rechazo administrativos y la salida voluntaria del cliente están conectados; finalizar desde administración sigue pendiente. La implementación requiere pruebas reales con backend y dispositivos y un análisis SonarCloud correspondiente a esta revisión.
 
 Comprobaciones de esta etapa: Expo Export completó bundles web, iOS y Android; `git diff --check` pasó. Las comprobaciones aisladas con API simulada verificaron paginación, alias vacío, bloqueo de envíos simultáneos, reintento con cuerpo/clave idénticos, actualización de estado y respuesta posterior al desmontaje. No se probaron cámaras físicas ni escrituras contra el backend. SonarCloud consultado: último análisis del 30 de octubre de 2026, correspondiente a otra revisión; no confirma esta entrega. Lint, suite de pruebas y tipos siguen sin configuración.
 
@@ -153,6 +153,17 @@ El modal de visita de `/admin/tables` consulta y decide solicitudes con `partici
 Los resultados inciertos conservan clave y cuerpo para reintento explícito. La reconciliación recorre páginas sin filtro antes de mostrar el estado encontrado; no atribuye el resultado a una escritura no confirmada. Durante el envío se bloquean cierre del modal y escrituras de visita/QR. Una recarga fallida después de confirmar la decisión solo requiere reintentar la consulta. Emitir QR refresca participantes; cambiar/cerrar visita desmonta la sección y cancela consultas. El cliente actualiza su estado manualmente desde el escáner.
 
 - [ ] Verificar aprobación/rechazo con backend y cuentas de prueba, incluidos errores, concurrencia, QR renovado y plataformas físicas; confirmar SonarCloud de esta revisión.
-- [ ] Conectar finalización de participaciones, cancelación voluntaria y pedidos reales cuando se solicite.
+- [ ] Conectar finalización administrativa y pedidos reales cuando se solicite.
 
 Verificación administrativa de esta entrega: bundles web, iOS y Android exportados correctamente y `git diff --check` sin errores. Comprobaciones aisladas con API simulada: consulta filtrada, motivo vacío, bloqueo de envíos repetidos, reintento con la misma clave, recarga tras confirmación y respuesta posterior al desmontaje. No se realizaron escrituras reales ni pruebas con dispositivos. SonarCloud devuelve OK para el análisis del 30 de octubre de 2026, de otra revisión; la puerta actual queda pendiente. Lint, suite de pruebas y tipos no están configurados.
+
+
+## Salida voluntaria del cliente
+
+El panel del escáner permite cancelar solicitudes pendientes y salir de participaciones aprobadas mediante `POST /me/participants/:id/leave`, con `{}` e `Idempotency-Key`. `participationApi.js` realiza la solicitud, `useVisitParticipation.js` consulta el estado antes de confirmar y coordina el envío; `VisitParticipationPanel.jsx` presenta acciones, confirmaciones y resultado.
+
+Si la solicitud cambia de estado durante la consulta previa, se exige otra confirmación. Una aprobación concurrente posterior puede convertir la cancelación en una salida; la confirmación lo explica. El backend rechaza salidas con consumos pendientes y conserva las participaciones canceladas o finalizadas, sin permitir otro ingreso en la misma visita.
+
+La salida tiene su clave y contexto propios, separados del ingreso. Ante resultado incierto, consultar conserva la clave mientras el estado siga pendiente/aprobado; un estado terminal se muestra sin atribuirlo al envío no confirmado. Los reintentos son explícitos. Abandonar la pantalla no revierte una solicitud recibida por el servidor. No se agrega historial ni acceso global a participaciones.
+
+- [ ] Verificar salida del cliente con backend y dispositivos de prueba y confirmar SonarCloud de esta revisión. Pruebas aisladas: consulta previa, cambio concurrente, cancelación, finalización, bloqueo de envíos, clave reutilizada, errores 400/401/403/404/409 y respuesta tardía.
