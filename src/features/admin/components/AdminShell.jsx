@@ -3,6 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { router, usePathname } from 'expo-router';
 import AdminIcon from '@/features/admin/components/AdminIcon';
+import { logoutUser } from '@/shared/session/sessionStore';
 
 const tabs = [
   { label: 'Panel', icon: 'panel', path: '/admin/dashboard' },
@@ -21,6 +22,11 @@ export default function AdminShell({
   children,
 }) {
   const pathname = usePathname();
+
+  async function handleLogout() {
+    await logoutUser();
+    router.replace('/(auth)/login');
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-[#fff8ef]">
@@ -47,16 +53,28 @@ export default function AdminShell({
                 {subtitle}
               </Text>
             </View>
-            {showAdd && (
+            <View className="flex-row items-center gap-2">
+              {showAdd && (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={addLabel}
+                  onPress={onAdd}
+                  className="h-11 w-11 items-center justify-center rounded-full bg-white active:bg-[#fff0e4]"
+                >
+                  <Text className="text-2xl font-light text-[#b7472a]">＋</Text>
+                </Pressable>
+              )}
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={addLabel}
-                onPress={onAdd}
-                className="h-11 w-11 items-center justify-center rounded-full bg-white active:bg-[#fff0e4]"
+                accessibilityLabel="Cerrar sesión"
+                onPress={handleLogout}
+                className="h-11 items-center justify-center rounded-full bg-white px-3 active:bg-[#fff0e4]"
               >
-                <Text className="text-2xl font-light text-[#b7472a]">＋</Text>
+                <Text className="text-[11px] font-semibold text-[#b7472a]">
+                  Salir
+                </Text>
               </Pressable>
-            )}
+            </View>
           </View>
           {children}
         </ScrollView>

@@ -61,7 +61,22 @@ export default function HomeScreen() {
                 Mesa aún no vinculada
               </Text>
             </View>
-            <CartButton onPress={() => router.push('/orders')} />
+            <View className="flex-row items-center gap-2">
+              <CartButton onPress={() => router.push('/orders')} />
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Cerrar sesión"
+                onPress={async () => {
+                  await logoutUser();
+                  router.replace('/(auth)/login');
+                }}
+                className="h-10 items-center justify-center rounded-full bg-white px-3 active:bg-[#fff0e4]"
+              >
+                <Text className="text-[11px] font-semibold text-[#b7472a]">
+                  Salir
+                </Text>
+              </Pressable>
+            </View>
           </View>
 
           <View className="relative h-[280px] justify-end overflow-hidden rounded-[20px]">
