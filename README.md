@@ -1,6 +1,6 @@
 # MontePica
 
-Aplicación para una cevichería, construida con Expo, React Native, Expo Router y NativeWind. El login, el registro, el catálogo del cliente y la gestión administrativa de productos/categorías, inventario, usuarios, mesas y visitas consultan el backend. El carrito, los pedidos y otras pantallas administrativas todavía conservan simulaciones locales.
+Aplicación para una cevichería, construida con Expo, React Native, Expo Router y NativeWind. El login, el registro, el catálogo del cliente, los pedidos de servicio en salón y la gestión administrativa de productos/categorías, inventario, usuarios, mesas y visitas consultan el backend. El carrito permanece en memoria; los pedidos a domicilio, la bandeja del mesero y otras pantallas administrativas todavía conservan simulaciones locales.
 
 ## Estructura del código
 
@@ -21,9 +21,9 @@ Aplicación para una cevichería, construida con Expo, React Native, Expo Router
 │   ├── features/
 │   │   ├── auth/                        # Formularios, pantallas, API y validadores
 │   │   ├── client/                      # Inicio, escáner, menú, detalle, pedidos y UI cliente
-│   │   │   ├── api/                     # Catálogo y resolución de QR de mesas
-│   │   │   ├── hooks/                   # Coordinación del escaneo y resolución QR
-│   │   │   └── data/                    # Mapper del catálogo y orderStore local
+│   │   │   ├── api/                     # Catálogo, QR, participación y pedidos
+│   │   │   ├── hooks/                   # Escáner, participación y pedidos
+│   │   │   └── data/                    # Mappers de catálogo/pedidos y carrito local
 │   │   ├── waiter/                      # Bandeja de pedidos de prueba del mesero
 │   │   └── admin/                       # Catálogo, inventario, usuarios, mesas/visitas API; panel demo
 │   │       ├── api/                      # APIs administrativas de catálogo, inventario, usuarios, mesas y visitas
@@ -47,7 +47,7 @@ Aplicación para una cevichería, construida con Expo, React Native, Expo Router
 
 - `app/` solo declara navegación. Cada archivo de ruta conecta Expo Router con una pantalla o layout de una feature. Los nombres entre paréntesis agrupan rutas sin agregarse a la URL.
 - `features/auth/` contiene los formularios y las llamadas de registro e inicio de sesión al backend.
-- `features/client/` contiene el recorrido del cliente. `api/catalogApi.js` consulta productos y categorías, y `api/tableAccessApi.js` valida el token QR con el backend. `hooks/useTableQrScanner.js` coordina lectura, bloqueo, reintento y cancelación. `data/menuProductMapper.js` adapta los productos para la interfaz; `data/orderStore.js` conserva carrito y pedido activo en memoria.
+- `features/client/` contiene el recorrido del cliente. `api/catalogApi.js` consulta productos y categorías, `api/tableAccessApi.js` valida el QR, y `api/ordersApi.js` crea y consulta pedidos. `hooks/useTableQrScanner.js` coordina lectura, bloqueo, reintento y cancelación; `hooks/useClientOrders.js` coordina lista y envío idempotente. `data/menuProductMapper.js` adapta productos, `data/orderMapper.js` adapta el carrito y respuestas de pedidos, y `data/orderStore.js` conserva el carrito y el contexto de envío en memoria.
 - `features/waiter/` muestra pedidos de ejemplo y permite cambiar su estado localmente.
 - `features/admin/` gestiona productos/categorías, inventario diario, usuarios, mesas y visitas desde el backend. El panel conserva datos de demostración independientes.
 - `shared/` contiene módulos transversales como Axios y la sesión. Axios agrega el token de acceso al llamar endpoints protegidos. En iOS/Android, SecureStore conserva la sesión entre reinicios; en web solo se mantiene en memoria.
@@ -60,7 +60,7 @@ Aplicación para una cevichería, construida con Expo, React Native, Expo Router
 2. `/` redirige a `/login`. Las rutas `/login` y `/register` muestran sus pantallas de autenticación.
 3. Login o registro validan la cuenta con el backend; la sesión restaura el destino correspondiente al rol.
 4. Desde `/home`, **Pedir a domicilio** abre `/menu`; **Para servirse** abre `/scan-table`. La cámara lee un QR y `POST /table-access/resolve` valida su token. Si el backend lo acepta, la app muestra el código real de mesa y permite continuar al menú.
-5. El menú obtiene productos y categorías del backend. Elegir un producto abre `/product/[id]`, que consulta el producto por su UUID. Agregarlo lleva a `/orders`, donde el carrito y el seguimiento siguen siendo locales.
+5. El menú obtiene productos y categorías del backend. En servicio en salón, el `visitId` real viaja del escáner al menú, al detalle y al carrito, sin enviar el token QR en la navegación. `/orders` envía el carrito a `POST /visits/:id/orders` y consulta pedidos locales en `GET /me/orders`. En domicilio, la confirmación permanece como demostración local hasta conectar su flujo específico.
 6. `/admin/products` consulta el catálogo administrativo y permite crear/editar productos y categorías con permisos `catalog.read` y `catalog.write`. `/admin/inventory` consulta la jornada actual y las existencias; `/admin/movement` inicializa o modifica el inventario según los permisos de la cuenta. El panel conserva su simulación local.
 
 Las rutas conservan sus URLs aunque cambien de grupo. Por ejemplo, `(waiter)/waiter.jsx` sigue siendo `/waiter`.
@@ -95,11 +95,19 @@ Para decidir dónde poner código nuevo:
 
 El login y el registro llaman al backend. La sesión se conserva en memoria y en SecureStore para iOS/Android; en web se pierde al recargar. `apiClient` adjunta automáticamente el token de acceso a los endpoints protegidos.
 
-El catálogo del cliente y `/admin/products` usan los mismos productos del backend. `/admin/inventory` muestra existencias reales de la jornada actual; consultar la operación y el inventario requiere `operations.read` e `inventory.read`; abrir la jornada requiere `operations.open`; inicializar requiere `inventory.initialize`; registrar movimientos requiere `inventory.move`; y ajustar un conteo requiere `inventory.adjust`. Las operaciones de escritura usan claves idempotentes. El comprobante de movimiento solo se previsualiza en el dispositivo y no se envía. El catálogo no incluye imágenes ni stock: las cantidades vienen del servicio de inventario diario, no de `tracksInventory`. El carrito y el pedido activo del cliente viven en `orderStore.js`; confirmar el pedido genera un seguimiento local. Los pedidos de la pantalla del mesero son datos de muestra independientes y no se conectan con los pedidos del cliente. El panel administrativo conserva su simulación local.
+El catálogo del cliente y `/admin/products` usan los mismos productos del backend. `/admin/inventory` muestra existencias reales de la jornada actual; consultar operación e inventario requiere `operations.read` e `inventory.read`; abrir la jornada requiere `operations.open`; inicializar requiere `inventory.initialize`; registrar movimientos requiere `inventory.move`; y ajustar un conteo requiere `inventory.adjust`. Las operaciones de escritura usan claves idempotentes. El comprobante de movimiento solo se previsualiza en el dispositivo y no se envía. El catálogo no incluye imágenes ni stock: las cantidades vienen del servicio de inventario diario, no de `tracksInventory`. El carrito del cliente permanece en `orderStore.js`, pero los pedidos de servicio en salón se crean y consultan en el backend; sus estados y totales se muestran desde la respuesta real. Los pedidos a domicilio y los de la pantalla del mesero siguen siendo simulaciones independientes. El panel administrativo conserva su simulación local.
 
 `/admin/tables` permite abrir y cerrar la visita actual de una mesa, y emitir un QR para la visita abierta. Abrir y emitir QR requieren `visits.manage`, mesa activa y jornada abierta. Consultar fechas requiere `visits.read`; gestionar visitas no exige `tables.manage`. Cerrar requiere confirmación, finaliza participaciones y falla si hay consumos pendientes; la solicitud lleva una clave idempotente reutilizable ante reintentos. Para emitir un QR se confirma que se invalidará el anterior y se cancelarán las solicitudes de participación pendientes. El token QR se conserva solo en memoria mientras el modal permanece abierto y se codifica localmente; la API entrega ese token una sola vez.
 
-`/scan-table` lee únicamente códigos QR y envía el contenido leído como `qrToken` a `POST /table-access/resolve` con la sesión actual. La respuesta muestra el `tableCode` real y permite abrir `/menu` con el servicio en salón. Resolver el QR solo valida la mesa y su visita: no crea una participación ni confirma el ingreso. El token permanece en memoria durante la consulta y no se incluye en la navegación. El cliente puede solicitar participación explícitamente y consultar su estado; los pedidos y pagos siguen locales.
+`/scan-table` lee únicamente códigos QR y envía el contenido leído como `qrToken` a `POST /table-access/resolve` con la sesión actual. La respuesta muestra el `tableCode` y `visitId` reales y permite abrir `/menu` con el servicio en salón. Resolver el QR solo valida la mesa y su visita: no crea una participación ni confirma el ingreso. El token permanece en memoria durante la consulta y no se incluye en la navegación. El cliente solicita participación explícitamente y consulta su estado; para enviar pedidos locales el backend exige aprobación y una cuenta abierta.
+
+## Pedidos locales del cliente
+
+`/orders` consulta pedidos propios del local mediante `GET /me/orders`, con páginas de 20 y modalidad `local`. Para crear uno, `useClientOrders.js` coordina el carrito con `ordersApi.js` y envía `POST /visits/:id/orders`. El cuerpo contiene UUID de productos y cantidades. Variantes del mismo producto se agrupan porque el contrato no acepta UUID duplicados; picante y notas se envían como observaciones dentro del límite del backend. El servidor valida participación aprobada, cuenta abierta, jornada, caja e inventario, y calcula el total final.
+
+La creación usa `Idempotency-Key`. Si la respuesta queda incierta, se bloquean cambios en el carrito y se permite reintentar el mismo cuerpo con la misma clave. Una respuesta confirmada limpia el carrito; si falla la recarga, la interfaz informa que el pedido se guardó y permite actualizar la lista sin volver a crearlo. La pantalla muestra estados, fechas, cantidades y totales del servidor; no inventa etapas de preparación.
+
+El pedido a domicilio sigue como demostración local porque requiere un flujo previo de cobertura y solicitud aprobada. La bandeja del mesero continúa independiente.
 
 ## Configuración y comandos
 
@@ -141,7 +149,7 @@ Después de resolver el QR, el escáner consulta las participaciones propias por
 
 `participationApi.js` contiene las llamadas Axios; `useVisitParticipation.js` coordina consulta, envío, bloqueo y respuestas obsoletas; `VisitParticipationPanel.jsx` presenta formulario y estados dentro del escáner. El hook del escáner conserva el QR solo en memoria y lo limpia al confirmar una participación, reiniciar, continuar o abandonar. Ante resultado incierto se conserva la clave y el alias para un reintento explícito; abandonar no revierte un envío recibido por el servidor. No hay consultas periódicas.
 
-Ver menú permite explorar el catálogo; los pedidos permanecen locales. La consulta, aprobación y rechazo administrativos y la salida voluntaria del cliente están conectados; finalizar desde administración sigue pendiente. La implementación requiere pruebas reales con backend y dispositivos y un análisis SonarCloud correspondiente a esta revisión.
+Ver menú permite explorar el catálogo. Los pedidos de servicio en salón se crean y consultan con el backend; domicilio y la bandeja del mesero siguen siendo simulaciones. La consulta, aprobación y rechazo administrativos y la salida voluntaria del cliente están conectados; finalizar desde administración sigue pendiente.
 
 Comprobaciones de esta etapa: Expo Export completó bundles web, iOS y Android; `git diff --check` pasó. Las comprobaciones aisladas con API simulada verificaron paginación, alias vacío, bloqueo de envíos simultáneos, reintento con cuerpo/clave idénticos, actualización de estado y respuesta posterior al desmontaje. No se probaron cámaras físicas ni escrituras contra el backend. SonarCloud consultado: último análisis del 30 de octubre de 2026, correspondiente a otra revisión; no confirma esta entrega. Lint, suite de pruebas y tipos siguen sin configuración.
 

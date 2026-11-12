@@ -216,11 +216,11 @@ export default function TableScannerScreen() {
 
   function continueToMenu() {
     if (scanner.status !== 'resolved' || !scanner.table) return;
-    const { tableCode } = scanner.table;
+    const { tableCode, visitId } = scanner.table;
     scanner.clearAfterContinue();
     router.push({
       pathname: '/menu',
-      params: { service: 'dine-in', table: tableCode },
+      params: { service: 'dine-in', table: tableCode, visitId },
     });
   }
 

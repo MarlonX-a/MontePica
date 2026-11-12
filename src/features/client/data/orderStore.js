@@ -2,9 +2,10 @@ import { useSyncExternalStore } from 'react';
 
 let cartItems = [];
 let activeOrder = null;
+let pendingSubmission = null;
 let orderSequence = 1048;
 const listeners = new Set();
-let snapshot = { cartItems, activeOrder };
+let snapshot = { cartItems, activeOrder, pendingSubmission };
 
 function notify() {
   listeners.forEach((listener) => listener());
@@ -20,15 +21,32 @@ function subscribe(listener) {
 }
 
 function updateSnapshot() {
-  snapshot = { cartItems, activeOrder };
+  snapshot = { cartItems, activeOrder, pendingSubmission };
 }
 
 export function useOrderStore() {
   return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }
 
-export function addToCart({ product, quantity, spice, note, service, table }) {
-  const itemKey = `${product.id}-${spice || ''}-${note || ''}`;
+export function addToCart({
+  product,
+  quantity,
+  spice,
+  note,
+  service,
+  table,
+  visitId,
+}) {
+  if (pendingSubmission) return false;
+
+  const itemKey = [
+    product.id,
+    spice || '',
+    note || '',
+    service || '',
+    table || '',
+    visitId || '',
+  ].join('-');
   const itemExists = cartItems.some((item) => item.key === itemKey);
 
   if (itemExists) {
@@ -48,15 +66,19 @@ export function addToCart({ product, quantity, spice, note, service, table }) {
         note,
         service,
         table,
+        visitId,
       },
     ];
   }
 
   updateSnapshot();
   notify();
+  return true;
 }
 
 export function updateCartQuantity(key, quantity) {
+  if (pendingSubmission) return false;
+
   if (quantity <= 0) {
     cartItems = cartItems.filter((item) => item.key !== key);
   } else {
@@ -67,10 +89,11 @@ export function updateCartQuantity(key, quantity) {
 
   updateSnapshot();
   notify();
+  return true;
 }
 
 export function confirmOrder() {
-  if (!cartItems.length) {
+  if (!cartItems.length || pendingSubmission) {
     return null;
   }
 
@@ -92,7 +115,62 @@ export function confirmOrder() {
 
 export function getCartTotal() {
   return cartItems.reduce(
-    (total, item) => total + Number(item.product.price.replace('$', '')) * item.quantity,
+    (total, item) =>
+      total + Number(item.product.price.replace('$', '')) * item.quantity,
     0,
   );
+}
+
+export function getPendingOrderSubmission() {
+  return pendingSubmission;
+}
+
+export function createPendingOrderSubmission(visitId, payload) {
+  if (pendingSubmission) return null;
+
+  pendingSubmission = {
+    visitId,
+    payload,
+    key: `order-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    status: 'ready',
+  };
+  updateSnapshot();
+  notify();
+  return pendingSubmission;
+}
+
+export function beginOrderSubmission(key) {
+  if (!pendingSubmission || pendingSubmission.key !== key) return null;
+  if (pendingSubmission.status === 'sending') return null;
+
+  pendingSubmission = { ...pendingSubmission, status: 'sending' };
+  updateSnapshot();
+  notify();
+  return pendingSubmission;
+}
+
+export function markOrderSubmissionUncertain(key) {
+  if (!pendingSubmission || pendingSubmission.key !== key) return;
+
+  pendingSubmission = { ...pendingSubmission, status: 'uncertain' };
+  updateSnapshot();
+  notify();
+}
+
+export function releaseOrderSubmission(key) {
+  if (!pendingSubmission || pendingSubmission.key !== key) return;
+
+  pendingSubmission = null;
+  updateSnapshot();
+  notify();
+}
+
+export function completeOrderSubmission(key) {
+  if (!pendingSubmission || pendingSubmission.key !== key) return false;
+
+  cartItems = [];
+  pendingSubmission = null;
+  updateSnapshot();
+  notify();
+  return true;
 }

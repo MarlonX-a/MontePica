@@ -21,7 +21,7 @@ import {
 } from '@/features/client/api/catalogApi';
 
 export default function MenuScreen() {
-  const { service, table } = useLocalSearchParams();
+  const { service, table, visitId } = useLocalSearchParams();
   const [products, setProducts] = useState([]);
   const [availableCategories, setAvailableCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('Todos');
@@ -132,7 +132,7 @@ export default function MenuScreen() {
         onPress={() =>
           router.push({
             pathname: '/product/[id]',
-            params: { id: product.id, service, table },
+            params: { id: product.id, service, table, visitId },
           })
         }
       />
@@ -174,7 +174,14 @@ export default function MenuScreen() {
                 </Text>
               ) : null}
             </View>
-            <CartButton onPress={() => router.push('/orders')} />
+            <CartButton
+              onPress={() =>
+                router.push({
+                  pathname: '/orders',
+                  params: { service, table, visitId },
+                })
+              }
+            />
           </View>
 
           <View className="mb-4 h-12 flex-row items-center rounded-xl border border-[#eadfd2] bg-white px-3">
@@ -229,7 +236,12 @@ export default function MenuScreen() {
           activeTab="menu"
           onTabPress={async (tab) => {
             if (tab === 'home') router.replace('/home');
-            if (tab === 'orders') router.replace('/orders');
+            if (tab === 'orders') {
+              router.replace({
+                pathname: '/orders',
+                params: { service, table, visitId },
+              });
+            }
             if (tab === 'profile') {
               await logoutUser();
               router.replace('/(auth)/login');

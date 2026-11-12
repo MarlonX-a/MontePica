@@ -15,7 +15,7 @@ Lee estas instrucciones antes de modificar la aplicación. Mantén los cambios d
 
 MontePica es una aplicación móvil para una cevichería. El catálogo del cliente se consulta al backend y debe limitarse a ceviches —por ejemplo, pescado, camarón y mixto— y bebidas como jugos, limonada y cola. No agregues platos ajenos a ese catálogo.
 
-El login, el registro, el catálogo del cliente, productos/categorías, inventario diario, usuarios y el listado, creación y edición de mesas están conectados al backend. La sesión se conserva en memoria y SecureStore en iOS/Android; en web solo vive en memoria. `apiClient` adjunta el token de acceso a las rutas protegidas. El carrito, los pedidos del cliente y del mesero y el panel siguen usando simulaciones locales independientes. No conviertas esos flujos en llamadas de red hasta que el usuario solicite conectarlos. El catálogo no entrega imágenes ni cantidades disponibles; las existencias sí se consultan desde los endpoints diarios de inventario. No deduzcas stock a partir de `tracksInventory`.
+El login, el registro, el catálogo del cliente, productos/categorías, inventario diario, usuarios, mesas, visitas y pedidos locales del cliente están conectados al backend. El carrito se conserva en memoria. Los pedidos a domicilio y del mesero y el panel siguen usando simulaciones locales independientes. No conviertas esos flujos en llamadas de red hasta que el usuario solicite conectarlos. La sesión se conserva en memoria y SecureStore en iOS/Android; en web solo vive en memoria. `apiClient` adjunta el token de acceso a las rutas protegidas. El catálogo no entrega imágenes ni cantidades disponibles; las existencias sí se consultan desde los endpoints diarios de inventario. No deduzcas stock a partir de `tracksInventory`.
 
 Flujo actual:
 
@@ -24,7 +24,7 @@ Flujo actual:
 3. Desde Inicio, **Para servirse** abre el escáner. La cámara lee un QR y la app consulta `POST /table-access/resolve`; si el backend lo acepta, muestra el código de mesa real y permite continuar al menú. Resolver el QR no crea una participación ni aprueba el ingreso.
 4. **Pedir a domicilio** abre el menú directamente.
 5. El menú y el detalle consultan el catálogo del backend. La búsqueda y los filtros se aplican en la app.
-6. En el detalle, picante, nota y cantidad son controles locales. **Agregar** añade el producto al carrito en memoria; confirmar crea un pedido de demostración y muestra su seguimiento local.
+6. En el detalle, picante, nota y cantidad son controles locales. **Agregar** añade el producto al carrito en memoria. En servicio en salón, el menú conserva `visitId` hasta `/orders`; confirmar envía UUID y cantidades al backend, que valida participación aprobada, cuenta abierta e inventario. El listado muestra estados, fechas y totales devueltos por la API. En domicilio, la confirmación sigue siendo una demostración local porque su solicitud de cobertura/dirección todavía no está conectada.
 
 La pantalla `/waiter` tiene pedidos de ejemplo propios y no está conectada al carrito ni a los pedidos del cliente. El catálogo administrado desde `/admin/products` es el mismo que consulta el cliente; el panel conserva su simulación independiente del catálogo, inventario, usuarios y mesas conectados.
 
@@ -190,7 +190,10 @@ Actividades pendientes:
 - [ ] Verificar cancelación y salida voluntaria del cliente con backend y dispositivos. La implementación está conectada; faltan pruebas reales y SonarCloud de esta revisión.
 - [ ] Implementar finalización desde administración cuando se solicite.
 - [ ] Evaluar y conectar los datos operativos disponibles del panel administrativo; conservar explícitamente como simuladas las métricas que no tenga el backend.
-- [ ] Conectar carrito, pedidos del cliente y pedidos del mesero cuando existan contratos de backend adecuados y el usuario solicite esa integración. Mantener los flujos locales identificados hasta entonces.
+- [x] Conectar la creación y consulta paginada de pedidos locales del cliente; el carrito conserva el `visitId` y envía pedidos con clave idempotente.
+- [ ] Verificar pedidos locales del cliente con backend y cuentas de prueba: participación pendiente/aprobada, jornada/caja, inventario insuficiente, errores, resultado incierto y reintento con la misma clave; documentar plataformas y SonarCloud de esta revisión.
+- [ ] Diseñar y conectar pedidos a domicilio, incluyendo cobertura, dirección y solicitud aprobada antes de crear el pedido. Hasta entonces, identificar la confirmación como demostración local.
+- [ ] Conectar los pedidos del mesero con la API administrativa cuando se solicite; la bandeja actual sigue independiente.
 - [ ] Revisar búsqueda, filtros y paginación de usuarios administrativos frente al contrato del backend y mostrar el detalle de permisos por rol si se solicita.
 - [ ] Revisar y completar la gestión de sesión con el contrato vigente del backend, incluidos renovación y cierre de sesión remotos cuando corresponda; verificar el comportamiento en web y dispositivos.
 - [ ] Configurar lint y pruebas automatizadas si el equipo solicita incorporarlos; documentar comandos y ejecución en CI. Hasta entonces no afirmar que están configurados o aprobados.
@@ -204,7 +207,7 @@ Después de resolver el QR, el escáner consulta las participaciones propias por
 
 `participationApi.js` contiene las llamadas Axios; `useVisitParticipation.js` coordina consulta, envío, bloqueo y respuestas obsoletas; `VisitParticipationPanel.jsx` presenta formulario y estados dentro del escáner. El hook del escáner conserva el QR solo en memoria y lo limpia al confirmar una participación, reiniciar, continuar o abandonar. Ante resultado incierto se conserva la clave y el alias para un reintento explícito; abandonar no revierte un envío recibido por el servidor. No hay consultas periódicas.
 
-Ver menú permite explorar el catálogo; los pedidos permanecen locales. La consulta, aprobación y rechazo administrativos y la salida voluntaria del cliente están conectados; finalizar desde administración sigue pendiente. La implementación requiere pruebas reales con backend y dispositivos y un análisis SonarCloud correspondiente a esta revisión.
+Ver menú permite explorar el catálogo. Los pedidos de servicio en salón se crean y consultan con el backend; los pedidos a domicilio y la bandeja del mesero siguen siendo simulaciones. La consulta, aprobación y rechazo administrativos y la salida voluntaria del cliente están conectados; finalizar desde administración sigue pendiente.
 
 Comprobaciones de esta etapa: Expo Export completó bundles web, iOS y Android; `git diff --check` pasó. Las comprobaciones aisladas con API simulada verificaron paginación, alias vacío, bloqueo de envíos simultáneos, reintento con cuerpo/clave idénticos, actualización de estado y respuesta posterior al desmontaje. No se probaron cámaras físicas ni escrituras contra el backend. SonarCloud consultado: último análisis del 30 de octubre de 2026, correspondiente a otra revisión; no confirma esta entrega. Lint, suite de pruebas y tipos siguen sin configuración.
 
@@ -216,7 +219,7 @@ El modal de visita de `/admin/tables` consulta y decide solicitudes con `partici
 Los resultados inciertos conservan clave y cuerpo para reintento explícito. La reconciliación recorre páginas sin filtro antes de mostrar el estado encontrado; no atribuye el resultado a una escritura no confirmada. Durante el envío se bloquean cierre del modal y escrituras de visita/QR. Una recarga fallida después de confirmar la decisión solo requiere reintentar la consulta. Emitir QR refresca participantes; cambiar/cerrar visita desmonta la sección y cancela consultas. El cliente actualiza su estado manualmente desde el escáner.
 
 - [ ] Verificar aprobación/rechazo con backend y cuentas de prueba, incluidos errores, concurrencia, QR renovado y plataformas físicas; confirmar SonarCloud de esta revisión.
-- [ ] Conectar finalización administrativa y pedidos reales cuando se solicite.
+- [ ] Conectar finalización administrativa cuando se solicite.
 
 Verificación administrativa de esta entrega: bundles web, iOS y Android exportados correctamente y `git diff --check` sin errores. Comprobaciones aisladas con API simulada: consulta filtrada, motivo vacío, bloqueo de envíos repetidos, reintento con la misma clave, recarga tras confirmación y respuesta posterior al desmontaje. No se realizaron escrituras reales ni pruebas con dispositivos. SonarCloud devuelve OK para el análisis del 30 de octubre de 2026, de otra revisión; la puerta actual queda pendiente. Lint, suite de pruebas y tipos no están configurados.
 
@@ -230,3 +233,14 @@ Si la solicitud cambia de estado durante la consulta previa, se exige otra confi
 La salida tiene su clave y contexto propios, separados del ingreso. Ante resultado incierto, consultar conserva la clave mientras el estado siga pendiente/aprobado; un estado terminal se muestra sin atribuirlo al envío no confirmado. Los reintentos son explícitos. Abandonar la pantalla no revierte una solicitud recibida por el servidor. No se agrega historial ni acceso global a participaciones.
 
 - [ ] Verificar salida del cliente con backend y dispositivos de prueba y confirmar SonarCloud de esta revisión. Pruebas aisladas: consulta previa, cambio concurrente, cancelación, finalización, bloqueo de envíos, clave reutilizada, errores 400/401/403/404/409 y respuesta tardía.
+
+
+## Pedidos locales del cliente
+
+`/orders` consulta pedidos propios de servicio en salón con `GET /me/orders` (páginas de 20 y modalidad `local`) y crea pedidos con `POST /visits/:id/orders`. `features/client/api/ordersApi.js` contiene las solicitudes; `hooks/useClientOrders.js` coordina carga, paginación, envío y reintentos; `data/orderMapper.js` convierte el carrito al DTO y adapta estados, fechas y totales; `data/orderStore.js` conserva el carrito y una operación idempotente pendiente en memoria.
+
+El `visitId` real viaja desde la respuesta de resolver QR por el menú y el detalle hasta cada elemento del carrito; no se transmite el `qrToken` en rutas. Solo se envía un carrito de servicio en salón asociado a una única visita. Productos repetidos se agrupan por UUID porque el DTO prohíbe IDs duplicados; picante y notas se convierten en observaciones con límite de 500 caracteres por producto. El backend determina el precio final y valida visita abierta, participación aprobada, cuenta abierta, jornada/caja e inventario.
+
+La escritura incluye `Idempotency-Key`. Si el resultado queda incierto se conserva el cuerpo y la clave, se bloquean cambios al carrito y el usuario decide cuándo reintentar. Al confirmar, se limpia el carrito y se consulta de nuevo la lista. Si falla esa consulta, el pedido confirmado sigue mostrándose y se ofrece actualizar la lista sin reenviar la creación. La interfaz muestra los estados reales; no inventa tiempos ni etapas de cocina.
+
+La confirmación a domicilio sigue siendo una demostración local porque requiere un flujo distinto de cobertura/dirección y una solicitud aprobada. La bandeja del mesero tampoco comparte ni consulta estos pedidos. La integración local requiere prueba real con cuentas autorizadas y revisión SonarCloud de la revisión correspondiente; lint y pruebas unitarias no están configurados.

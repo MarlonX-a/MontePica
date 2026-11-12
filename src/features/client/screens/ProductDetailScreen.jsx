@@ -28,7 +28,9 @@ function QuantityButton({ label, onPress, children, disabled }) {
       onPress={onPress}
       className={`h-9 w-9 items-center justify-center rounded-lg ${disabled ? 'bg-[#f4eee5]' : 'bg-[#f5e7d5]'}`}
     >
-      <Text className={`text-lg font-semibold ${disabled ? 'text-[#c6b9aa]' : 'text-[#8e3b27]'}`}>
+      <Text
+        className={`text-lg font-semibold ${disabled ? 'text-[#c6b9aa]' : 'text-[#8e3b27]'}`}
+      >
         {children}
       </Text>
     </Pressable>
@@ -36,7 +38,7 @@ function QuantityButton({ label, onPress, children, disabled }) {
 }
 
 export default function ProductDetailScreen() {
-  const { id, service, table } = useLocalSearchParams();
+  const { id, service, table, visitId } = useLocalSearchParams();
   const productId = Array.isArray(id) ? id[0] : id;
   const [product, setProduct] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -46,6 +48,7 @@ export default function ProductDetailScreen() {
   const [quantity, setQuantity] = useState(1);
   const [note, setNote] = useState('');
   const [favorite, setFavorite] = useState(false);
+  const [cartError, setCartError] = useState('');
 
   useEffect(() => {
     let isMounted = true;
@@ -115,7 +118,10 @@ export default function ProductDetailScreen() {
             <Text className="font-semibold text-white">Reintentar</Text>
           </Pressable>
         ) : null}
-        <Pressable onPress={() => router.back()} className="mt-4 rounded-xl bg-[#b7472a] px-5 py-3">
+        <Pressable
+          onPress={() => router.back()}
+          className="mt-4 rounded-xl bg-[#b7472a] px-5 py-3"
+        >
           <Text className="font-semibold text-white">Volver al menú</Text>
         </Pressable>
       </SafeAreaView>
@@ -187,7 +193,9 @@ export default function ProductDetailScreen() {
               <Text className="flex-1 text-[11px] font-medium text-[#75695f]">
                 Disponibilidad por confirmar
               </Text>
-              <Text className="text-[10px] text-[#75695f]">{product.availability}</Text>
+              <Text className="text-[10px] text-[#75695f]">
+                {product.availability}
+              </Text>
             </View>
 
             {isCeviche && (
@@ -235,44 +243,65 @@ export default function ProductDetailScreen() {
           </View>
         </ScrollView>
 
-        <View className="flex-row items-center border-t border-[#eee2d7] bg-[#fff8ef] px-5 py-3">
-          <View className="mr-3 flex-row items-center rounded-lg bg-[#f5e7d5] px-1.5 py-1.5">
-            <QuantityButton
-              label="Quitar una unidad"
-              disabled={quantity <= 1}
-              onPress={() => setQuantity((value) => Math.max(1, value - 1))}
+        <View className="border-t border-[#eee2d7] bg-[#fff8ef] px-5 py-3">
+          {cartError ? (
+            <Text
+              accessibilityRole="alert"
+              className="mb-2 text-xs leading-4 text-[#b7472a]"
             >
-              −
-            </QuantityButton>
-            <Text className="w-8 text-center text-sm font-semibold text-[#514941]">
-              {quantity}
+              {cartError}
             </Text>
-            <QuantityButton
-              label="Agregar una unidad"
-              onPress={() => setQuantity((value) => value + 1)}
+          ) : null}
+          <View className="flex-row items-center">
+            <View className="mr-3 flex-row items-center rounded-lg bg-[#f5e7d5] px-1.5 py-1.5">
+              <QuantityButton
+                label="Quitar una unidad"
+                disabled={quantity <= 1}
+                onPress={() => setQuantity((value) => Math.max(1, value - 1))}
+              >
+                −
+              </QuantityButton>
+              <Text className="w-8 text-center text-sm font-semibold text-[#514941]">
+                {quantity}
+              </Text>
+              <QuantityButton
+                label="Agregar una unidad"
+                onPress={() => setQuantity((value) => value + 1)}
+              >
+                +
+              </QuantityButton>
+            </View>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Agregar ${quantity} al pedido por $${total}`}
+              onPress={() => {
+                const added = addToCart({
+                  product,
+                  quantity,
+                  spice: isCeviche ? spice : undefined,
+                  note: isCeviche ? note.trim() : '',
+                  service,
+                  table,
+                  visitId,
+                });
+                if (!added) {
+                  setCartError(
+                    'Hay un pedido pendiente de confirmación. Reinténtalo desde Pedidos antes de modificar el carrito.',
+                  );
+                  return;
+                }
+                setCartError('');
+                router.replace({
+                  pathname: '/orders',
+                  params: { service, table, visitId },
+                });
+              }}
+              className="h-12 flex-1 flex-row items-center justify-center rounded-xl bg-[#b7472a]"
             >
-              +
-            </QuantityButton>
+              <Text className="mr-2 text-white">▣</Text>
+              <Text className="font-bold text-white">Agregar · ${total}</Text>
+            </Pressable>
           </View>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={`Agregar ${quantity} al pedido por $${total}`}
-            onPress={() => {
-              addToCart({
-                product,
-                quantity,
-                spice: isCeviche ? spice : undefined,
-                note: isCeviche ? note.trim() : '',
-                service,
-                table,
-              });
-              router.replace('/orders');
-            }}
-            className="h-12 flex-1 flex-row items-center justify-center rounded-xl bg-[#b7472a]"
-          >
-            <Text className="mr-2 text-white">▣</Text>
-            <Text className="font-bold text-white">Agregar · ${total}</Text>
-          </Pressable>
         </View>
       </View>
     </SafeAreaView>
