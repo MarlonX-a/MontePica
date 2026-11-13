@@ -1,6 +1,6 @@
 import apiClient from '@/shared/api/apiClient';
 
-export async function getAdminTables(page = 1, signal) {
+export async function getAdminTables(signal, page = 1) {
   const { data } = await apiClient.get('/admin/tables', {
     params: { page, limit: 100 },
     signal,
@@ -9,22 +9,20 @@ export async function getAdminTables(page = 1, signal) {
 }
 
 export async function getAllAdminTables(signal) {
+  const firstPage = await getAdminTables(signal, 1);
+  const pageCount = Math.ceil(firstPage.total / firstPage.limit);
+  const remainingPages = await Promise.all(
+    Array.from({ length: Math.max(0, pageCount - 1) }, (_, index) =>
+      getAdminTables(signal, index + 2),
+    ),
+  );
   const tables = new Map();
-  let page = 1;
-  let received = 0;
-  let total;
-  do {
-    const data = await getAdminTables(page, signal);
-    total = data.total;
-    if (data.items.length === 0 && received < total) {
-      throw new Error(
-        'La lista de mesas cambió durante la carga. Vuelve a consultar.',
-      );
-    }
-    data.items.forEach((table) => tables.set(table.id, table));
-    received += data.items.length;
-    page += 1;
-  } while (received < total);
+  [firstPage, ...remainingPages].forEach((page) =>
+    page.items.forEach((table) => tables.set(table.id, table)),
+  );
+  const total = remainingPages.every((page) => page.total === firstPage.total)
+    ? firstPage.total
+    : -1;
 
   if (tables.size !== total) {
     throw new Error(

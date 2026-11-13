@@ -32,6 +32,23 @@ function getPageAfterReload(
   return Math.min(pageRef.current, pageCount);
 }
 
+function prepareTableSave(values, editing) {
+  const validation = validateTableCode(values.code);
+  if (validation) return { error: validation };
+  if (!editing?.table) return { mode: 'create', code: values.code.trim() };
+
+  const active = values.status === 'Activa';
+  const changes = {};
+  if (values.code.trim() !== editing.table.code) changes.code = values.code.trim();
+  if (active !== editing.table.active) changes.active = active;
+  if (!active && editing.table.openVisitId) {
+    return { error: 'No se puede desactivar una mesa con visita abierta.' };
+  }
+  return Object.keys(changes).length
+    ? { mode: 'update', changes }
+    : { unchanged: true };
+}
+
 export default function useAdminTables(canRead, canManage) {
   const [tables, setTables] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -109,34 +126,24 @@ export default function useAdminTables(canRead, canManage) {
   async function saveTable(values) {
     if (creating.current) return undefined;
     if (!canManage) return 'Tu cuenta no tiene permiso para crear mesas.';
-    const validation = validateTableCode(values.code);
-    if (validation) return validation;
-    let changes;
-    if (editing?.table) {
-      changes = {};
-      const active = values.status === 'Activa';
-      if (values.code.trim() !== editing.table.code)
-        changes.code = values.code.trim();
-      if (active !== editing.table.active) changes.active = active;
-      if (!active && editing.table.openVisitId)
-        return 'No se puede desactivar una mesa con visita abierta.';
-      if (!Object.keys(changes).length) {
-        setEditorOpen(false);
-        setNotice('No hubo modificaciones.');
-        return undefined;
-      }
+    const prepared = prepareTableSave(values, editing);
+    if (prepared.error) return prepared.error;
+    if (prepared.unchanged) {
+      setEditorOpen(false);
+      setNotice('No hubo modificaciones.');
+      return undefined;
     }
     creating.current = true;
     try {
-      const created = editing?.table
-        ? await updateAdminTable(editing.table.id, changes)
-        : await createAdminTable(values.code.trim());
+      const created = prepared.mode === 'update'
+        ? await updateAdminTable(editing.table.id, prepared.changes)
+        : await createAdminTable(prepared.code);
       if (!mounted.current) return undefined;
       setEditorOpen(false);
       setSearch('');
       setFilter('Todas');
       setPage(1);
-      const action = editing?.table ? 'actualizó' : 'creó';
+      const action = prepared.mode === 'update' ? 'actualizó' : 'creó';
       setNotice(`La mesa ${created.code} se ${action} correctamente.`);
       focusTable.current = created.id;
       const refreshed = await reload(created.id);
