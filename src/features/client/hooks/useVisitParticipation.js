@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import * as Crypto from 'expo-crypto';
 import {
   getMyParticipation,
   leaveMyParticipation,
@@ -22,6 +23,34 @@ const initial = {
 };
 const canLeave = (participant) =>
   ['pending', 'approved'].includes(participant?.status);
+
+async function findVisitParticipation(visitId, page, pageCount, signal) {
+  if (page > pageCount) return null;
+  const result = await getMyParticipations(signal, page);
+  const found = result.items.find((item) => item.visitId === visitId);
+  return found || findVisitParticipation(visitId, page + 1, pageCount, signal);
+}
+
+function applyFoundParticipation(scope, found, stateRef, update, confirmed) {
+  if (found) {
+    scope.operation = null;
+    confirmed.current();
+  }
+  const reconciledLeave = Boolean(
+    found && !canLeave(found) && scope.leaveOperation,
+  );
+  if (reconciledLeave) scope.leaveOperation = null;
+  update({
+    leaveUncertain: reconciledLeave ? false : stateRef.current.leaveUncertain,
+    notice: reconciledLeave
+      ? 'La participación tiene un estado final. No se atribuye a una salida que no fue confirmada.'
+      : '',
+    participant: found,
+    checked: true,
+    uncertain: found ? false : stateRef.current.uncertain,
+  });
+}
+
 export default function useVisitParticipation(visitId, onConfirmed) {
   const [state, setState] = useState(initial);
   const stateRef = useRef(initial);
@@ -52,35 +81,20 @@ export default function useVisitParticipation(visitId, onConfirmed) {
       if (known) {
         found = await getMyParticipation(known.id, controller.signal);
       } else {
-        let page = 1;
-        let result;
-        do {
-          result = await getMyParticipations(page, controller.signal);
-          found =
-            result.items.find((item) => item.visitId === scope.visitId) ?? null;
-          page += 1;
-        } while (!found && (page - 1) * result.limit < result.total);
+        const firstPage = await getMyParticipations(controller.signal, 1);
+        found = firstPage.items.find((item) => item.visitId === scope.visitId) ?? null;
+        if (!found) {
+          const pageCount = Math.ceil(firstPage.total / firstPage.limit);
+          found = await findVisitParticipation(
+            scope.visitId,
+            2,
+            pageCount,
+            controller.signal,
+          );
+        }
       }
       if (context.current !== scope || controller.signal.aborted) return;
-      if (found) {
-        scope.operation = null;
-        confirmed.current();
-      }
-      const reconciledLeave = Boolean(
-        found && !canLeave(found) && scope.leaveOperation,
-      );
-      if (reconciledLeave) scope.leaveOperation = null;
-      update({
-        leaveUncertain: reconciledLeave
-          ? false
-          : stateRef.current.leaveUncertain,
-        notice: reconciledLeave
-          ? 'La participación tiene un estado final. No se atribuye a una salida que no fue confirmada.'
-          : '',
-        participant: found,
-        checked: true,
-        uncertain: found ? false : stateRef.current.uncertain,
-      });
+      applyFoundParticipation(scope, found, stateRef, update, confirmed);
       return found;
     } catch (error) {
       if (context.current !== scope || controller.signal.aborted) return;
@@ -136,7 +150,7 @@ export default function useVisitParticipation(visitId, onConfirmed) {
       }
       if ([401, 403, 404, 409].includes(current.errorStatus)) return;
       scope.operation ??= {
-        key: `participation-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        key: `participation-${Crypto.randomUUID()}`,
         alias: normalized,
       };
       scope.saving = true;
@@ -211,7 +225,7 @@ export default function useVisitParticipation(visitId, onConfirmed) {
       return;
     scope.leaveOperation ??= {
       id: current.leaveConfirmation.id,
-      key: `participation-leave-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      key: `participation-leave-${Crypto.randomUUID()}`,
     };
     scope.saving = true;
     update({

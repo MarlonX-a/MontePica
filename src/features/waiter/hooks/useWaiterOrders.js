@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import * as Crypto from 'expo-crypto';
 import {
   getWaiterOrder,
   getWaiterOrders,
@@ -11,8 +12,46 @@ import {
 import { mapWaiterOrder } from '@/features/waiter/data/waiterOrderMapper';
 
 const PAGE_SIZE = 20;
+const requiredStatusByAction = {
+  'start-preparation': 'submitted',
+  cancel: 'submitted',
+  ready: 'preparing',
+  deliver: 'ready',
+};
+
+function isCurrentOrderVersion(detail, listedOrder) {
+  return detail.status === listedOrder.status && detail.version === listedOrder.version;
+}
+
+function isActionAvailable(action, status) {
+  return requiredStatusByAction[action] === status;
+}
+
+async function getVisitTableCodes(signal) {
+  const firstPage = await getWaiterTables(signal, 1);
+  const pageCount = Math.ceil(firstPage.total / firstPage.limit);
+  const remainingPages = await Promise.all(
+    Array.from({ length: Math.max(0, pageCount - 1) }, (_, index) =>
+      getWaiterTables(signal, index + 2),
+    ),
+  );
+  const allPages = [firstPage, ...remainingPages];
+  const tables = new Map();
+  allPages.forEach((page) => {
+    page.items.forEach((table) => tables.set(table.id, table));
+  });
+  if (tables.size !== firstPage.total || allPages.some((page) => page.total !== firstPage.total)) {
+    throw new Error('La lista de mesas cambió durante la consulta.');
+  }
+  return new Map(
+    [...tables.values()]
+      .filter((table) => table.openVisitId)
+      .map((table) => [table.openVisitId, table.code]),
+  );
+}
+
 function makeIdempotencyKey() {
-  return `${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
+  return Crypto.randomUUID();
 }
 
 function isAbort(error) {
@@ -125,20 +164,9 @@ export default function useWaiterOrders({ canReadOrders, canManageOrders, canRea
     const controller = new AbortController();
     tableController.current = controller;
     let active = true;
-    (async () => {
+    void (async () => {
       try {
-        const tables = new Map();
-        let currentPage = 1;
-        let totalTables = 0;
-        do {
-          const response = await getWaiterTables(currentPage, controller.signal);
-          totalTables = response.total;
-          response.items?.forEach((table) => {
-            if (table.openVisitId) tables.set(table.openVisitId, table.code);
-          });
-          if (!response.items?.length && currentPage * 100 < totalTables) break;
-          currentPage += 1;
-        } while ((currentPage - 1) * 100 < totalTables);
+        const tables = await getVisitTableCodes(controller.signal);
         if (active && !controller.signal.aborted) setTableCodes(tables);
       } catch {
         if (active && !controller.signal.aborted) setTableCodes(new Map());
@@ -200,17 +228,11 @@ export default function useWaiterOrders({ canReadOrders, canManageOrders, canRea
     const listedOrder = currentById.get(selectedId);
     const fresh = await loadDetail(selectedId);
     if (!fresh || !listedOrder) return;
-    if (fresh.status !== listedOrder.status || fresh.version !== listedOrder.version) {
+    if (!isCurrentOrderVersion(fresh, listedOrder)) {
       setNotice('El pedido cambió desde la lista. Revisa su estado actual y vuelve a elegir la acción.');
       return;
     }
-    const expectedActionStatus = {
-      'start-preparation': 'submitted',
-      cancel: 'submitted',
-      ready: 'preparing',
-      deliver: 'ready',
-    }[action];
-    if (fresh.status !== expectedActionStatus) {
+    if (!isActionAvailable(action, fresh.status)) {
       setNotice('Esta acción ya no corresponde al estado actual del pedido.');
       return;
     }

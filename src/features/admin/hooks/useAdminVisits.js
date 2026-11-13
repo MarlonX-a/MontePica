@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import * as Crypto from 'expo-crypto';
 import {
   getAdminTable,
   getTablesApiError,
@@ -12,7 +13,12 @@ import {
 import { mapAdminTable } from '@/features/admin/data/adminTableMapper';
 
 function createCloseKey() {
-  return `visit-close-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  return `visit-close-${Crypto.randomUUID()}`;
+}
+
+function getClosedVisit(canRead, current, closed) {
+  if (!canRead) return null;
+  return current ? { ...current, ...closed } : closed;
 }
 
 export default function useAdminVisits({
@@ -275,9 +281,7 @@ export default function useAdminVisits({
           ? { ...current, openVisitId: null, visitLabel: 'Sin visita' }
           : current,
       );
-      setVisit((current) =>
-        canReadVisits ? (current ? { ...current, ...closed } : closed) : null,
-      );
+      setVisit((current) => getClosedVisit(canReadVisits, current, closed));
       setMessage('La visita se cerró correctamente.');
       const refreshed = await reloadTables(null, { preservePage: true });
       if (mounted.current && refreshed === false) setListRefreshError(true);

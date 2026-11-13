@@ -5,6 +5,23 @@ import {
   issueAdminVisitQr,
 } from '@/features/admin/api/visitsAdminApi';
 
+function isCurrentRequest(mounted, currentRequest, request) {
+  return mounted.current && currentRequest === request.current;
+}
+
+function isCurrentTable(table, visitId) {
+  return table.active && table.openVisitId === visitId;
+}
+
+function reportIssueError(error, setError, setUncertain) {
+  const uncertain = !error.response || error.response.status >= 500;
+  setUncertain(uncertain);
+  const recovery = uncertain
+    ? ' El QR anterior pudo haberse invalidado. Actualiza la mesa y emite otro solo después de confirmarlo.'
+    : '';
+  setError(`${getVisitsApiError(error)}${recovery}`);
+}
+
 export default function useAdminVisitQr({ table, visitId, onRefreshTable }) {
   const [issuedQr, setIssuedQr] = useState(null);
   const [error, setError] = useState('');
@@ -38,36 +55,17 @@ export default function useAdminVisitQr({ table, visitId, onRefreshTable }) {
     setIssuedQr(null);
     setError('');
     setUncertain(false);
-    let currentTable;
     try {
-      currentTable = await getAdminTable(tableId);
-    } catch (requestError) {
-      if (mounted.current && currentRequest === request.current) {
-        setError(getVisitsApiError(requestError));
+      const currentTable = await getAdminTable(tableId);
+      if (!isCurrentRequest(mounted, currentRequest, request)) return false;
+      if (!isCurrentTable(currentTable, visitId)) {
+        setError(
+          'La mesa o la visita cambió. Actualiza el estado antes de emitir el QR.',
+        );
+        return false;
       }
-      lock.current = false;
-      if (mounted.current && currentRequest === request.current) {
-        setIssuing(false);
-      }
-      return false;
-    }
-    if (!mounted.current || currentRequest !== request.current) {
-      lock.current = false;
-      return false;
-    }
-    if (!currentTable.active || currentTable.openVisitId !== visitId) {
-      setError(
-        'La mesa o la visita cambió. Actualiza el estado antes de emitir el QR.',
-      );
-      lock.current = false;
-      if (mounted.current && currentRequest === request.current) {
-        setIssuing(false);
-      }
-      return false;
-    }
-    try {
       const result = await issueAdminVisitQr(visitId);
-      if (!mounted.current || currentRequest !== request.current) return false;
+      if (!isCurrentRequest(mounted, currentRequest, request)) return false;
       setIssuedQr({
         tableId,
         visitId: result.visitId,
@@ -76,19 +74,13 @@ export default function useAdminVisitQr({ table, visitId, onRefreshTable }) {
       });
       return true;
     } catch (requestError) {
-      if (!mounted.current || currentRequest !== request.current) return false;
-      const isUncertain =
-        !requestError.response || requestError.response.status >= 500;
-      setUncertain(isUncertain);
-      setError(
-        isUncertain
-          ? `${getVisitsApiError(requestError)} El QR anterior pudo haberse invalidado. Actualiza la mesa y emite otro solo después de confirmarlo.`
-          : getVisitsApiError(requestError),
-      );
+      if (isCurrentRequest(mounted, currentRequest, request)) {
+        reportIssueError(requestError, setError, setUncertain);
+      }
       return false;
     } finally {
       lock.current = false;
-      if (mounted.current && currentRequest === request.current) {
+      if (isCurrentRequest(mounted, currentRequest, request)) {
         setIssuing(false);
       }
     }

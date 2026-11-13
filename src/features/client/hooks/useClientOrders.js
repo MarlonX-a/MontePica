@@ -12,13 +12,11 @@ import {
   getPendingOrderSubmission,
   markOrderSubmissionUncertain,
   releaseOrderSubmission,
-  useOrderStore,
 } from '@/features/client/data/orderStore';
 
 const PAGE_LIMIT = 20;
 
 export default function useClientOrders() {
-  const { pendingSubmission } = useOrderStore();
   const [orders, setOrders] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -61,10 +59,11 @@ export default function useClientOrders() {
     setLoadErrorStatus(null);
 
     try {
-      const result = await getMyOrders(
-        { page: requestedPage, limit: PAGE_LIMIT, modality: 'local' },
-        controller.signal,
-      );
+      const result = await getMyOrders(controller.signal, {
+        page: requestedPage,
+        limit: PAGE_LIMIT,
+        modality: 'local',
+      });
       if (
         !mounted.current ||
         controller.signal.aborted ||
@@ -227,7 +226,7 @@ export default function useClientOrders() {
 
   const retrySubmission = useCallback(() => {
     const pending = getPendingOrderSubmission();
-    if (!pending || pending.status !== 'uncertain')
+    if (pending?.status !== 'uncertain')
       return Promise.resolve(false);
 
     return sendSubmission(pending);

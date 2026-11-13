@@ -1,3 +1,5 @@
+import * as Crypto from 'expo-crypto';
+
 export function mapInventoryItem(item, categories) {
   const categoryName = categories.find(
     (category) => category.id === item.product.categoryId,
@@ -18,5 +20,5 @@ export function mapInventoryItem(item, categories) {
 }
 
 export function makeIdempotencyKey() {
-  return `inventory-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  return `inventory-${Crypto.randomUUID()}`;
 }

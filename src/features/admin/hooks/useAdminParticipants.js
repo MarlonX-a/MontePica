@@ -1,10 +1,34 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import * as Crypto from 'expo-crypto';
 import {
   approveParticipant,
   getParticipantsError,
   getVisitParticipants,
   rejectParticipant,
 } from '@/features/admin/api/participantsAdminApi';
+
+function canDecide(item, action, state, isLocked, pendingOperation) {
+  const pendingMismatch = pendingOperation &&
+    (pendingOperation.id !== item.id || pendingOperation.action !== action);
+  return !isLocked && !state.loading && !state.error &&
+    item.status === 'pending' && !pendingMismatch;
+}
+
+function findParticipantPage(visitId, participantId, page, pageCount, signal) {
+  if (page > pageCount) return Promise.resolve(null);
+  return getVisitParticipants(visitId, { page, limit: 100 }, signal).then((result) => {
+    const found = result.items.find((item) => item.id === participantId);
+    return found || findParticipantPage(visitId, participantId, page + 1, pageCount, signal);
+  });
+}
+
+async function findParticipantForOperation(visitId, participantId, signal) {
+  const firstPage = await getVisitParticipants(visitId, { page: 1, limit: 100 }, signal);
+  const found = firstPage.items.find((item) => item.id === participantId);
+  if (found) return found;
+  const pageCount = Math.ceil(firstPage.total / firstPage.limit);
+  return findParticipantPage(visitId, participantId, 2, pageCount, signal);
+}
 
 export default function useAdminParticipants(visitId) {
   const [state, setState] = useState({
@@ -73,19 +97,7 @@ export default function useAdminParticipants(visitId) {
 
   const decide = useCallback(
     async (item, action, reason = '') => {
-      if (
-        lock.current ||
-        current.current.loading ||
-        current.current.error ||
-        item.status !== 'pending'
-      )
-        return false;
-      if (
-        operation.current &&
-        (operation.current.id !== item.id ||
-          operation.current.action !== action)
-      )
-        return false;
+      if (!canDecide(item, action, current.current, lock.current, operation.current)) return false;
       const trimmed = reason.trim();
       if (
         !operation.current &&
@@ -100,7 +112,7 @@ export default function useAdminParticipants(visitId) {
         item,
         action,
         reason: trimmed,
-        key: `participant-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        key: `participant-${Crypto.randomUUID()}`,
       };
       operation.current = op;
       lock.current = true;
@@ -150,18 +162,7 @@ export default function useAdminParticipants(visitId) {
     controller.current?.abort();
     controller.current = request;
     try {
-      let page = 1,
-        result,
-        found;
-      do {
-        result = await getVisitParticipants(
-          visitId,
-          { page, limit: 100 },
-          request.signal,
-        );
-        found = result.items.find((item) => item.id === op.id);
-        page += 1;
-      } while (!found && (page - 1) * result.limit < result.total);
+      const found = await findParticipantForOperation(visitId, op.id, request.signal);
       if (!alive.current || request.signal.aborted) return;
       if (found && found.status !== 'pending') {
         operation.current = null;

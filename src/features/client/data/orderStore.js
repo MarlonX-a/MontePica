@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react';
+import * as Crypto from 'expo-crypto';
 
 let cartItems = [];
 let activeOrder = null;
@@ -131,7 +132,7 @@ export function createPendingOrderSubmission(visitId, payload) {
   pendingSubmission = {
     visitId,
     payload,
-    key: `order-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    key: `order-${Crypto.randomUUID()}`,
     status: 'ready',
   };
   updateSnapshot();

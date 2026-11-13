@@ -18,7 +18,7 @@ export async function getWaiterProduct(id, signal) {
   return data;
 }
 
-export async function getWaiterTables(page = 1, signal) {
+export async function getWaiterTables(signal, page = 1) {
   const { data } = await apiClient.get('/admin/tables', {
     params: { page, limit: 100 },
     signal,

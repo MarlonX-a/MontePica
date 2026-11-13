@@ -8,7 +8,7 @@ export async function createVisitOrder(visitId, payload, idempotencyKey) {
   return data;
 }
 
-export async function getMyOrders(params = {}, signal) {
+export async function getMyOrders(signal, params = {}) {
   const { data } = await apiClient.get('/me/orders', {
     params,
     signal,

@@ -1,6 +1,6 @@
 import apiClient from '@/shared/api/apiClient';
 
-export async function getMyParticipations(page = 1, signal) {
+export async function getMyParticipations(signal, page = 1) {
   const { data } = await apiClient.get('/me/participants', {
     params: { page, limit: 100 },
     signal,

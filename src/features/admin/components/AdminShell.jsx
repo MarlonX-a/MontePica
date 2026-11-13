@@ -13,6 +13,11 @@ const tabs = [
   { label: 'Usuarios', icon: 'users', path: '/admin/users' },
 ];
 
+async function handleLogout() {
+  await logoutUser();
+  router.replace('/(auth)/login');
+}
+
 export default function AdminShell({
   title,
   subtitle,
@@ -22,11 +27,6 @@ export default function AdminShell({
   children,
 }) {
   const pathname = usePathname();
-
-  async function handleLogout() {
-    await logoutUser();
-    router.replace('/(auth)/login');
-  }
 
   return (
     <SafeAreaView className="flex-1 bg-[#fff8ef]">

@@ -120,177 +120,175 @@ function ActionButton({ label, onPress, disabled = false, secondary = false }) {
   );
 }
 
-function CartSection({
-  items,
-  pendingSubmission,
-  ordersState,
-  activeOrder,
-  onSubmit,
-  onRetry,
-  onBackToMenu,
-}) {
+function getCartContextLabel(cartKind, items) {
+  if (cartKind === 'dine-in') return `${items[0].table || 'Servicio en salón'} · ${items.length} productos`;
+  if (cartKind === 'delivery') return `Domicilio · ${items.length} productos`;
+  if (cartKind === 'mixed' || cartKind === 'invalid') {
+    return 'Revisa el servicio y la visita de los productos del carrito.';
+  }
+  return 'Agrega productos para empezar';
+}
+
+function CartTotals({ total }) {
+  return (
+    <View className="rounded-2xl bg-white p-4">
+      <View className="flex-row justify-between">
+        <Text className="text-xs text-[#8b8178]">Subtotal estimado</Text>
+        <Text className="text-xs text-[#514941]">${total.toFixed(2)}</Text>
+      </View>
+      <View className="mt-3 flex-row items-center justify-between border-t border-[#f0e6dc] pt-3">
+        <Text className="text-base font-bold text-[#332d28]">Total estimado</Text>
+        <Text className="text-xl font-bold text-[#b7472a]">${total.toFixed(2)}</Text>
+      </View>
+    </View>
+  );
+}
+
+function CartServiceNotice({ cartKind }) {
+  if (cartKind === 'dine-in') {
+    return (
+      <Text className="mt-3 text-[10px] leading-4 text-[#81766d]">
+        Para enviar el pedido, el backend comprobará que tu participación esté aprobada, la cuenta siga abierta y exista inventario disponible.
+      </Text>
+    );
+  }
+  if (cartKind === 'delivery') {
+    return (
+      <View className="mt-3 rounded-xl bg-[#f4eee5] px-3 py-3">
+        <Text className="text-[10px] leading-4 text-[#75695f]">
+          Los pedidos a domicilio todavía no están conectados al backend. Esta confirmación se conserva como demostración local.
+        </Text>
+      </View>
+    );
+  }
+  if (cartKind === 'mixed' || cartKind === 'invalid') {
+    return (
+      <Text accessibilityRole="alert" className="mt-3 text-xs leading-5 text-[#b7472a]">
+        No se puede enviar un carrito que mezcle servicios o visitas. Quita los productos que no pertenezcan al mismo servicio y visita.
+      </Text>
+    );
+  }
+  return null;
+}
+
+function OrderSubmissionError({ ordersState }) {
+  if (!ordersState.submitError) return null;
+  return (
+    <View className="mt-3 rounded-xl bg-[#fde7e3] px-3 py-3">
+      <Text accessibilityRole="alert" className="text-xs leading-5 text-[#a83224]">
+        {ordersState.submitError}
+      </Text>
+      {ordersState.submitErrorStatus === 401 ? (
+        <ActionButton
+          label="Volver a iniciar sesión"
+          onPress={async () => {
+            await logoutUser();
+            router.replace('/(auth)/login');
+          }}
+        />
+      ) : null}
+    </View>
+  );
+}
+
+function PendingSubmissionNotice({ pendingSubmission, onRetry }) {
+  if (!pendingSubmission) return null;
+  const isSending = pendingSubmission.status === 'sending';
+  return (
+    <View className="mt-3 rounded-xl bg-[#fff0e7] px-3 py-3">
+      <Text className="text-[11px] font-semibold text-[#a85431]">
+        {isSending ? 'Enviando pedido…' : 'Resultado del envío sin confirmar'}
+      </Text>
+      <Text className="mt-1 text-[10px] leading-4 text-[#75695f]">
+        {isSending
+          ? 'Espera la respuesta del servidor.'
+          : 'Puedes reintentar. Se enviará el mismo pedido con la misma clave para evitar duplicados.'}
+      </Text>
+      {pendingSubmission.status === 'uncertain' ? (
+        <ActionButton label="Reintentar el mismo pedido" onPress={onRetry} />
+      ) : null}
+    </View>
+  );
+}
+
+function CartSubmitButton({ cartKind, total, submitting, items, onSubmit }) {
+  return (
+    <ActionButton
+      label={getSubmitLabel(cartKind, total, submitting)}
+      disabled={submitting || !['dine-in', 'delivery'].includes(cartKind)}
+      onPress={() => {
+        if (cartKind === 'dine-in') void onSubmit(items);
+        if (cartKind === 'delivery') confirmOrder();
+      }}
+    />
+  );
+}
+
+function CartContents({ items, pendingSubmission, ordersState, cartKind, total, onSubmit, onRetry, onBackToMenu }) {
+  if (!items.length) {
+    return (
+      <View className="items-center rounded-2xl bg-white px-6 py-9">
+        <Text className="text-4xl">🛒</Text>
+        <Text className="mt-3 text-base font-bold text-[#332d28]">Tu pedido está vacío</Text>
+        <Text className="mt-1 text-center text-xs leading-5 text-[#8b8178]">
+          Agrega ceviches o bebidas desde el menú para comenzar.
+        </Text>
+        <ActionButton label="Ver menú" onPress={onBackToMenu} />
+      </View>
+    );
+  }
+  const locked = Boolean(pendingSubmission || ordersState.submitting);
+  return (
+    <>
+      <View className="mb-4 rounded-xl bg-[#fff0e7] px-3 py-3">
+        <Text className="text-[11px] font-semibold text-[#a85431]">El inventario se comprobará al enviar</Text>
+        <Text className="mt-1 text-[10px] text-[#a85431]">El servidor confirma disponibilidad y calcula el total final.</Text>
+      </View>
+      {items.map((item) => <CartItem key={item.key} item={item} locked={locked} />)}
+      <CartTotals total={total} />
+      <CartServiceNotice cartKind={cartKind} />
+      <OrderSubmissionError ordersState={ordersState} />
+      <PendingSubmissionNotice pendingSubmission={pendingSubmission} onRetry={onRetry} />
+      {!pendingSubmission ? (
+        <CartSubmitButton cartKind={cartKind} total={total} submitting={ordersState.submitting} items={items} onSubmit={onSubmit} />
+      ) : null}
+    </>
+  );
+}
+
+function LocalOrderNotice({ order }) {
+  if (!order) return null;
+  return (
+    <View className="mt-4 rounded-2xl border border-[#eadfd2] bg-white p-4">
+      <Text className="text-[10px] font-bold tracking-wide text-[#a85431]">DEMOSTRACIÓN LOCAL</Text>
+      <Text className="mt-1 text-sm font-bold text-[#332d28]">Pedido {order.id} · {order.status}</Text>
+      <Text className="mt-1 text-[10px] leading-4 text-[#81766d]">
+        Este pedido de domicilio solo se guardó en memoria; no fue enviado al restaurante.
+      </Text>
+    </View>
+  );
+}
+
+function CartSection({ items, pendingSubmission, ordersState, activeOrder, onSubmit, onRetry, onBackToMenu }) {
   const cartKind = getCartKind(items);
   const total = getCartTotal();
-  const locked = Boolean(pendingSubmission || ordersState.submitting);
-  let contextLabel = 'Agrega productos para empezar';
-
-  if (cartKind === 'dine-in') {
-    contextLabel = `${items[0].table || 'Servicio en salón'} · ${items.length} productos`;
-  } else if (cartKind === 'delivery') {
-    contextLabel = `Domicilio · ${items.length} productos`;
-  } else if (cartKind === 'mixed' || cartKind === 'invalid') {
-    contextLabel =
-      'Revisa el servicio y la visita de los productos del carrito.';
-  }
-
   return (
     <View className="mb-6">
       <View className="mb-4">
         <Text className="text-2xl font-bold text-[#332d28]">Tu pedido</Text>
-        <Text className="mt-1 text-[11px] text-[#8b8178]">{contextLabel}</Text>
+        <Text className="mt-1 text-[11px] text-[#8b8178]">{getCartContextLabel(cartKind, items)}</Text>
       </View>
-
-      {items.length ? (
-        <>
-          <View className="mb-4 rounded-xl bg-[#fff0e7] px-3 py-3">
-            <Text className="text-[11px] font-semibold text-[#a85431]">
-              El inventario se comprobará al enviar
-            </Text>
-            <Text className="mt-1 text-[10px] text-[#a85431]">
-              El servidor confirma disponibilidad y calcula el total final.
-            </Text>
-          </View>
-
-          {items.map((item) => (
-            <CartItem key={item.key} item={item} locked={locked} />
-          ))}
-
-          <View className="rounded-2xl bg-white p-4">
-            <View className="flex-row justify-between">
-              <Text className="text-xs text-[#8b8178]">Subtotal estimado</Text>
-              <Text className="text-xs text-[#514941]">
-                ${total.toFixed(2)}
-              </Text>
-            </View>
-            <View className="mt-3 flex-row items-center justify-between border-t border-[#f0e6dc] pt-3">
-              <Text className="text-base font-bold text-[#332d28]">
-                Total estimado
-              </Text>
-              <Text className="text-xl font-bold text-[#b7472a]">
-                ${total.toFixed(2)}
-              </Text>
-            </View>
-          </View>
-
-          {cartKind === 'dine-in' ? (
-            <Text className="mt-3 text-[10px] leading-4 text-[#81766d]">
-              Para enviar el pedido, el backend comprobará que tu participación
-              esté aprobada, la cuenta siga abierta y exista inventario
-              disponible.
-            </Text>
-          ) : null}
-
-          {cartKind === 'delivery' ? (
-            <View className="mt-3 rounded-xl bg-[#f4eee5] px-3 py-3">
-              <Text className="text-[10px] leading-4 text-[#75695f]">
-                Los pedidos a domicilio todavía no están conectados al backend.
-                Esta confirmación se conserva como demostración local.
-              </Text>
-            </View>
-          ) : null}
-
-          {cartKind === 'mixed' || cartKind === 'invalid' ? (
-            <Text
-              accessibilityRole="alert"
-              className="mt-3 text-xs leading-5 text-[#b7472a]"
-            >
-              No se puede enviar un carrito que mezcle servicios o visitas.
-              Quita los productos que no pertenezcan al mismo servicio y visita.
-            </Text>
-          ) : null}
-
-          {ordersState.submitError ? (
-            <View className="mt-3 rounded-xl bg-[#fde7e3] px-3 py-3">
-              <Text
-                accessibilityRole="alert"
-                className="text-xs leading-5 text-[#a83224]"
-              >
-                {ordersState.submitError}
-              </Text>
-              {ordersState.submitErrorStatus === 401 ? (
-                <ActionButton
-                  label="Volver a iniciar sesión"
-                  onPress={async () => {
-                    await logoutUser();
-                    router.replace('/(auth)/login');
-                  }}
-                />
-              ) : null}
-            </View>
-          ) : null}
-
-          {pendingSubmission ? (
-            <View className="mt-3 rounded-xl bg-[#fff0e7] px-3 py-3">
-              <Text className="text-[11px] font-semibold text-[#a85431]">
-                {pendingSubmission.status === 'sending'
-                  ? 'Enviando pedido…'
-                  : 'Resultado del envío sin confirmar'}
-              </Text>
-              <Text className="mt-1 text-[10px] leading-4 text-[#75695f]">
-                {pendingSubmission.status === 'sending'
-                  ? 'Espera la respuesta del servidor.'
-                  : 'Puedes reintentar. Se enviará el mismo pedido con la misma clave para evitar duplicados.'}
-              </Text>
-              {pendingSubmission.status === 'uncertain' ? (
-                <ActionButton
-                  label="Reintentar el mismo pedido"
-                  onPress={onRetry}
-                />
-              ) : null}
-            </View>
-          ) : null}
-
-          {!pendingSubmission ? (
-            <ActionButton
-              label={getSubmitLabel(cartKind, total, ordersState.submitting)}
-              disabled={
-                ordersState.submitting ||
-                !['dine-in', 'delivery'].includes(cartKind)
-              }
-              onPress={() => {
-                if (cartKind === 'dine-in') void onSubmit(items);
-                if (cartKind === 'delivery') confirmOrder();
-              }}
-            />
-          ) : null}
-        </>
-      ) : (
-        <View className="items-center rounded-2xl bg-white px-6 py-9">
-          <Text className="text-4xl">🛒</Text>
-          <Text className="mt-3 text-base font-bold text-[#332d28]">
-            Tu pedido está vacío
-          </Text>
-          <Text className="mt-1 text-center text-xs leading-5 text-[#8b8178]">
-            Agrega ceviches o bebidas desde el menú para comenzar.
-          </Text>
-          <ActionButton label="Ver menú" onPress={onBackToMenu} />
-        </View>
-      )}
-
-      {activeOrder ? (
-        <View className="mt-4 rounded-2xl border border-[#eadfd2] bg-white p-4">
-          <Text className="text-[10px] font-bold tracking-wide text-[#a85431]">
-            DEMOSTRACIÓN LOCAL
-          </Text>
-          <Text className="mt-1 text-sm font-bold text-[#332d28]">
-            Pedido {activeOrder.id} · {activeOrder.status}
-          </Text>
-          <Text className="mt-1 text-[10px] leading-4 text-[#81766d]">
-            Este pedido de domicilio solo se guardó en memoria; no fue enviado
-            al restaurante.
-          </Text>
-        </View>
-      ) : null}
+      <CartContents
+        items={items}
+        pendingSubmission={pendingSubmission}
+        ordersState={ordersState}
+        cartKind={cartKind}
+        total={total}
+        onSubmit={onSubmit}
+        onRetry={onRetry}
+        onBackToMenu={onBackToMenu}
+      />
+      <LocalOrderNotice order={activeOrder} />
     </View>
   );
 }

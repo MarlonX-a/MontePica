@@ -92,7 +92,136 @@ function Notice({ children, error = false }) {
   );
 }
 
-function OrderDetail({ state, cancelReason, setCancelReason, canManage }) {
+function PendingOperationPanel({ state }) {
+  if (!state.pendingOperation) return null;
+  return (
+    <View className="mb-3 rounded-xl bg-[#fff0cf] p-3">
+      <Text className="mb-2 text-xs font-semibold text-[#795817]">
+        El resultado todavía no está confirmado. Puedes revisar el estado del pedido o repetir la misma operación.
+      </Text>
+      <View className="flex-row">
+        <View className="mr-2 flex-1">
+          <ActionButton label={state.reconciling ? 'Consultando…' : 'Consultar estado'} secondary disabled={state.reconciling || state.busy} onPress={state.reconcilePending} />
+        </View>
+        <View className="flex-1">
+          <ActionButton label={state.busy ? 'Enviando…' : 'Reintentar operación'} disabled={state.reconciling || state.busy} onPress={state.retryPending} />
+        </View>
+      </View>
+    </View>
+  );
+}
+
+function OrderInformation({ order }) {
+  return (
+    <View className="rounded-2xl bg-white p-4">
+      <View className="flex-row items-start justify-between">
+        <View className="mr-2 flex-1">
+          <Text className="text-lg font-bold text-[#332d28]">{order.tableLabel}</Text>
+          <Text className="mt-1 text-xs text-[#8b8178]">Recibido: {order.submittedLabel}</Text>
+          {order.tableUnavailable ? (
+            <Text className="mt-1 text-[10px] text-[#a85431]">
+              {order.visitId
+                ? `El código de mesa no está disponible. Referencia de visita: ${order.visitId}`
+                : 'No hay una referencia de mesa disponible para este pedido.'}
+            </Text>
+          ) : null}
+          <Text className="mt-1 text-[10px] text-[#a79b90]">Versión {order.version}</Text>
+        </View>
+        <StatusBadge status={order.status} label={order.statusLabel} />
+      </View>
+      <View className="mt-5 border-t border-[#f0e6dc] pt-4">
+        <Text className="mb-3 text-sm font-semibold text-[#514941]">Productos</Text>
+        {order.items.map((item) => (
+          <View key={item.id} className="mb-3 flex-row items-start">
+            <View className="mr-2 h-7 w-7 items-center justify-center rounded-lg bg-[#fff0e7]">
+              <Text className="text-[10px] font-bold text-[#b7472a]">{item.quantity}×</Text>
+            </View>
+            <View className="flex-1">
+              <Text className="text-xs font-semibold text-[#332d28]">{item.name}</Text>
+              <Text className="mt-0.5 text-[10px] text-[#8b8178]">{item.notes || `Producto ${item.productId}`}</Text>
+              <Text className="mt-0.5 text-[10px] text-[#a79b90]">{item.unitPriceLabel} por unidad</Text>
+            </View>
+            <Text className="text-xs font-semibold text-[#514941]">{item.subtotalLabel}</Text>
+          </View>
+        ))}
+      </View>
+      {order.notes ? (
+        <View className="border-t border-[#f0e6dc] py-3">
+          <Text className="text-[11px] font-semibold text-[#514941]">Nota del pedido</Text>
+          <Text className="mt-1 text-xs text-[#70665e]">{order.notes}</Text>
+        </View>
+      ) : null}
+      <View className="mt-1 flex-row items-center justify-between border-t border-[#f0e6dc] pt-4">
+        <Text className="text-sm font-semibold text-[#514941]">Total</Text>
+        <Text className="text-xl font-bold text-[#b7472a]">{order.totalLabel}</Text>
+      </View>
+    </View>
+  );
+}
+
+function OrderHistory({ history }) {
+  return (
+    <View className="mt-4 rounded-2xl bg-white p-4">
+      <Text className="mb-3 text-sm font-semibold text-[#514941]">Historial del pedido</Text>
+      {history.length ? history.map((event, index) => (
+        <View key={`${event.occurredAt}-${index}`} className="mb-3 border-l-2 border-[#e8b09d] pl-3">
+          <Text className="text-xs font-semibold text-[#332d28]">{event.label}</Text>
+          <Text className="mt-1 text-[10px] text-[#8b8178]">{event.occurredLabel}</Text>
+          {event.reason ? <Text className="mt-1 text-[10px] text-[#70665e]">Motivo: {event.reason}</Text> : null}
+        </View>
+      )) : (
+        <Text className="text-xs text-[#8b8178]">El backend no devolvió eventos del pedido.</Text>
+      )}
+    </View>
+  );
+}
+
+function getActionInstructions(action) {
+  const instructions = {
+    'start-preparation': 'El pedido cambiará a En preparación. El backend validará la jornada e inventario.',
+    ready: 'El pedido cambiará a Listo para su entrega.',
+    deliver: 'El pedido quedará marcado como Entregado.',
+    cancel: 'El pedido recibido se cancelará y el backend liberará las reservas de inventario.',
+  };
+  return instructions[action] || '';
+}
+
+function ActionConfirmation({ action, state, cancelReason, setCancelReason }) {
+  if (!state.confirmation) return null;
+  return (
+    <View className="mt-4 rounded-2xl border border-[#e9c7b6] bg-[#fff1e8] p-4">
+      <Text className="text-sm font-bold text-[#514941]">Confirmar: {actions[action]?.label}</Text>
+      <Text className="mt-2 text-xs leading-5 text-[#70665e]">{getActionInstructions(action)}</Text>
+      {action === 'cancel' ? (
+        <>
+          <Text className="mb-1 mt-3 text-xs font-semibold text-[#514941]">Motivo de cancelación</Text>
+          <TextInput
+            accessibilityLabel="Motivo de cancelación"
+            value={cancelReason}
+            onChangeText={setCancelReason}
+            editable={!state.busy}
+            maxLength={500}
+            multiline
+            textAlignVertical="top"
+            placeholder="Escribe el motivo (máximo 500 caracteres)"
+            className="min-h-20 rounded-xl border border-[#eadfd2] bg-white px-3 py-2 text-xs text-[#332d28]"
+          />
+          <Text className="mt-1 text-right text-[10px] text-[#8b8178]">{cancelReason.length}/500</Text>
+        </>
+      ) : null}
+      <View className="mt-3 flex-row">
+        <View className="mr-2 flex-1">
+          <ActionButton label="Volver" secondary disabled={state.busy} onPress={state.cancelConfirmation} />
+        </View>
+        <View className="flex-1">
+          <ActionButton label={state.busy ? 'Guardando…' : 'Confirmar'} disabled={state.busy} onPress={() => state.confirmAction(cancelReason)} />
+        </View>
+      </View>
+    </View>
+  );
+}
+
+function OrderActions({ state, cancelReason, setCancelReason, canManage }) {
   const { detail: order } = state;
   const transitionActions = {
     submitted: ['start-preparation', 'cancel'],
@@ -101,9 +230,31 @@ function OrderDetail({ state, cancelReason, setCancelReason, canManage }) {
     delivered: [],
     cancelled: [],
   }[order.status] || [];
-  const currentAction = state.confirmation?.action;
   const canChange = canManage && !state.busy && !state.detailLoading && !state.pendingOperation;
+  return (
+    <>
+      {transitionActions.length && canManage && !state.pendingOperation ? (
+        <View className="mt-4">
+          <Text className="mb-2 text-sm font-semibold text-[#514941]">Acciones</Text>
+          {transitionActions.map((action) => (
+            <View key={action} className="mb-2">
+              <ActionButton label={actions[action].label} disabled={!canChange} secondary={action === 'cancel'} onPress={() => state.beginAction(action)} />
+            </View>
+          ))}
+        </View>
+      ) : null}
+      {!canManage ? (
+        <Text className="mt-4 text-center text-xs text-[#8b8178]">
+          Tu cuenta puede consultar pedidos, pero no tiene el permiso orders.manage para cambiarlos.
+        </Text>
+      ) : null}
+      <ActionConfirmation action={state.confirmation?.action} state={state} cancelReason={cancelReason} setCancelReason={setCancelReason} />
+    </>
+  );
+}
 
+function OrderDetail({ state, cancelReason, setCancelReason, canManage }) {
+  const { detail: order } = state;
   return (
     <SafeAreaView className="flex-1 bg-[#fff8ef]">
       <ScrollView
@@ -144,158 +295,38 @@ function OrderDetail({ state, cancelReason, setCancelReason, canManage }) {
           </View>
         ) : null}
 
-        {state.pendingOperation ? (
-          <View className="mb-3 rounded-xl bg-[#fff0cf] p-3">
-            <Text className="mb-2 text-xs font-semibold text-[#795817]">
-              El resultado todavía no está confirmado. Puedes revisar el estado del pedido o repetir la misma operación.
-            </Text>
-            <View className="flex-row">
-              <View className="mr-2 flex-1">
-                <ActionButton label={state.reconciling ? 'Consultando…' : 'Consultar estado'} secondary disabled={state.reconciling || state.busy} onPress={state.reconcilePending} />
-              </View>
-              <View className="flex-1">
-                <ActionButton label={state.busy ? 'Enviando…' : 'Reintentar operación'} disabled={state.reconciling || state.busy} onPress={state.retryPending} />
-              </View>
-            </View>
-          </View>
-        ) : null}
-
-        <View className="rounded-2xl bg-white p-4">
-          <View className="flex-row items-start justify-between">
-            <View className="mr-2 flex-1">
-              <Text className="text-lg font-bold text-[#332d28]">{order.tableLabel}</Text>
-              <Text className="mt-1 text-xs text-[#8b8178]">Recibido: {order.submittedLabel}</Text>
-              {order.tableUnavailable ? (
-                <Text className="mt-1 text-[10px] text-[#a85431]">
-                  {order.visitId
-                    ? `El código de mesa no está disponible. Referencia de visita: ${order.visitId}`
-                    : 'No hay una referencia de mesa disponible para este pedido.'}
-                </Text>
-              ) : null}
-              <Text className="mt-1 text-[10px] text-[#a79b90]">Versión {order.version}</Text>
-            </View>
-            <StatusBadge status={order.status} label={order.statusLabel} />
-          </View>
-
-          <View className="mt-5 border-t border-[#f0e6dc] pt-4">
-            <Text className="mb-3 text-sm font-semibold text-[#514941]">Productos</Text>
-            {order.items.map((item) => (
-              <View key={item.id} className="mb-3 flex-row items-start">
-                <View className="mr-2 h-7 w-7 items-center justify-center rounded-lg bg-[#fff0e7]">
-                  <Text className="text-[10px] font-bold text-[#b7472a]">{item.quantity}×</Text>
-                </View>
-                <View className="flex-1">
-                  <Text className="text-xs font-semibold text-[#332d28]">{item.name}</Text>
-                  <Text className="mt-0.5 text-[10px] text-[#8b8178]">
-                    {item.notes || `Producto ${item.productId}`}
-                  </Text>
-                  <Text className="mt-0.5 text-[10px] text-[#a79b90]">
-                    {item.unitPriceLabel} por unidad
-                  </Text>
-                </View>
-                <Text className="text-xs font-semibold text-[#514941]">{item.subtotalLabel}</Text>
-              </View>
-            ))}
-          </View>
-
-          {order.notes ? (
-            <View className="border-t border-[#f0e6dc] py-3">
-              <Text className="text-[11px] font-semibold text-[#514941]">Nota del pedido</Text>
-              <Text className="mt-1 text-xs text-[#70665e]">{order.notes}</Text>
-            </View>
-          ) : null}
-
-          <View className="mt-1 flex-row items-center justify-between border-t border-[#f0e6dc] pt-4">
-            <Text className="text-sm font-semibold text-[#514941]">Total</Text>
-            <Text className="text-xl font-bold text-[#b7472a]">{order.totalLabel}</Text>
-          </View>
-        </View>
-
-        <View className="mt-4 rounded-2xl bg-white p-4">
-          <Text className="mb-3 text-sm font-semibold text-[#514941]">Historial del pedido</Text>
-          {order.history.length ? order.history.map((event, index) => (
-            <View key={`${event.occurredAt}-${index}`} className="mb-3 border-l-2 border-[#e8b09d] pl-3">
-              <Text className="text-xs font-semibold text-[#332d28]">{event.label}</Text>
-              <Text className="mt-1 text-[10px] text-[#8b8178]">{event.occurredLabel}</Text>
-              {event.reason ? <Text className="mt-1 text-[10px] text-[#70665e]">Motivo: {event.reason}</Text> : null}
-            </View>
-          )) : (
-            <Text className="text-xs text-[#8b8178]">El backend no devolvió eventos del pedido.</Text>
-          )}
-        </View>
-
-        {transitionActions.length && canManage && !state.pendingOperation ? (
-          <View className="mt-4">
-            <Text className="mb-2 text-sm font-semibold text-[#514941]">Acciones</Text>
-            {transitionActions.map((action) => (
-              <View key={action} className="mb-2">
-                <ActionButton
-                  label={actions[action].label}
-                  disabled={!canChange}
-                  secondary={action === 'cancel'}
-                  onPress={() => state.beginAction(action)}
-                />
-              </View>
-            ))}
-          </View>
-        ) : null}
-
-        {!canManage ? (
-          <Text className="mt-4 text-center text-xs text-[#8b8178]">
-            Tu cuenta puede consultar pedidos, pero no tiene el permiso orders.manage para cambiarlos.
-          </Text>
-        ) : null}
-
-        {state.confirmation ? (
-          <View className="mt-4 rounded-2xl border border-[#e9c7b6] bg-[#fff1e8] p-4">
-            <Text className="text-sm font-bold text-[#514941]">
-              Confirmar: {actions[currentAction]?.label}
-            </Text>
-            <Text className="mt-2 text-xs leading-5 text-[#70665e]">
-              {currentAction === 'start-preparation' && 'El pedido cambiará a En preparación. El backend validará la jornada e inventario.'}
-              {currentAction === 'ready' && 'El pedido cambiará a Listo para su entrega.'}
-              {currentAction === 'deliver' && 'El pedido quedará marcado como Entregado.'}
-              {currentAction === 'cancel' && 'El pedido recibido se cancelará y el backend liberará las reservas de inventario.'}
-            </Text>
-            {currentAction === 'cancel' ? (
-              <>
-                <Text className="mb-1 mt-3 text-xs font-semibold text-[#514941]">Motivo de cancelación</Text>
-                <TextInput
-                  accessibilityLabel="Motivo de cancelación"
-                  value={cancelReason}
-                  onChangeText={setCancelReason}
-                  editable={!state.busy}
-                  maxLength={500}
-                  multiline
-                  textAlignVertical="top"
-                  placeholder="Escribe el motivo (máximo 500 caracteres)"
-                  className="min-h-20 rounded-xl border border-[#eadfd2] bg-white px-3 py-2 text-xs text-[#332d28]"
-                />
-                <Text className="mt-1 text-right text-[10px] text-[#8b8178]">{cancelReason.length}/500</Text>
-              </>
-            ) : null}
-            <View className="mt-3 flex-row">
-              <View className="mr-2 flex-1">
-                <ActionButton
-                  label="Volver"
-                  secondary
-                  disabled={state.busy}
-                  onPress={() => state.cancelConfirmation()}
-                />
-              </View>
-              <View className="flex-1">
-                <ActionButton
-                  label={state.busy ? 'Guardando…' : 'Confirmar'}
-                  disabled={state.busy}
-                  onPress={() => state.confirmAction(cancelReason)}
-                />
-              </View>
-            </View>
-          </View>
-        ) : null}
+        <PendingOperationPanel state={state} />
+        <OrderInformation order={order} />
+        <OrderHistory history={order.history} />
+        <OrderActions state={state} cancelReason={cancelReason} setCancelReason={setCancelReason} canManage={canManage} />
       </ScrollView>
     </SafeAreaView>
   );
+}
+
+function OrdersListContent({ state }) {
+  if (state.loading) {
+    return <Text className="py-8 text-center text-sm text-[#8b8178]">Cargando pedidos…</Text>;
+  }
+  if (state.error) {
+    return (
+      <View className="items-center rounded-2xl bg-white p-5">
+        <Text className="mb-3 text-center text-xs text-[#70665e]">No se pudo cargar la bandeja.</Text>
+        <ActionButton label="Reintentar" onPress={state.refresh} />
+      </View>
+    );
+  }
+  if (!state.orders.length) {
+    return (
+      <View className="rounded-2xl bg-white p-5">
+        <Text className="text-center text-sm font-semibold text-[#514941]">No hay pedidos en este filtro</Text>
+        <Text className="mt-1 text-center text-xs text-[#8b8178]">Actualiza la bandeja para consultar cambios recientes.</Text>
+      </View>
+    );
+  }
+  return state.orders.map((order) => (
+    <OrderCard key={order.id} order={order} onPress={() => state.selectOrder(order.id)} />
+  ));
 }
 
 async function handleLogout() {
@@ -418,21 +449,7 @@ export default function WaiterOrdersScreen() {
           ))}
         </ScrollView>
 
-        {state.loading ? (
-          <Text className="py-8 text-center text-sm text-[#8b8178]">Cargando pedidos…</Text>
-        ) : state.error ? (
-          <View className="items-center rounded-2xl bg-white p-5">
-            <Text className="mb-3 text-center text-xs text-[#70665e]">No se pudo cargar la bandeja.</Text>
-            <ActionButton label="Reintentar" onPress={state.refresh} />
-          </View>
-        ) : state.orders.length === 0 ? (
-          <View className="rounded-2xl bg-white p-5">
-            <Text className="text-center text-sm font-semibold text-[#514941]">No hay pedidos en este filtro</Text>
-            <Text className="mt-1 text-center text-xs text-[#8b8178]">Actualiza la bandeja para consultar cambios recientes.</Text>
-          </View>
-        ) : state.orders.map((order) => (
-          <OrderCard key={order.id} order={order} onPress={() => state.selectOrder(order.id)} />
-        ))}
+        <OrdersListContent state={state} />
 
         {!state.loading && !state.error && state.total > 0 ? (
           <View className="mt-2 flex-row items-center justify-between rounded-xl bg-white px-3 py-2">
