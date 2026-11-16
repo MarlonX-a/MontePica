@@ -1,0 +1,99 @@
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from 'react-native';
+import { Link, router } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import RegisterForm from '@/features/auth/components/RegisterForm';
+import { registerWithApi } from '@/features/auth/api/authApi';
+import { setCurrentSession } from '@/shared/session/sessionStore';
+
+export default function RegisterScreen() {
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#f8f5ec' }}>
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{
+            flexGrow: 1,
+            paddingHorizontal: 24,
+            paddingTop: 14,
+            paddingBottom: 24,
+          }}
+        >
+          <View className="mb-7 flex-row items-center justify-between">
+            <Link href="/" asChild>
+              <Pressable
+                accessibilityRole="link"
+                accessibilityLabel="Volver a MontePica"
+                className="h-10 w-10 items-center justify-center rounded-full bg-white"
+              >
+                <Text className="text-2xl leading-7 text-[#75695f]">‹</Text>
+              </Pressable>
+            </Link>
+
+            <View className="flex-row items-center">
+              <View className="mr-2 h-10 w-10 items-center justify-center rounded-xl bg-[#24543a]">
+                <Text className="text-lg font-bold text-white">P</Text>
+              </View>
+              <View>
+                <Text className="text-sm font-bold leading-4 text-[#23382b]">
+                  MontePica
+                </Text>
+                <Text className="text-[9px] font-bold tracking-[1.5px] text-[#24543a]">
+                  MONTECRISTI
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          <View className="mb-5">
+            <Text className="text-2xl font-bold text-[#23382b]">
+              Crea tu cuenta
+            </Text>
+            <Text className="mt-1 text-sm leading-5 text-[#687363]">
+              Guarda tus pedidos y disfruta una atención más rápida.
+            </Text>
+          </View>
+
+          <RegisterForm
+            onRegistered={async (registrationData) => {
+              const session = await registerWithApi(registrationData);
+
+              try {
+                await setCurrentSession(session);
+              } catch {
+                const error = new Error('No se pudo guardar la sesión.');
+                error.code = 'SESSION_STORAGE_FAILED';
+                throw error;
+              }
+
+              router.replace('/home');
+            }}
+          />
+
+          <View className="mt-5 flex-row justify-center">
+            <Text className="text-xs text-[#687363]">
+              ¿Ya tienes cuenta?{' '}
+            </Text>
+            <Link href="/(auth)/login" asChild>
+              <Pressable accessibilityRole="link">
+                <Text className="text-xs font-semibold text-[#24543a]">
+                  Ingresar
+                </Text>
+              </Pressable>
+            </Link>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
+}
