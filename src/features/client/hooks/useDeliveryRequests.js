@@ -75,8 +75,8 @@ export default function useDeliveryRequests() {
   }, [clientId, form, settings, submitting, load]);
 
   const refreshRequest = useCallback(async (id) => {
-    try { const updated = await getMyDeliveryRequest(id); setItems((current) => current.map((item) => item.id === id ? updated : item)); }
-    catch (requestError) { setError(getDeliveryApiError(requestError)); }
+    try { const updated = await getMyDeliveryRequest(id); setItems((current) => current.map((item) => item.id === id ? updated : item)); return updated; }
+    catch (requestError) { setError(getDeliveryApiError(requestError)); return null; }
   }, []);
 
   return { settings, items, form, update, error, fieldError, loading, submitting, uncertain, page, total, refreshing, load, submit, refreshRequest, setPage, clientId };

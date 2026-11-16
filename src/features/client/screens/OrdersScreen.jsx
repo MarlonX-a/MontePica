@@ -21,6 +21,7 @@ import {
 import useClientOrders from '@/features/client/hooks/useClientOrders';
 import { logoutUser } from '@/shared/session/sessionStore';
 import DeliveryRequestPanel from '@/features/client/components/DeliveryRequestPanel';
+import DeliveryReceiptPanel from '@/features/client/components/DeliveryReceiptPanel';
 
 function getCartKind(items) {
   if (!items.length) return 'empty';
@@ -283,7 +284,7 @@ function CartSection({ items, pendingSubmission, ordersState, activeOrder, onSub
   );
 }
 
-function OrderCard({ order }) {
+function OrderCard({ order, onPress }) {
   const quantity = order.items.reduce(
     (sum, item) => sum + Number(item.quantity || 0),
     0,
@@ -291,7 +292,7 @@ function OrderCard({ order }) {
   const shortId = order.id ? order.id.slice(0, 8).toUpperCase() : '—';
 
   return (
-    <View className="mb-3 rounded-2xl bg-white p-4">
+    <Pressable onPress={onPress} className="mb-3 rounded-2xl bg-white p-4">
       <View className="flex-row items-start justify-between">
         <View className="mr-3 flex-1">
           <Text className="text-[10px] font-semibold text-[#8b8178]">
@@ -309,7 +310,7 @@ function OrderCard({ order }) {
         {formatOrderDate(order.submittedAt)} · {order.items.length} productos ·{' '}
         {quantity} unidades
       </Text>
-    </View>
+    </Pressable>
   );
 }
 
@@ -319,7 +320,7 @@ function OrderHistory({ ordersState }) {
       <View className="mb-3 flex-row items-center justify-between">
         <View>
           <Text className="text-lg font-bold text-[#332d28]">
-            Pedidos del local
+            {ordersState.modality === 'delivery' ? 'Pedidos a domicilio' : 'Pedidos del local'}
           </Text>
           <Text className="mt-0.5 text-[10px] text-[#8b8178]">
             {ordersState.total} pedidos registrados por el servidor
@@ -341,6 +342,10 @@ function OrderHistory({ ordersState }) {
           </Text>
         </Pressable>
       </View>
+      <View className="mb-3 flex-row gap-2">
+        {['local', 'delivery'].map((modality) => <Pressable key={modality} onPress={() => ordersState.changeModality(modality)} className={`rounded-full px-3 py-2 ${ordersState.modality === modality ? 'bg-[#8e3b27]' : 'bg-white'}`}><Text className={`text-[10px] ${ordersState.modality === modality ? 'text-white' : 'text-[#70665e]'}`}>{modality === 'local' ? 'Salón' : 'Domicilio'}</Text></Pressable>)}
+      </View>
+      {ordersState.selectedOrder ? <View className="mb-3 rounded-2xl bg-white p-4"><Text className="text-sm font-bold text-[#332d28]">Detalle · {ordersState.selectedOrder.status}</Text>{ordersState.selectedOrder.delivery ? <><Text className="mt-2 text-xs leading-5 text-[#75695f]">{ordersState.selectedOrder.delivery.recipientName}{'\n'}{ordersState.selectedOrder.delivery.phone}{'\n'}{ordersState.selectedOrder.delivery.address}{'\n'}Envío: {formatOrderTotal(ordersState.selectedOrder.shippingCents, ordersState.selectedOrder.currency)}</Text><DeliveryReceiptPanel order={ordersState.selectedOrder} onUpdated={ordersState.setSelectedOrder} /></> : null}<Pressable onPress={() => ordersState.setSelectedOrder(null)}><Text className="mt-2 text-xs font-bold text-[#b7472a]">Cerrar detalle</Text></Pressable></View> : null}
 
       {ordersState.notice ? (
         <View className="mb-3 rounded-xl bg-[#e4efe2] px-3 py-3">
@@ -393,13 +398,15 @@ function OrderHistory({ ordersState }) {
       !ordersState.orders.length ? (
         <View className="rounded-2xl bg-white px-5 py-7">
           <Text className="text-center text-xs text-[#8b8178]">
-            Todavía no tienes pedidos registrados en el local.
+            {ordersState.modality === 'delivery'
+              ? 'Todavía no tienes pedidos a domicilio.'
+              : 'Todavía no tienes pedidos registrados en el local.'}
           </Text>
         </View>
       ) : null}
 
       {ordersState.orders.map((order) => (
-        <OrderCard key={order.id} order={order} />
+        <OrderCard key={order.id} order={order} onPress={() => void ordersState.loadOrderDetail(order.id)} />
       ))}
 
       {ordersState.hasMore ? (
@@ -461,7 +468,7 @@ export default function OrdersScreen() {
             onRetry={ordersState.retrySubmission}
             onBackToMenu={goToMenu}
           />
-          {routeService === 'delivery' ? <DeliveryRequestPanel /> : null}
+          {routeService === 'delivery' || cartItems.some((item) => item.service === 'delivery') ? <DeliveryRequestPanel cartItems={cartItems} ordersState={ordersState} /> : null}
           <OrderHistory ordersState={ordersState} />
         </ScrollView>
         <BottomNavigation

@@ -126,12 +126,13 @@ export function getPendingOrderSubmission() {
   return pendingSubmission;
 }
 
-export function createPendingOrderSubmission(visitId, payload) {
+export function createPendingOrderSubmission(visitId, payload, context = {}) {
   if (pendingSubmission) return null;
 
   pendingSubmission = {
     visitId,
     payload,
+    ...context,
     key: `order-${Crypto.randomUUID()}`,
     status: 'ready',
   };
