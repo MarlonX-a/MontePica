@@ -9,7 +9,6 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BottomNavigation from '@/features/client/components/BottomNavigation';
 import {
-  confirmOrder,
   getCartTotal,
   updateCartQuantity,
   useOrderStore,
@@ -21,6 +20,7 @@ import {
 } from '@/features/client/data/orderMapper';
 import useClientOrders from '@/features/client/hooks/useClientOrders';
 import { logoutUser } from '@/shared/session/sessionStore';
+import DeliveryRequestPanel from '@/features/client/components/DeliveryRequestPanel';
 
 function getCartKind(items) {
   if (!items.length) return 'empty';
@@ -44,7 +44,6 @@ function firstParam(value) {
 function getSubmitLabel(cartKind, total, submitting) {
   if (submitting) return 'Enviando…';
   if (cartKind === 'dine-in') return `Enviar pedido · $${total.toFixed(2)}`;
-  if (cartKind === 'delivery') return 'Confirmar demostración local';
   return 'Revisa los productos del carrito';
 }
 
@@ -152,15 +151,7 @@ function CartServiceNotice({ cartKind }) {
       </Text>
     );
   }
-  if (cartKind === 'delivery') {
-    return (
-      <View className="mt-3 rounded-xl bg-[#f4eee5] px-3 py-3">
-        <Text className="text-[10px] leading-4 text-[#75695f]">
-          Los pedidos a domicilio todavía no están conectados al backend. Esta confirmación se conserva como demostración local.
-        </Text>
-      </View>
-    );
-  }
+  if (cartKind === 'delivery') return null;
   if (cartKind === 'mixed' || cartKind === 'invalid') {
     return (
       <Text accessibilityRole="alert" className="mt-3 text-xs leading-5 text-[#b7472a]">
@@ -215,10 +206,9 @@ function CartSubmitButton({ cartKind, total, submitting, items, onSubmit }) {
   return (
     <ActionButton
       label={getSubmitLabel(cartKind, total, submitting)}
-      disabled={submitting || !['dine-in', 'delivery'].includes(cartKind)}
+      disabled={submitting || cartKind !== 'dine-in'}
       onPress={() => {
         if (cartKind === 'dine-in') void onSubmit(items);
-        if (cartKind === 'delivery') confirmOrder();
       }}
     />
   );
@@ -249,7 +239,7 @@ function CartContents({ items, pendingSubmission, ordersState, cartKind, total, 
       <CartServiceNotice cartKind={cartKind} />
       <OrderSubmissionError ordersState={ordersState} />
       <PendingSubmissionNotice pendingSubmission={pendingSubmission} onRetry={onRetry} />
-      {!pendingSubmission ? (
+      {!pendingSubmission && cartKind === 'dine-in' ? (
         <CartSubmitButton cartKind={cartKind} total={total} submitting={ordersState.submitting} items={items} onSubmit={onSubmit} />
       ) : null}
     </>
@@ -263,7 +253,7 @@ function LocalOrderNotice({ order }) {
       <Text className="text-[10px] font-bold tracking-wide text-[#a85431]">DEMOSTRACIÓN LOCAL</Text>
       <Text className="mt-1 text-sm font-bold text-[#332d28]">Pedido {order.id} · {order.status}</Text>
       <Text className="mt-1 text-[10px] leading-4 text-[#81766d]">
-        Este pedido de domicilio solo se guardó en memoria; no fue enviado al restaurante.
+        La solicitud de domicilio no envía automáticamente los productos del carrito.
       </Text>
     </View>
   );
@@ -471,6 +461,7 @@ export default function OrdersScreen() {
             onRetry={ordersState.retrySubmission}
             onBackToMenu={goToMenu}
           />
+          {routeService === 'delivery' ? <DeliveryRequestPanel /> : null}
           <OrderHistory ordersState={ordersState} />
         </ScrollView>
         <BottomNavigation
