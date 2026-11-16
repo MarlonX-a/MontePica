@@ -59,7 +59,7 @@ function QuantityButton({ item, amount, disabled }) {
       className={`h-8 w-8 items-center justify-center rounded-lg ${disabled ? 'bg-[#f4eee5]' : 'bg-[#f5e7d5]'}`}
     >
       <Text
-        className={`text-base font-bold ${disabled ? 'text-[#c6b9aa]' : 'text-[#24543a]'}`}
+        className={`text-base font-bold ${disabled ? 'text-[#c6b9aa]' : 'text-[#8e3b27]'}`}
       >
         {amount < 0 ? '−' : '+'}
       </Text>
@@ -73,25 +73,25 @@ function CartItem({ item, locked }) {
   return (
     <View className="mb-3 rounded-2xl bg-white p-3">
       <View className="flex-row items-start">
-        <View className="mr-3 h-12 w-12 items-center justify-center rounded-xl bg-[#edf0df]">
+        <View className="mr-3 h-12 w-12 items-center justify-center rounded-xl bg-[#fff0e7]">
           <Text className="text-2xl">{item.product.icon}</Text>
         </View>
         <View className="flex-1">
           <View className="flex-row justify-between">
-            <Text className="mr-2 flex-1 text-xs font-semibold text-[#23382b]">
+            <Text className="mr-2 flex-1 text-xs font-semibold text-[#332d28]">
               {item.product.name}
             </Text>
-            <Text className="text-xs font-bold text-[#23382b]">
+            <Text className="text-xs font-bold text-[#332d28]">
               ${(unitPrice * item.quantity).toFixed(2)}
             </Text>
           </View>
-          <Text className="mt-1 text-[10px] text-[#687363]">
+          <Text className="mt-1 text-[10px] text-[#8b8178]">
             {item.spice ? `${item.spice} · ` : ''}
             {item.note || 'Sin nota para cocina'}
           </Text>
           <View className="mt-2 flex-row items-center">
             <QuantityButton item={item} amount={-1} disabled={locked} />
-            <Text className="w-9 text-center text-xs font-semibold text-[#455343]">
+            <Text className="w-9 text-center text-xs font-semibold text-[#514941]">
               {item.quantity}
             </Text>
             <QuantityButton item={item} amount={1} disabled={locked} />
@@ -109,10 +109,10 @@ function ActionButton({ label, onPress, disabled = false, secondary = false }) {
       accessibilityState={{ disabled }}
       disabled={disabled}
       onPress={onPress}
-      className={`mt-3 min-h-11 items-center justify-center rounded-xl px-4 ${secondary ? 'border border-[#dedfce] bg-white' : 'bg-[#24543a]'} ${disabled ? 'opacity-50' : ''}`}
+      className={`mt-3 min-h-11 items-center justify-center rounded-xl px-4 ${secondary ? 'border border-[#eadfd2] bg-white' : 'bg-[#b7472a]'} ${disabled ? 'opacity-50' : ''}`}
     >
       <Text
-        className={`text-xs font-bold ${secondary ? 'text-[#6f741b]' : 'text-white'}`}
+        className={`text-xs font-bold ${secondary ? 'text-[#a85431]' : 'text-white'}`}
       >
         {label}
       </Text>
@@ -133,12 +133,12 @@ function CartTotals({ total }) {
   return (
     <View className="rounded-2xl bg-white p-4">
       <View className="flex-row justify-between">
-        <Text className="text-xs text-[#687363]">Subtotal estimado</Text>
-        <Text className="text-xs text-[#455343]">${total.toFixed(2)}</Text>
+        <Text className="text-xs text-[#8b8178]">Subtotal estimado</Text>
+        <Text className="text-xs text-[#514941]">${total.toFixed(2)}</Text>
       </View>
       <View className="mt-3 flex-row items-center justify-between border-t border-[#f0e6dc] pt-3">
-        <Text className="text-base font-bold text-[#23382b]">Total estimado</Text>
-        <Text className="text-xl font-bold text-[#24543a]">${total.toFixed(2)}</Text>
+        <Text className="text-base font-bold text-[#332d28]">Total estimado</Text>
+        <Text className="text-xl font-bold text-[#b7472a]">${total.toFixed(2)}</Text>
       </View>
     </View>
   );
@@ -155,7 +155,7 @@ function CartServiceNotice({ cartKind }) {
   if (cartKind === 'delivery') return null;
   if (cartKind === 'mixed' || cartKind === 'invalid') {
     return (
-      <Text accessibilityRole="alert" className="mt-3 text-xs leading-5 text-[#24543a]">
+      <Text accessibilityRole="alert" className="mt-3 text-xs leading-5 text-[#b7472a]">
         No se puede enviar un carrito que mezcle servicios o visitas. Quita los productos que no pertenezcan al mismo servicio y visita.
       </Text>
     );
@@ -187,8 +187,8 @@ function PendingSubmissionNotice({ pendingSubmission, onRetry }) {
   if (!pendingSubmission) return null;
   const isSending = pendingSubmission.status === 'sending';
   return (
-    <View className="mt-3 rounded-xl bg-[#edf0df] px-3 py-3">
-      <Text className="text-[11px] font-semibold text-[#6f741b]">
+    <View className="mt-3 rounded-xl bg-[#fff0e7] px-3 py-3">
+      <Text className="text-[11px] font-semibold text-[#a85431]">
         {isSending ? 'Enviando pedido…' : 'Resultado del envío sin confirmar'}
       </Text>
       <Text className="mt-1 text-[10px] leading-4 text-[#75695f]">
@@ -220,8 +220,8 @@ function CartContents({ items, pendingSubmission, ordersState, cartKind, total, 
     return (
       <View className="items-center rounded-2xl bg-white px-6 py-9">
         <Text className="text-4xl">🛒</Text>
-        <Text className="mt-3 text-base font-bold text-[#23382b]">Tu pedido está vacío</Text>
-        <Text className="mt-1 text-center text-xs leading-5 text-[#687363]">
+        <Text className="mt-3 text-base font-bold text-[#332d28]">Tu pedido está vacío</Text>
+        <Text className="mt-1 text-center text-xs leading-5 text-[#8b8178]">
           Agrega ceviches o bebidas desde el menú para comenzar.
         </Text>
         <ActionButton label="Ver menú" onPress={onBackToMenu} />
@@ -231,9 +231,9 @@ function CartContents({ items, pendingSubmission, ordersState, cartKind, total, 
   const locked = Boolean(pendingSubmission || ordersState.submitting);
   return (
     <>
-      <View className="mb-4 rounded-xl bg-[#edf0df] px-3 py-3">
-        <Text className="text-[11px] font-semibold text-[#6f741b]">El inventario se comprobará al enviar</Text>
-        <Text className="mt-1 text-[10px] text-[#6f741b]">El servidor confirma disponibilidad y calcula el total final.</Text>
+      <View className="mb-4 rounded-xl bg-[#fff0e7] px-3 py-3">
+        <Text className="text-[11px] font-semibold text-[#a85431]">El inventario se comprobará al enviar</Text>
+        <Text className="mt-1 text-[10px] text-[#a85431]">El servidor confirma disponibilidad y calcula el total final.</Text>
       </View>
       {items.map((item) => <CartItem key={item.key} item={item} locked={locked} />)}
       <CartTotals total={total} />
@@ -250,9 +250,9 @@ function CartContents({ items, pendingSubmission, ordersState, cartKind, total, 
 function LocalOrderNotice({ order }) {
   if (!order) return null;
   return (
-    <View className="mt-4 rounded-2xl border border-[#dedfce] bg-white p-4">
-      <Text className="text-[10px] font-bold tracking-wide text-[#6f741b]">DEMOSTRACIÓN LOCAL</Text>
-      <Text className="mt-1 text-sm font-bold text-[#23382b]">Pedido {order.id} · {order.status}</Text>
+    <View className="mt-4 rounded-2xl border border-[#eadfd2] bg-white p-4">
+      <Text className="text-[10px] font-bold tracking-wide text-[#a85431]">DEMOSTRACIÓN LOCAL</Text>
+      <Text className="mt-1 text-sm font-bold text-[#332d28]">Pedido {order.id} · {order.status}</Text>
       <Text className="mt-1 text-[10px] leading-4 text-[#81766d]">
         La solicitud de domicilio no envía automáticamente los productos del carrito.
       </Text>
@@ -266,8 +266,8 @@ function CartSection({ items, pendingSubmission, ordersState, activeOrder, onSub
   return (
     <View className="mb-6">
       <View className="mb-4">
-        <Text className="text-2xl font-bold text-[#23382b]">Tu pedido</Text>
-        <Text className="mt-1 text-[11px] text-[#687363]">{getCartContextLabel(cartKind, items)}</Text>
+        <Text className="text-2xl font-bold text-[#332d28]">Tu pedido</Text>
+        <Text className="mt-1 text-[11px] text-[#8b8178]">{getCartContextLabel(cartKind, items)}</Text>
       </View>
       <CartContents
         items={items}
@@ -295,18 +295,18 @@ function OrderCard({ order, onPress }) {
     <Pressable onPress={onPress} className="mb-3 rounded-2xl bg-white p-4">
       <View className="flex-row items-start justify-between">
         <View className="mr-3 flex-1">
-          <Text className="text-[10px] font-semibold text-[#687363]">
+          <Text className="text-[10px] font-semibold text-[#8b8178]">
             PEDIDO · {shortId}
           </Text>
-          <Text className="mt-1 text-sm font-bold text-[#23382b]">
+          <Text className="mt-1 text-sm font-bold text-[#332d28]">
             {getOrderStatusLabel(order.status)}
           </Text>
         </View>
-        <Text className="text-sm font-bold text-[#24543a]">
+        <Text className="text-sm font-bold text-[#b7472a]">
           {formatOrderTotal(order.totalCents, order.currency)}
         </Text>
       </View>
-      <Text className="mt-2 text-[10px] text-[#687363]">
+      <Text className="mt-2 text-[10px] text-[#8b8178]">
         {formatOrderDate(order.submittedAt)} · {order.items.length} productos ·{' '}
         {quantity} unidades
       </Text>
@@ -319,10 +319,10 @@ function OrderHistory({ ordersState }) {
     <View className="mb-6">
       <View className="mb-3 flex-row items-center justify-between">
         <View>
-          <Text className="text-lg font-bold text-[#23382b]">
+          <Text className="text-lg font-bold text-[#332d28]">
             {ordersState.modality === 'delivery' ? 'Pedidos a domicilio' : 'Pedidos del local'}
           </Text>
-          <Text className="mt-0.5 text-[10px] text-[#687363]">
+          <Text className="mt-0.5 text-[10px] text-[#8b8178]">
             {ordersState.total} pedidos registrados por el servidor
           </Text>
         </View>
@@ -337,15 +337,15 @@ function OrderHistory({ ordersState }) {
           onPress={() => void ordersState.refresh()}
           className="rounded-lg bg-white px-3 py-2"
         >
-          <Text className="text-[10px] font-semibold text-[#6f741b]">
+          <Text className="text-[10px] font-semibold text-[#a85431]">
             {ordersState.refreshing ? 'Actualizando…' : 'Actualizar'}
           </Text>
         </Pressable>
       </View>
       <View className="mb-3 flex-row gap-2">
-        {['local', 'delivery'].map((modality) => <Pressable key={modality} onPress={() => ordersState.changeModality(modality)} className={`rounded-full px-3 py-2 ${ordersState.modality === modality ? 'bg-[#24543a]' : 'bg-white'}`}><Text className={`text-[10px] ${ordersState.modality === modality ? 'text-white' : 'text-[#70665e]'}`}>{modality === 'local' ? 'Salón' : 'Domicilio'}</Text></Pressable>)}
+        {['local', 'delivery'].map((modality) => <Pressable key={modality} onPress={() => ordersState.changeModality(modality)} className={`rounded-full px-3 py-2 ${ordersState.modality === modality ? 'bg-[#8e3b27]' : 'bg-white'}`}><Text className={`text-[10px] ${ordersState.modality === modality ? 'text-white' : 'text-[#70665e]'}`}>{modality === 'local' ? 'Salón' : 'Domicilio'}</Text></Pressable>)}
       </View>
-      {ordersState.selectedOrder ? <View className="mb-3 rounded-2xl bg-white p-4"><Text className="text-sm font-bold text-[#23382b]">Detalle · {ordersState.selectedOrder.status}</Text>{ordersState.selectedOrder.delivery ? <><Text className="mt-2 text-xs leading-5 text-[#75695f]">{ordersState.selectedOrder.delivery.recipientName}{'\n'}{ordersState.selectedOrder.delivery.phone}{'\n'}{ordersState.selectedOrder.delivery.address}{'\n'}Envío: {formatOrderTotal(ordersState.selectedOrder.shippingCents, ordersState.selectedOrder.currency)}</Text><DeliveryReceiptPanel order={ordersState.selectedOrder} onUpdated={ordersState.setSelectedOrder} /></> : null}<Pressable onPress={() => ordersState.setSelectedOrder(null)}><Text className="mt-2 text-xs font-bold text-[#24543a]">Cerrar detalle</Text></Pressable></View> : null}
+      {ordersState.selectedOrder ? <View className="mb-3 rounded-2xl bg-white p-4"><Text className="text-sm font-bold text-[#332d28]">Detalle · {ordersState.selectedOrder.status}</Text>{ordersState.selectedOrder.delivery ? <><Text className="mt-2 text-xs leading-5 text-[#75695f]">{ordersState.selectedOrder.delivery.recipientName}{'\n'}{ordersState.selectedOrder.delivery.phone}{'\n'}{ordersState.selectedOrder.delivery.address}{'\n'}Envío: {formatOrderTotal(ordersState.selectedOrder.shippingCents, ordersState.selectedOrder.currency)}</Text><DeliveryReceiptPanel order={ordersState.selectedOrder} onUpdated={ordersState.setSelectedOrder} /></> : null}<Pressable onPress={() => ordersState.setSelectedOrder(null)}><Text className="mt-2 text-xs font-bold text-[#b7472a]">Cerrar detalle</Text></Pressable></View> : null}
 
       {ordersState.notice ? (
         <View className="mb-3 rounded-xl bg-[#e4efe2] px-3 py-3">
@@ -360,8 +360,8 @@ function OrderHistory({ ordersState }) {
 
       {ordersState.loading ? (
         <View className="items-center rounded-2xl bg-white px-5 py-7">
-          <ActivityIndicator color="#24543a" />
-          <Text className="mt-2 text-xs text-[#687363]">
+          <ActivityIndicator color="#b7472a" />
+          <Text className="mt-2 text-xs text-[#8b8178]">
             Consultando tus pedidos…
           </Text>
         </View>
@@ -397,7 +397,7 @@ function OrderHistory({ ordersState }) {
       !ordersState.loadError &&
       !ordersState.orders.length ? (
         <View className="rounded-2xl bg-white px-5 py-7">
-          <Text className="text-center text-xs text-[#687363]">
+          <Text className="text-center text-xs text-[#8b8178]">
             {ordersState.modality === 'delivery'
               ? 'Todavía no tienes pedidos a domicilio.'
               : 'Todavía no tienes pedidos registrados en el local.'}
@@ -449,7 +449,7 @@ export default function OrdersScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-[#f8f5ec]">
+    <SafeAreaView className="flex-1 bg-[#fff8ef]">
       <View className="flex-1">
         <ScrollView
           showsVerticalScrollIndicator={false}

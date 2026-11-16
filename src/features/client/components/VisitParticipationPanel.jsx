@@ -22,7 +22,7 @@ function Button({ label, onPress, disabled = false }) {
       accessibilityRole="button"
       disabled={disabled}
       onPress={onPress}
-      className={`mt-3 min-h-11 items-center justify-center rounded-xl bg-[#24543a] px-4 ${disabled ? 'opacity-50' : ''}`}
+      className={`mt-3 min-h-11 items-center justify-center rounded-xl bg-[#b7472a] px-4 ${disabled ? 'opacity-50' : ''}`}
     >
       <Text className="text-xs font-semibold text-white">{label}</Text>
     </Pressable>
@@ -41,7 +41,7 @@ function LeaveControls({ participation: p }) {
       ) : null}
       {p.leaveUncertain ? (
         <>
-          <Text className="mt-3 text-xs text-[#24543a]">
+          <Text className="mt-3 text-xs text-[#b7472a]">
             La salida no está confirmada. Consulta el estado o reintenta con la
             misma clave. Si la solicitud ya fue aprobada, la salida finalizará
             esa participación.
@@ -69,13 +69,13 @@ function LeaveControls({ participation: p }) {
         />
       ) : null}
       {p.leaveConfirmation ? (
-        <View className="mt-3 rounded-xl border border-[#dedfce] p-3">
-          <Text className="text-sm text-[#23382b]">
+        <View className="mt-3 rounded-xl border border-[#eadfd2] p-3">
+          <Text className="text-sm text-[#332d28]">
             {p.leaveConfirmation.status === 'pending'
               ? '¿Cancelar tu solicitud? Si el personal la aprueba mientras se procesa la cancelación, se finalizará tu participación.'
               : '¿Salir de la mesa? Se finalizará tu participación y su cuenta de consumo.'}
           </Text>
-          <Text className="mt-2 text-xs text-[#687363]">
+          <Text className="mt-2 text-xs text-[#8b8178]">
             El servidor rechazará la salida si hay consumos pendientes. No
             podrás solicitar nuevamente ingreso en esta misma visita.
           </Text>
@@ -88,7 +88,7 @@ function LeaveControls({ participation: p }) {
         </View>
       ) : null}
       {['cancelled', 'finished'].includes(p.participant?.status) ? (
-        <Text className="mt-2 text-xs text-[#687363]">
+        <Text className="mt-2 text-xs text-[#8b8178]">
           El backend conserva esta participación. No se puede solicitar
           nuevamente ingreso en la misma visita.
         </Text>
@@ -109,36 +109,36 @@ export default function VisitParticipationPanel({
     !p.participant &&
     ![401, 403, 404, 409].includes(p.errorStatus);
   return (
-    <View className="rounded-[24px] bg-[#f8f5ec] p-5">
+    <View className="rounded-[24px] bg-[#fff8ef] p-5">
       <Text className="text-[10px] font-semibold text-[#477052]">
         QR RECONOCIDO
       </Text>
-      <Text className="mt-1 text-xl font-bold text-[#23382b]">
+      <Text className="mt-1 text-xl font-bold text-[#332d28]">
         {scanner.table.tableCode}
       </Text>
-      {blocked ? <ActivityIndicator color="#24543a" /> : null}
+      {blocked ? <ActivityIndicator color="#b7472a" /> : null}
       {p.participant ? (
         <>
-          <Text className="mt-3 font-bold text-[#23382b]">
+          <Text className="mt-3 font-bold text-[#332d28]">
             {labels[p.participant.status] ?? 'Estado desconocido'}
           </Text>
-          <Text className="mt-1 text-sm text-[#687363]">
+          <Text className="mt-1 text-sm text-[#8b8178]">
             {p.participant.alias}
           </Text>
           {p.participant.rejectionReason ? (
-            <Text className="mt-1 text-sm text-[#24543a]">
+            <Text className="mt-1 text-sm text-[#b7472a]">
               {p.participant.rejectionReason}
             </Text>
           ) : null}
         </>
       ) : null}
       {p.error ? (
-        <Text accessibilityRole="alert" className="mt-2 text-sm text-[#24543a]">
+        <Text accessibilityRole="alert" className="mt-2 text-sm text-[#b7472a]">
           {p.error}
         </Text>
       ) : null}
       {p.uncertain ? (
-        <Text className="mt-2 text-xs text-[#687363]">
+        <Text className="mt-2 text-xs text-[#8b8178]">
           El resultado no está confirmado. Consulta tus participaciones o
           reintenta la misma solicitud. Se conservarán el nombre y la clave
           originales.
@@ -146,7 +146,7 @@ export default function VisitParticipationPanel({
       ) : null}
       {canSubmit ? (
         <>
-          <Text className="mt-3 text-sm text-[#23382b]">
+          <Text className="mt-3 text-sm text-[#332d28]">
             Nombre para la mesa
           </Text>
           <TextInput
@@ -154,7 +154,7 @@ export default function VisitParticipationPanel({
             onChangeText={setAlias}
             editable={!blocked && !p.uncertain}
             accessibilityLabel="Nombre para la mesa"
-            className="mt-2 h-11 rounded-xl border border-[#dedfce] bg-white px-3 text-[#23382b]"
+            className="mt-2 h-11 rounded-xl border border-[#eadfd2] bg-white px-3 text-[#332d28]"
           />
           <Button
             label={p.uncertain ? 'Reintentar solicitud' : 'Solicitar ingreso'}
@@ -187,11 +187,11 @@ export default function VisitParticipationPanel({
         />
       ) : null}
       {p.errorKind !== 'leave' && [400, 404].includes(p.errorStatus) ? (
-        <Text className="mt-2 text-xs text-[#24543a]">
+        <Text className="mt-2 text-xs text-[#b7472a]">
           Escanea el QR vigente de la mesa.
         </Text>
       ) : null}
-      <Text className="mt-3 text-xs leading-5 text-[#687363]">
+      <Text className="mt-3 text-xs leading-5 text-[#8b8178]">
         Explorar el menú no confirma tu participación. Los pedidos todavía son
         de demostración. Abandonar esta pantalla no cancela una solicitud
         recibida por el servidor.

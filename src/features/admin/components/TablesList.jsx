@@ -24,7 +24,7 @@ function PageButton({ label, disabled, onPress }) {
       className="min-h-11 justify-center rounded-xl bg-[#f2e8d6] px-3"
       style={{ opacity: disabled ? 0.4 : 1 }}
     >
-      <Text className="text-xs font-semibold text-[#24543a]">{label}</Text>
+      <Text className="text-xs font-semibold text-[#b7472a]">{label}</Text>
     </Pressable>
   );
 }
@@ -53,7 +53,7 @@ function TableResults({
     return <Empty>No hay mesas que coincidan con estos filtros.</Empty>;
   return (
     <>
-      <Text className="mb-3 text-xs text-[#687363]">
+      <Text className="mb-3 text-xs text-[#8b8178]">
         {start + 1}–{start + visible.length} de {shown.length} mesas
       </Text>
       {rows.map((row) => (
@@ -75,7 +75,7 @@ function TableResults({
           disabled={currentPage === 1}
           onPress={() => setPage(currentPage - 1)}
         />
-        <Text className="text-xs text-[#687363]">
+        <Text className="text-xs text-[#8b8178]">
           {currentPage} / {pages}
         </Text>
         <PageButton
@@ -92,15 +92,15 @@ export default function TablesList({ model }) {
   if (model.loading) {
     return (
       <View className="items-center rounded-2xl bg-white p-8">
-        <ActivityIndicator color="#24543a" />
-        <Text className="mt-3 text-xs text-[#687363]">Consultando mesas…</Text>
+        <ActivityIndicator color="#b7472a" />
+        <Text className="mt-3 text-xs text-[#8b8178]">Consultando mesas…</Text>
       </View>
     );
   }
   if (model.error) {
     return (
       <View className="rounded-2xl bg-white p-4">
-        <Text accessibilityRole="alert" className="mb-3 text-xs text-[#24543a]">
+        <Text accessibilityRole="alert" className="mb-3 text-xs text-[#b7472a]">
           {model.error}
         </Text>
         <Button

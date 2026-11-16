@@ -33,12 +33,12 @@ function InventoryRow({ item, onPress }) {
       className="mb-2 flex-row items-center rounded-xl bg-white px-3 py-3 active:opacity-70"
     >
       <View className="flex-1">
-        <Text className="text-xs font-semibold text-[#23382b]">
+        <Text className="text-xs font-semibold text-[#332d28]">
           {item.name}
         </Text>
-        <Text className="mt-1 text-[9px] text-[#687363]">{categoryLabel}</Text>
+        <Text className="mt-1 text-[9px] text-[#8b8178]">{categoryLabel}</Text>
       </View>
-      <Text className="w-12 text-center text-[10px] text-[#687363]">
+      <Text className="w-12 text-center text-[10px] text-[#8b8178]">
         {item.initialQuantity ?? '—'}
       </Text>
       <Text className="w-12 text-center text-xs font-bold text-[#477052]">
@@ -150,7 +150,7 @@ function InventoryList({
           <Pressable
             accessibilityRole="button"
             onPress={() => router.push('/admin/movement')}
-            className="h-12 flex-row items-center rounded-xl bg-[#24543a] px-3 active:opacity-80"
+            className="h-12 flex-row items-center rounded-xl bg-[#b7472a] px-3 active:opacity-80"
           >
             <Text className="mr-1 text-base text-white">＋</Text>
             <Text className="text-[10px] font-semibold text-white">
@@ -161,16 +161,16 @@ function InventoryList({
       </View>
       <Chips items={filters} value={filter} onChange={setFilter} />
       <View className="mb-2 flex-row px-3">
-        <Text className="flex-1 text-[9px] font-semibold uppercase text-[#687363]">
+        <Text className="flex-1 text-[9px] font-semibold uppercase text-[#8b8178]">
           Producto
         </Text>
-        <Text className="w-12 text-center text-[9px] font-semibold uppercase text-[#687363]">
+        <Text className="w-12 text-center text-[9px] font-semibold uppercase text-[#8b8178]">
           Inicial
         </Text>
-        <Text className="w-12 text-center text-[9px] font-semibold uppercase text-[#687363]">
+        <Text className="w-12 text-center text-[9px] font-semibold uppercase text-[#8b8178]">
           Disp.
         </Text>
-        <Text className="w-12 text-center text-[9px] font-semibold uppercase text-[#687363]">
+        <Text className="w-12 text-center text-[9px] font-semibold uppercase text-[#8b8178]">
           Reserv.
         </Text>
       </View>
@@ -211,8 +211,8 @@ function InventoryContent({
   if (loading) {
     return (
       <View className="items-center rounded-2xl bg-white px-5 py-10">
-        <ActivityIndicator color="#24543a" />
-        <Text className="mt-3 text-xs text-[#687363]">
+        <ActivityIndicator color="#b7472a" />
+        <Text className="mt-3 text-xs text-[#8b8178]">
           Consultando inventario del servidor…
         </Text>
       </View>
@@ -224,7 +224,7 @@ function InventoryContent({
       <View className="rounded-2xl bg-white p-5">
         <Text
           accessibilityRole="alert"
-          className="mb-3 text-sm text-[#24543a]"
+          className="mb-3 text-sm text-[#b7472a]"
         >
           {error}
         </Text>
@@ -236,10 +236,10 @@ function InventoryContent({
   if (!operatingDay) {
     return (
       <View className="rounded-2xl bg-white p-5">
-        <Text className="mb-2 text-sm font-semibold text-[#23382b]">
+        <Text className="mb-2 text-sm font-semibold text-[#332d28]">
           No hay una jornada abierta
         </Text>
-        <Text className="mb-4 text-xs leading-5 text-[#687363]">
+        <Text className="mb-4 text-xs leading-5 text-[#8b8178]">
           Abre la jornada de hoy para consultar e inicializar las existencias.
         </Text>
         {canOpenDay ? (
@@ -247,7 +247,7 @@ function InventoryContent({
             {opening ? 'Abriendo jornada…' : 'Abrir jornada'}
           </Button>
         ) : (
-          <Text className="text-xs text-[#687363]">
+          <Text className="text-xs text-[#8b8178]">
             Tu cuenta no tiene permiso para abrir la jornada.
           </Text>
         )}

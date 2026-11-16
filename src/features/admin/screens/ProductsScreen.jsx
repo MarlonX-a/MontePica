@@ -227,8 +227,8 @@ export default function ProductsScreen() {
   if (loading) {
     catalogContent = (
       <View className="items-center rounded-2xl bg-white px-5 py-10">
-        <ActivityIndicator color="#24543a" />
-        <Text className="mt-3 text-xs text-[#687363]">
+        <ActivityIndicator color="#b7472a" />
+        <Text className="mt-3 text-xs text-[#8b8178]">
           Cargando catálogo del servidor…
         </Text>
       </View>
@@ -236,7 +236,7 @@ export default function ProductsScreen() {
   } else if (loadError) {
     catalogContent = (
       <View className="rounded-2xl bg-white p-5">
-        <Text accessibilityRole="alert" className="mb-3 text-sm text-[#24543a]">
+        <Text accessibilityRole="alert" className="mb-3 text-sm text-[#b7472a]">
           {loadError}
         </Text>
         <Button onPress={loadCatalog}>Reintentar</Button>
@@ -284,7 +284,7 @@ export default function ProductsScreen() {
   } else {
     catalogContent = (
       <>
-        <Text className="mb-3 text-xs text-[#687363]">
+        <Text className="mb-3 text-xs text-[#8b8178]">
           Organiza tu carta por tipo de producto.
         </Text>
         {categories.map((item) => (
@@ -293,10 +293,10 @@ export default function ProductsScreen() {
             className="mb-3 flex-row items-center rounded-2xl bg-white p-4"
           >
             <View className="flex-1">
-              <Text className="text-sm font-semibold text-[#23382b]">
+              <Text className="text-sm font-semibold text-[#332d28]">
                 {item.name}
               </Text>
-              <Text className="mt-1 text-[10px] text-[#687363]">
+              <Text className="mt-1 text-[10px] text-[#8b8178]">
                 {item.active ? 'Activa · ' : 'Inactiva · '}
                 {products.filter((product) => product.categoryId === item.id).length}{' '}
                 productos
@@ -334,7 +334,7 @@ export default function ProductsScreen() {
             className={`min-h-9 flex-1 items-center justify-center rounded-lg ${tab === item ? 'bg-white' : ''}`}
           >
             <Text
-              className={`text-xs ${tab === item ? 'font-medium text-[#24543a]' : 'text-[#687363]'}`}
+              className={`text-xs ${tab === item ? 'font-medium text-[#b7472a]' : 'text-[#8b8178]'}`}
             >
               {item}
             </Text>

@@ -14,7 +14,7 @@ import { setCurrentSession } from '@/shared/session/sessionStore';
 
 export default function RegisterScreen() {
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#f8f5ec' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff8ef' }}>
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -30,10 +30,10 @@ export default function RegisterScreen() {
           }}
         >
           <View className="mb-7 flex-row items-center justify-between">
-            <Link href="/" asChild>
+            <Link href="/(auth)/login" asChild>
               <Pressable
                 accessibilityRole="link"
-                accessibilityLabel="Volver a MontePica"
+                accessibilityLabel="Volver al inicio de sesión"
                 className="h-10 w-10 items-center justify-center rounded-full bg-white"
               >
                 <Text className="text-2xl leading-7 text-[#75695f]">‹</Text>
@@ -41,14 +41,14 @@ export default function RegisterScreen() {
             </Link>
 
             <View className="flex-row items-center">
-              <View className="mr-2 h-10 w-10 items-center justify-center rounded-xl bg-[#24543a]">
+              <View className="mr-2 h-10 w-10 items-center justify-center rounded-xl bg-[#b7472a]">
                 <Text className="text-lg font-bold text-white">P</Text>
               </View>
               <View>
-                <Text className="text-sm font-bold leading-4 text-[#23382b]">
-                  MontePica
+                <Text className="text-sm font-bold leading-4 text-[#332d28]">
+                  Picantiería
                 </Text>
-                <Text className="text-[9px] font-bold tracking-[1.5px] text-[#24543a]">
+                <Text className="text-[9px] font-bold tracking-[1.5px] text-[#b7472a]">
                   MONTECRISTI
                 </Text>
               </View>
@@ -56,10 +56,10 @@ export default function RegisterScreen() {
           </View>
 
           <View className="mb-5">
-            <Text className="text-2xl font-bold text-[#23382b]">
+            <Text className="text-2xl font-bold text-[#332d28]">
               Crea tu cuenta
             </Text>
-            <Text className="mt-1 text-sm leading-5 text-[#687363]">
+            <Text className="mt-1 text-sm leading-5 text-[#8b8178]">
               Guarda tus pedidos y disfruta una atención más rápida.
             </Text>
           </View>
@@ -81,12 +81,12 @@ export default function RegisterScreen() {
           />
 
           <View className="mt-5 flex-row justify-center">
-            <Text className="text-xs text-[#687363]">
+            <Text className="text-xs text-[#8b8178]">
               ¿Ya tienes cuenta?{' '}
             </Text>
             <Link href="/(auth)/login" asChild>
               <Pressable accessibilityRole="link">
-                <Text className="text-xs font-semibold text-[#24543a]">
+                <Text className="text-xs font-semibold text-[#b7472a]">
                   Ingresar
                 </Text>
               </Pressable>

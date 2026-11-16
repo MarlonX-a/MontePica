@@ -16,7 +16,7 @@ const filters = [
 
 const statusStyles = {
   submitted: { background: '#fff0cf', text: '#9a6700' },
-  preparing: { background: '#fbe5d8', text: '#6f741b' },
+  preparing: { background: '#fbe5d8', text: '#a85431' },
   ready: { background: '#e2f0df', text: '#4f8156' },
   delivered: { background: '#e7efff', text: '#4169a1' },
   cancelled: { background: '#f7dddd', text: '#a34444' },
@@ -48,9 +48,9 @@ function ActionButton({ label, onPress, secondary = false, disabled = false }) {
       accessibilityState={{ disabled }}
       disabled={disabled}
       onPress={onPress}
-      className={`items-center rounded-xl px-4 py-3 ${secondary ? 'border border-[#dedfce] bg-white' : 'bg-[#24543a]'} ${disabled ? 'opacity-50' : ''}`}
+      className={`items-center rounded-xl px-4 py-3 ${secondary ? 'border border-[#eadfd2] bg-white' : 'bg-[#b7472a]'} ${disabled ? 'opacity-50' : ''}`}
     >
-      <Text className={`text-xs font-bold ${secondary ? 'text-[#6f741b]' : 'text-white'}`}>
+      <Text className={`text-xs font-bold ${secondary ? 'text-[#a85431]' : 'text-white'}`}>
         {label}
       </Text>
     </Pressable>
@@ -63,16 +63,16 @@ function OrderCard({ order, onPress }) {
       accessibilityRole="button"
       accessibilityLabel={`Ver detalle del pedido ${order.displayId}`}
       onPress={onPress}
-      className="mb-3 rounded-2xl border border-[#dedfce] bg-white p-3"
+      className="mb-3 rounded-2xl border border-[#eadfd2] bg-white p-3"
     >
       <View className="flex-row items-start justify-between">
         <View className="mr-2 flex-1">
-          <Text className="text-xs font-bold text-[#23382b]">Pedido {order.displayId}</Text>
-          <Text className="mt-1 text-[11px] text-[#687363]">{order.tableLabel}</Text>
+          <Text className="text-xs font-bold text-[#332d28]">Pedido {order.displayId}</Text>
+          <Text className="mt-1 text-[11px] text-[#8b8178]">{order.tableLabel}</Text>
         </View>
         <View className="items-end">
           <StatusBadge status={order.status} label={order.statusLabel} />
-          <Text className="mt-2 text-sm font-bold text-[#23382b]">{order.totalLabel}</Text>
+          <Text className="mt-2 text-sm font-bold text-[#332d28]">{order.totalLabel}</Text>
         </View>
       </View>
       <Text className="mt-2 text-[11px] text-[#70665e]" numberOfLines={1}>
@@ -116,10 +116,10 @@ function OrderInformation({ order }) {
     <View className="rounded-2xl bg-white p-4">
       <View className="flex-row items-start justify-between">
         <View className="mr-2 flex-1">
-          <Text className="text-lg font-bold text-[#23382b]">{order.tableLabel}</Text>
-          <Text className="mt-1 text-xs text-[#687363]">Recibido: {order.submittedLabel}</Text>
+          <Text className="text-lg font-bold text-[#332d28]">{order.tableLabel}</Text>
+          <Text className="mt-1 text-xs text-[#8b8178]">Recibido: {order.submittedLabel}</Text>
           {order.tableUnavailable ? (
-            <Text className="mt-1 text-[10px] text-[#6f741b]">
+            <Text className="mt-1 text-[10px] text-[#a85431]">
               {order.visitId
                 ? `El código de mesa no está disponible. Referencia de visita: ${order.visitId}`
                 : 'No hay una referencia de mesa disponible para este pedido.'}
@@ -130,30 +130,30 @@ function OrderInformation({ order }) {
         <StatusBadge status={order.status} label={order.statusLabel} />
       </View>
       <View className="mt-5 border-t border-[#f0e6dc] pt-4">
-        <Text className="mb-3 text-sm font-semibold text-[#455343]">Productos</Text>
+        <Text className="mb-3 text-sm font-semibold text-[#514941]">Productos</Text>
         {order.items.map((item) => (
           <View key={item.id} className="mb-3 flex-row items-start">
-            <View className="mr-2 h-7 w-7 items-center justify-center rounded-lg bg-[#edf0df]">
-              <Text className="text-[10px] font-bold text-[#24543a]">{item.quantity}×</Text>
+            <View className="mr-2 h-7 w-7 items-center justify-center rounded-lg bg-[#fff0e7]">
+              <Text className="text-[10px] font-bold text-[#b7472a]">{item.quantity}×</Text>
             </View>
             <View className="flex-1">
-              <Text className="text-xs font-semibold text-[#23382b]">{item.name}</Text>
-              <Text className="mt-0.5 text-[10px] text-[#687363]">{item.notes || `Producto ${item.productId}`}</Text>
+              <Text className="text-xs font-semibold text-[#332d28]">{item.name}</Text>
+              <Text className="mt-0.5 text-[10px] text-[#8b8178]">{item.notes || `Producto ${item.productId}`}</Text>
               <Text className="mt-0.5 text-[10px] text-[#a79b90]">{item.unitPriceLabel} por unidad</Text>
             </View>
-            <Text className="text-xs font-semibold text-[#455343]">{item.subtotalLabel}</Text>
+            <Text className="text-xs font-semibold text-[#514941]">{item.subtotalLabel}</Text>
           </View>
         ))}
       </View>
       {order.notes ? (
         <View className="border-t border-[#f0e6dc] py-3">
-          <Text className="text-[11px] font-semibold text-[#455343]">Nota del pedido</Text>
+          <Text className="text-[11px] font-semibold text-[#514941]">Nota del pedido</Text>
           <Text className="mt-1 text-xs text-[#70665e]">{order.notes}</Text>
         </View>
       ) : null}
       <View className="mt-1 flex-row items-center justify-between border-t border-[#f0e6dc] pt-4">
-        <Text className="text-sm font-semibold text-[#455343]">Total</Text>
-        <Text className="text-xl font-bold text-[#24543a]">{order.totalLabel}</Text>
+        <Text className="text-sm font-semibold text-[#514941]">Total</Text>
+        <Text className="text-xl font-bold text-[#b7472a]">{order.totalLabel}</Text>
       </View>
     </View>
   );
@@ -162,15 +162,15 @@ function OrderInformation({ order }) {
 function OrderHistory({ history }) {
   return (
     <View className="mt-4 rounded-2xl bg-white p-4">
-      <Text className="mb-3 text-sm font-semibold text-[#455343]">Historial del pedido</Text>
+      <Text className="mb-3 text-sm font-semibold text-[#514941]">Historial del pedido</Text>
       {history.length ? history.map((event, index) => (
         <View key={`${event.occurredAt}-${index}`} className="mb-3 border-l-2 border-[#e8b09d] pl-3">
-          <Text className="text-xs font-semibold text-[#23382b]">{event.label}</Text>
-          <Text className="mt-1 text-[10px] text-[#687363]">{event.occurredLabel}</Text>
+          <Text className="text-xs font-semibold text-[#332d28]">{event.label}</Text>
+          <Text className="mt-1 text-[10px] text-[#8b8178]">{event.occurredLabel}</Text>
           {event.reason ? <Text className="mt-1 text-[10px] text-[#70665e]">Motivo: {event.reason}</Text> : null}
         </View>
       )) : (
-        <Text className="text-xs text-[#687363]">El backend no devolvió eventos del pedido.</Text>
+        <Text className="text-xs text-[#8b8178]">El backend no devolvió eventos del pedido.</Text>
       )}
     </View>
   );
@@ -190,11 +190,11 @@ function ActionConfirmation({ action, state, cancelReason, setCancelReason }) {
   if (!state.confirmation) return null;
   return (
     <View className="mt-4 rounded-2xl border border-[#e9c7b6] bg-[#fff1e8] p-4">
-      <Text className="text-sm font-bold text-[#455343]">Confirmar: {actions[action]?.label}</Text>
+      <Text className="text-sm font-bold text-[#514941]">Confirmar: {actions[action]?.label}</Text>
       <Text className="mt-2 text-xs leading-5 text-[#70665e]">{getActionInstructions(action)}</Text>
       {action === 'cancel' ? (
         <>
-          <Text className="mb-1 mt-3 text-xs font-semibold text-[#455343]">Motivo de cancelación</Text>
+          <Text className="mb-1 mt-3 text-xs font-semibold text-[#514941]">Motivo de cancelación</Text>
           <TextInput
             accessibilityLabel="Motivo de cancelación"
             value={cancelReason}
@@ -204,9 +204,9 @@ function ActionConfirmation({ action, state, cancelReason, setCancelReason }) {
             multiline
             textAlignVertical="top"
             placeholder="Escribe el motivo (máximo 500 caracteres)"
-            className="min-h-20 rounded-xl border border-[#dedfce] bg-white px-3 py-2 text-xs text-[#23382b]"
+            className="min-h-20 rounded-xl border border-[#eadfd2] bg-white px-3 py-2 text-xs text-[#332d28]"
           />
-          <Text className="mt-1 text-right text-[10px] text-[#687363]">{cancelReason.length}/500</Text>
+          <Text className="mt-1 text-right text-[10px] text-[#8b8178]">{cancelReason.length}/500</Text>
         </>
       ) : null}
       <View className="mt-3 flex-row">
@@ -235,7 +235,7 @@ function OrderActions({ state, cancelReason, setCancelReason, canManage }) {
     <>
       {transitionActions.length && canManage && !state.pendingOperation ? (
         <View className="mt-4">
-          <Text className="mb-2 text-sm font-semibold text-[#455343]">Acciones</Text>
+          <Text className="mb-2 text-sm font-semibold text-[#514941]">Acciones</Text>
           {transitionActions.map((action) => (
             <View key={action} className="mb-2">
               <ActionButton label={actions[action].label} disabled={!canChange} secondary={action === 'cancel'} onPress={() => state.beginAction(action)} />
@@ -244,7 +244,7 @@ function OrderActions({ state, cancelReason, setCancelReason, canManage }) {
         </View>
       ) : null}
       {!canManage ? (
-        <Text className="mt-4 text-center text-xs text-[#687363]">
+        <Text className="mt-4 text-center text-xs text-[#8b8178]">
           Tu cuenta puede consultar pedidos, pero no tiene el permiso orders.manage para cambiarlos.
         </Text>
       ) : null}
@@ -256,7 +256,7 @@ function OrderActions({ state, cancelReason, setCancelReason, canManage }) {
 function OrderDetail({ state, cancelReason, setCancelReason, canManage }) {
   const { detail: order } = state;
   return (
-    <SafeAreaView className="flex-1 bg-[#f8f5ec]">
+    <SafeAreaView className="flex-1 bg-[#fff8ef]">
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: 28 }}
@@ -272,8 +272,8 @@ function OrderDetail({ state, cancelReason, setCancelReason, canManage }) {
             <Text className="text-2xl text-[#75695f]">‹</Text>
           </Pressable>
           <View>
-            <Text className="text-xl font-bold text-[#23382b]">Detalle del pedido</Text>
-            <Text className="mt-0.5 text-[11px] text-[#687363]">Pedido {order.displayId}</Text>
+            <Text className="text-xl font-bold text-[#332d28]">Detalle del pedido</Text>
+            <Text className="mt-0.5 text-[11px] text-[#8b8178]">Pedido {order.displayId}</Text>
           </View>
           <Pressable
             accessibilityRole="button"
@@ -282,7 +282,7 @@ function OrderDetail({ state, cancelReason, setCancelReason, canManage }) {
             onPress={state.refreshDetail}
             className="ml-auto rounded-full bg-white px-3 py-2"
           >
-            <Text className="text-[11px] font-semibold text-[#6f741b]">Actualizar</Text>
+            <Text className="text-[11px] font-semibold text-[#a85431]">Actualizar</Text>
           </Pressable>
         </View>
 
@@ -306,7 +306,7 @@ function OrderDetail({ state, cancelReason, setCancelReason, canManage }) {
 
 function OrdersListContent({ state }) {
   if (state.loading) {
-    return <Text className="py-8 text-center text-sm text-[#687363]">Cargando pedidos…</Text>;
+    return <Text className="py-8 text-center text-sm text-[#8b8178]">Cargando pedidos…</Text>;
   }
   if (state.error) {
     return (
@@ -319,8 +319,8 @@ function OrdersListContent({ state }) {
   if (!state.orders.length) {
     return (
       <View className="rounded-2xl bg-white p-5">
-        <Text className="text-center text-sm font-semibold text-[#455343]">No hay pedidos en este filtro</Text>
-        <Text className="mt-1 text-center text-xs text-[#687363]">Actualiza la bandeja para consultar cambios recientes.</Text>
+        <Text className="text-center text-sm font-semibold text-[#514941]">No hay pedidos en este filtro</Text>
+        <Text className="mt-1 text-center text-xs text-[#8b8178]">Actualiza la bandeja para consultar cambios recientes.</Text>
       </View>
     );
   }
@@ -356,9 +356,9 @@ export default function WaiterOrdersScreen() {
   if (state.selectedId) {
     if (!state.detail) {
       return (
-        <SafeAreaView className="flex-1 items-center justify-center bg-[#f8f5ec] px-6">
+        <SafeAreaView className="flex-1 items-center justify-center bg-[#fff8ef] px-6">
           {state.detailLoading ? (
-            <Text className="mb-3 text-sm text-[#687363]">Cargando detalle del pedido…</Text>
+            <Text className="mb-3 text-sm text-[#8b8178]">Cargando detalle del pedido…</Text>
           ) : (
             <>
               <Notice error>{state.detailError || 'No se pudo cargar el pedido.'}</Notice>
@@ -366,7 +366,7 @@ export default function WaiterOrdersScreen() {
             </>
           )}
           <Pressable accessibilityRole="button" onPress={state.closeOrder} className="mt-4 px-4 py-2">
-            <Text className="text-xs font-semibold text-[#6f741b]">Volver a pedidos</Text>
+            <Text className="text-xs font-semibold text-[#a85431]">Volver a pedidos</Text>
           </Pressable>
         </SafeAreaView>
       );
@@ -385,15 +385,15 @@ export default function WaiterOrdersScreen() {
   const canChangeList = !state.busy && !state.pendingOperation;
 
   return (
-    <SafeAreaView className="flex-1 bg-[#f8f5ec]">
+    <SafeAreaView className="flex-1 bg-[#fff8ef]">
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: 28 }}
       >
         <View className="mb-4 flex-row items-center justify-between">
           <View>
-            <Text className="text-2xl font-bold text-[#23382b]">Pedidos</Text>
-            <Text className="mt-1 text-[11px] text-[#687363]">Pedidos de servicio en salón</Text>
+            <Text className="text-2xl font-bold text-[#332d28]">Pedidos</Text>
+            <Text className="mt-1 text-[11px] text-[#8b8178]">Pedidos de servicio en salón</Text>
           </View>
           <View className="flex-row">
             <Pressable
@@ -403,7 +403,7 @@ export default function WaiterOrdersScreen() {
               onPress={state.refresh}
               className="mr-2 h-10 items-center justify-center rounded-full bg-white px-3"
             >
-              <Text className="text-[11px] font-semibold text-[#6f741b]">Actualizar</Text>
+              <Text className="text-[11px] font-semibold text-[#a85431]">Actualizar</Text>
             </Pressable>
             <Pressable
               accessibilityRole="button"
@@ -411,7 +411,7 @@ export default function WaiterOrdersScreen() {
               onPress={handleLogout}
               className="h-10 w-10 items-center justify-center rounded-full bg-white"
             >
-              <Text className="text-base text-[#24543a]">↪</Text>
+              <Text className="text-base text-[#b7472a]">↪</Text>
             </Pressable>
           </View>
         </View>
@@ -421,14 +421,14 @@ export default function WaiterOrdersScreen() {
 
         <View className="mb-4 flex-row">
           <View className="mr-2 flex-1 rounded-xl bg-white p-3">
-            <Text className="text-[10px] text-[#687363]">Recibidos</Text>
-            <Text className="mt-1 text-xl font-bold text-[#23382b]">{state.counts.submitted ?? '—'}</Text>
-            <Text className="text-[10px] text-[#24543a]">Todos los pedidos locales</Text>
+            <Text className="text-[10px] text-[#8b8178]">Recibidos</Text>
+            <Text className="mt-1 text-xl font-bold text-[#332d28]">{state.counts.submitted ?? '—'}</Text>
+            <Text className="text-[10px] text-[#b7472a]">Todos los pedidos locales</Text>
           </View>
           <View className="flex-1 rounded-xl bg-white p-3">
-            <Text className="text-[10px] text-[#687363]">En preparación</Text>
-            <Text className="mt-1 text-xl font-bold text-[#23382b]">{state.counts.preparing ?? '—'}</Text>
-            <Text className="text-[10px] text-[#687363]">Todos los pedidos locales</Text>
+            <Text className="text-[10px] text-[#8b8178]">En preparación</Text>
+            <Text className="mt-1 text-xl font-bold text-[#332d28]">{state.counts.preparing ?? '—'}</Text>
+            <Text className="text-[10px] text-[#8b8178]">Todos los pedidos locales</Text>
           </View>
         </View>
 
@@ -440,7 +440,7 @@ export default function WaiterOrdersScreen() {
               accessibilityState={{ selected: selectedFilter === filter.label, disabled: !canChangeList }}
               disabled={!canChangeList}
               onPress={() => state.selectFilter(filter.status)}
-              className={`mr-2 rounded-full px-3 py-2 ${selectedFilter === filter.label ? 'bg-[#24543a]' : 'bg-white'}`}
+              className={`mr-2 rounded-full px-3 py-2 ${selectedFilter === filter.label ? 'bg-[#8e3b27]' : 'bg-white'}`}
             >
               <Text className={`text-[10px] font-semibold ${selectedFilter === filter.label ? 'text-white' : 'text-[#70665e]'}`}>
                 {filter.label}
@@ -462,7 +462,7 @@ export default function WaiterOrdersScreen() {
                 onPress={() => state.setPage(state.page - 1)}
                 className="mr-2 rounded-lg bg-[#fff1e8] px-3 py-2"
               >
-                <Text className="text-xs font-bold text-[#6f741b]">‹</Text>
+                <Text className="text-xs font-bold text-[#a85431]">‹</Text>
               </Pressable>
               <Pressable
                 accessibilityRole="button"
@@ -471,7 +471,7 @@ export default function WaiterOrdersScreen() {
                 onPress={() => state.setPage(state.page + 1)}
                 className="rounded-lg bg-[#fff1e8] px-3 py-2"
               >
-                <Text className="text-xs font-bold text-[#6f741b]">›</Text>
+                <Text className="text-xs font-bold text-[#a85431]">›</Text>
               </Pressable>
             </View>
           </View>

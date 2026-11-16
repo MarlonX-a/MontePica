@@ -170,8 +170,8 @@ async function submitInventoryChange({
 function LoadingMessage() {
   return (
     <View className="items-center rounded-2xl bg-white px-5 py-10">
-      <ActivityIndicator color="#24543a" />
-      <Text className="mt-3 text-xs text-[#687363]">Cargando existencias…</Text>
+      <ActivityIndicator color="#b7472a" />
+      <Text className="mt-3 text-xs text-[#8b8178]">Cargando existencias…</Text>
     </View>
   );
 }
@@ -179,9 +179,9 @@ function LoadingMessage() {
 function Notice({ title, children }) {
   return (
     <View className="rounded-2xl bg-white p-5">
-      <Text className="text-sm font-semibold text-[#23382b]">{title}</Text>
+      <Text className="text-sm font-semibold text-[#332d28]">{title}</Text>
       {children ? (
-        <Text className="mt-2 text-xs leading-5 text-[#687363]">
+        <Text className="mt-2 text-xs leading-5 text-[#8b8178]">
           {children}
         </Text>
       ) : null}
@@ -191,8 +191,8 @@ function Notice({ title, children }) {
 
 function QuantitySummary({ selected }) {
   const quantities = [
-    { label: 'Físico', value: selected.physicalQuantity, color: '#23382b' },
-    { label: 'Reservado', value: selected.reservedQuantity, color: '#23382b' },
+    { label: 'Físico', value: selected.physicalQuantity, color: '#332d28' },
+    { label: 'Reservado', value: selected.reservedQuantity, color: '#332d28' },
     { label: 'Disponible', value: selected.availableQuantity, color: '#477052' },
   ];
 
@@ -200,7 +200,7 @@ function QuantitySummary({ selected }) {
     <View className="mb-4 flex-row rounded-2xl bg-[#f2e8d6] px-4 py-3">
       {quantities.map((item) => (
         <View key={item.label} className="flex-1">
-          <Text className="text-[9px] text-[#687363]">{item.label}</Text>
+          <Text className="text-[9px] text-[#8b8178]">{item.label}</Text>
           <Text
             className="mt-1 text-lg font-bold"
             style={{ color: item.color }}
@@ -216,10 +216,10 @@ function QuantitySummary({ selected }) {
 function ReceiptPicker({ receiptUri, onPick, onRemove }) {
   return (
     <View className="mb-4 rounded-2xl border border-dashed border-[#e3cdbd] bg-[#fffaf3] px-4 py-4">
-      <Text className="text-xs font-semibold text-[#455343]">
+      <Text className="text-xs font-semibold text-[#514941]">
         Comprobante (opcional)
       </Text>
-      <Text className="mt-1 text-[10px] text-[#687363]">
+      <Text className="mt-1 text-[10px] text-[#8b8178]">
         La imagen solo se muestra como vista previa; no se envía al backend.
       </Text>
       <View className="mt-3 flex-row gap-2">
@@ -239,7 +239,7 @@ function ReceiptPicker({ receiptUri, onPick, onRemove }) {
           onPress={() => onPick('gallery')}
           className="flex-1 items-center rounded-xl bg-[#f2e8d6] px-3 py-3 active:opacity-70"
         >
-          <Text className="text-xs font-semibold text-[#687363]">
+          <Text className="text-xs font-semibold text-[#8b8178]">
             Elegir de galería
           </Text>
         </Pressable>
@@ -256,7 +256,7 @@ function ReceiptPicker({ receiptUri, onPick, onRemove }) {
             <Text className="text-xs font-semibold text-[#477052]">
               Comprobante adjunto
             </Text>
-            <Text className="mt-1 text-[10px] text-[#687363]">
+            <Text className="mt-1 text-[10px] text-[#8b8178]">
               Solo vista previa local
             </Text>
           </View>
@@ -266,7 +266,7 @@ function ReceiptPicker({ receiptUri, onPick, onRemove }) {
             onPress={onRemove}
             className="px-2 py-3"
           >
-            <Text className="text-xs font-semibold text-[#24543a]">Quitar</Text>
+            <Text className="text-xs font-semibold text-[#b7472a]">Quitar</Text>
           </Pressable>
         </View>
       ) : null}
@@ -305,7 +305,7 @@ function MovementForm({
 
   return (
     <>
-      <Text className="mb-2 text-xs font-semibold text-[#455343]">
+      <Text className="mb-2 text-xs font-semibold text-[#514941]">
         Tipo de movimiento
       </Text>
       {movementTypes.length > 0 ? (
@@ -318,13 +318,13 @@ function MovementForm({
           }}
         />
       ) : (
-        <Text className="mb-4 text-xs text-[#687363]">
+        <Text className="mb-4 text-xs text-[#8b8178]">
           Tu cuenta no tiene permiso para modificar las existencias de este
           producto.
         </Text>
       )}
 
-      <Text className="mb-2 text-xs font-semibold text-[#455343]">Producto</Text>
+      <Text className="mb-2 text-xs font-semibold text-[#514941]">Producto</Text>
       {productOptions.length > 1 ? (
         <Chips
           items={productOptions}
@@ -332,13 +332,13 @@ function MovementForm({
           onChange={onSelectProduct}
         />
       ) : (
-        <View className="mb-4 rounded-xl border border-[#dedfce] bg-white px-4 py-3">
-          <Text className="text-sm text-[#23382b]">{selected.product.name}</Text>
+        <View className="mb-4 rounded-xl border border-[#eadfd2] bg-white px-4 py-3">
+          <Text className="text-sm text-[#332d28]">{selected.product.name}</Text>
         </View>
       )}
 
       <QuantitySummary selected={selected} />
-      <Text className="mb-2 text-xs font-semibold text-[#455343]">
+      <Text className="mb-2 text-xs font-semibold text-[#514941]">
         {quantityLabel}
       </Text>
       <TextInput
@@ -349,12 +349,12 @@ function MovementForm({
           onFormChange();
         }}
         keyboardType="number-pad"
-        className="mb-4 min-h-12 rounded-xl border border-[#dedfce] bg-white px-4 py-3 text-sm text-[#23382b]"
+        className="mb-4 min-h-12 rounded-xl border border-[#eadfd2] bg-white px-4 py-3 text-sm text-[#332d28]"
       />
 
       {type !== 'initialization' && (
         <>
-          <Text className="mb-2 text-xs font-semibold text-[#455343]">
+          <Text className="mb-2 text-xs font-semibold text-[#514941]">
             Motivo o referencia
           </Text>
           <TextInput
@@ -365,7 +365,7 @@ function MovementForm({
               onFormChange();
             }}
             placeholder="Ej. Reposición del proveedor"
-            className="mb-4 min-h-12 rounded-xl border border-[#dedfce] bg-white px-4 py-3 text-sm text-[#23382b]"
+            className="mb-4 min-h-12 rounded-xl border border-[#eadfd2] bg-white px-4 py-3 text-sm text-[#332d28]"
           />
           <ReceiptPicker
             receiptUri={receiptUri}
@@ -376,7 +376,7 @@ function MovementForm({
       )}
 
       {message ? (
-        <Text accessibilityRole="alert" className="mb-3 text-xs text-[#24543a]">
+        <Text accessibilityRole="alert" className="mb-3 text-xs text-[#b7472a]">
           {message}
         </Text>
       ) : null}
@@ -401,7 +401,7 @@ function MovementContent({
   if (message && items.length === 0) {
     return (
       <View className="rounded-2xl bg-white p-5">
-        <Text accessibilityRole="alert" className="text-sm text-[#24543a]">
+        <Text accessibilityRole="alert" className="text-sm text-[#b7472a]">
           {message}
         </Text>
       </View>

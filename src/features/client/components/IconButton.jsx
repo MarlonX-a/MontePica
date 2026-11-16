@@ -5,7 +5,7 @@ export default function IconButton({
   onPress,
   children,
   className = 'h-11 w-11 items-center justify-center rounded-full bg-white/90',
-  textClassName = 'text-xl text-[#455343]',
+  textClassName = 'text-xl text-[#514941]',
 }) {
   return (
     <Pressable

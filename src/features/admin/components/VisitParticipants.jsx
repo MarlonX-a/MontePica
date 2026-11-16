@@ -21,7 +21,7 @@ function Button({ children, onPress, disabled }) {
       accessibilityRole="button"
       disabled={disabled}
       onPress={onPress}
-      className={`mt-2 min-h-11 items-center justify-center rounded-xl bg-[#24543a] px-3 py-2 ${disabled ? 'opacity-50' : ''}`}
+      className={`mt-2 min-h-11 items-center justify-center rounded-xl bg-[#b7472a] px-3 py-2 ${disabled ? 'opacity-50' : ''}`}
     >
       <Text className="text-xs font-semibold text-white">{children}</Text>
     </Pressable>
@@ -58,8 +58,8 @@ export default function VisitParticipants({
     }
   }
   return (
-    <View className="my-3 rounded-xl border border-[#dedfce] bg-white p-4">
-      <Text className="text-base font-bold text-[#23382b]">Participantes</Text>
+    <View className="my-3 rounded-xl border border-[#eadfd2] bg-white p-4">
+      <Text className="text-base font-bold text-[#332d28]">Participantes</Text>
       <View className="flex-row flex-wrap gap-2">
         {Object.entries(filters).map(([value, label]) => (
           <Button
@@ -74,12 +74,12 @@ export default function VisitParticipants({
           </Button>
         ))}
       </View>
-      <Text className="mt-3 text-xs text-[#687363]">
+      <Text className="mt-3 text-xs text-[#8b8178]">
         {model.total} registros · Página {model.page}
       </Text>
-      {model.loading ? <ActivityIndicator color="#24543a" /> : null}
+      {model.loading ? <ActivityIndicator color="#b7472a" /> : null}
       {model.error ? (
-        <Text accessibilityRole="alert" className="mt-2 text-sm text-[#24543a]">
+        <Text accessibilityRole="alert" className="mt-2 text-sm text-[#b7472a]">
           {model.error}
         </Text>
       ) : null}
@@ -89,19 +89,19 @@ export default function VisitParticipants({
         </Text>
       ) : null}
       {!model.loading && !model.error && !model.items.length ? (
-        <Text className="mt-3 text-sm text-[#687363]">
+        <Text className="mt-3 text-sm text-[#8b8178]">
           No hay participantes en este filtro.
         </Text>
       ) : null}
       {model.items.map((item) => (
-        <View key={item.id} className="mt-3 rounded-xl bg-[#f8f5ec] p-3">
-          <Text className="font-bold text-[#23382b]">{item.alias}</Text>
-          <Text className="mt-1 text-xs text-[#687363]">
+        <View key={item.id} className="mt-3 rounded-xl bg-[#fff8ef] p-3">
+          <Text className="font-bold text-[#332d28]">{item.alias}</Text>
+          <Text className="mt-1 text-xs text-[#8b8178]">
             {filters[item.status] ?? item.status} ·{' '}
             {new Date(item.requestedAt).toLocaleString()}
           </Text>
           {item.rejectionReason ? (
-            <Text className="mt-1 text-xs text-[#24543a]">
+            <Text className="mt-1 text-xs text-[#b7472a]">
               {item.rejectionReason}
             </Text>
           ) : null}
@@ -130,8 +130,8 @@ export default function VisitParticipants({
         </View>
       ))}
       {editor && !model.uncertain ? (
-        <View className="mt-3 rounded-xl border border-[#dedfce] p-3">
-          <Text className="text-sm text-[#23382b]">
+        <View className="mt-3 rounded-xl border border-[#eadfd2] p-3">
+          <Text className="text-sm text-[#332d28]">
             {editor.action === 'approve'
               ? `¿Aprobar a ${editor.item.alias}? Se autorizará su participación y se creará una cuenta individual de consumo.`
               : `Motivo de rechazo para ${editor.item.alias}`}
@@ -143,11 +143,11 @@ export default function VisitParticipants({
               editable={!disabled}
               value={reason}
               onChangeText={setReason}
-              className="mt-2 min-h-20 rounded-xl border border-[#dedfce] p-3"
+              className="mt-2 min-h-20 rounded-xl border border-[#eadfd2] p-3"
             />
           ) : null}
           {validation ? (
-            <Text accessibilityRole="alert" className="text-xs text-[#24543a]">
+            <Text accessibilityRole="alert" className="text-xs text-[#b7472a]">
               {validation}
             </Text>
           ) : null}
@@ -161,7 +161,7 @@ export default function VisitParticipants({
       ) : null}
       {model.uncertain ? (
         <>
-          <Text className="mt-3 text-xs text-[#24543a]">
+          <Text className="mt-3 text-xs text-[#b7472a]">
             Resultado incierto. Consulta el estado o reintenta la misma decisión
             con su clave y motivo originales.
           </Text>

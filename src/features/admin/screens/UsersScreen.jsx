@@ -154,7 +154,7 @@ export default function UsersScreen() {
   if (loading) {
     userContent = (
       <View className="items-center rounded-2xl bg-white px-5 py-10">
-        <Text className="text-sm font-semibold text-[#455343]">
+        <Text className="text-sm font-semibold text-[#514941]">
           Cargando usuarios…
         </Text>
       </View>
@@ -164,7 +164,7 @@ export default function UsersScreen() {
       <View className="rounded-2xl bg-white p-4">
         <Text
           accessibilityRole="alert"
-          className="mb-3 text-xs text-[#24543a]"
+          className="mb-3 text-xs text-[#b7472a]"
         >
           {error}
         </Text>
@@ -226,7 +226,7 @@ export default function UsersScreen() {
       {userContent}
       {!loading && !error && roles.length > 0 ? (
         <View className="mt-3 rounded-2xl bg-[#f2e8d6] p-3">
-          <Text className="mb-3 text-xs font-bold text-[#23382b]">
+          <Text className="mb-3 text-xs font-bold text-[#332d28]">
             Permisos por rol
           </Text>
           <View className="flex-row gap-2">
@@ -238,18 +238,18 @@ export default function UsersScreen() {
                 <AdminIcon
                   name="users"
                   size={18}
-                  color={roleTones[role.name] ? '#7c5994' : '#687363'}
+                  color={roleTones[role.name] ? '#7c5994' : '#8b8178'}
                 />
-                <Text className="mt-2 text-[9px] font-semibold text-[#23382b]">
+                <Text className="mt-2 text-[9px] font-semibold text-[#332d28]">
                   {role.name}
                 </Text>
-                <Text className="mt-1 text-[9px] leading-3 text-[#687363]">
+                <Text className="mt-1 text-[9px] leading-3 text-[#8b8178]">
                   {role.permissions.length} permisos asignados
                 </Text>
               </View>
             ))}
           </View>
-          <Text className="mt-3 text-[9px] leading-4 text-[#687363]">
+          <Text className="mt-3 text-[9px] leading-4 text-[#8b8178]">
             Roles y permisos cargados desde el backend.
           </Text>
         </View>

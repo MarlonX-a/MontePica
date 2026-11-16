@@ -26,11 +26,11 @@ function ActionButton({ children, onPress, disabled, secondary = false }) {
       accessibilityState={{ disabled }}
       disabled={disabled}
       onPress={onPress}
-      className={`min-h-11 items-center justify-center rounded-xl px-4 py-3 ${secondary ? 'bg-[#f2e8d6]' : 'bg-[#24543a]'}`}
+      className={`min-h-11 items-center justify-center rounded-xl px-4 py-3 ${secondary ? 'bg-[#f2e8d6]' : 'bg-[#b7472a]'}`}
       style={{ opacity: disabled ? 0.5 : 1 }}
     >
       <Text
-        className={`text-xs font-semibold ${secondary ? 'text-[#24543a]' : 'text-white'}`}
+        className={`text-xs font-semibold ${secondary ? 'text-[#b7472a]' : 'text-white'}`}
       >
         {children}
       </Text>
@@ -42,15 +42,15 @@ function VisitDetails({ visit, loading, error, onRetry }) {
   if (loading) {
     return (
       <View className="items-center rounded-xl bg-white p-4">
-        <ActivityIndicator color="#24543a" />
-        <Text className="mt-2 text-xs text-[#687363]">Consultando visita…</Text>
+        <ActivityIndicator color="#b7472a" />
+        <Text className="mt-2 text-xs text-[#8b8178]">Consultando visita…</Text>
       </View>
     );
   }
   if (error) {
     return (
       <View className="rounded-xl bg-white p-4">
-        <Text accessibilityRole="alert" className="mb-3 text-xs text-[#24543a]">
+        <Text accessibilityRole="alert" className="mb-3 text-xs text-[#b7472a]">
           {error}
         </Text>
         <Button onPress={onRetry}>Reintentar consulta</Button>
@@ -60,14 +60,14 @@ function VisitDetails({ visit, loading, error, onRetry }) {
   if (!visit) return null;
   return (
     <View className="rounded-xl bg-white p-4">
-      <Text className="text-[10px] font-semibold uppercase text-[#687363]">
+      <Text className="text-[10px] font-semibold uppercase text-[#8b8178]">
         Visita {visit.status === 'open' ? 'abierta' : 'cerrada'}
       </Text>
-      <Text className="mt-2 text-xs text-[#455343]">
+      <Text className="mt-2 text-xs text-[#514941]">
         Apertura: {formatDate(visit.openedAt)}
       </Text>
       {visit.closedAt ? (
-        <Text className="mt-1 text-xs text-[#455343]">
+        <Text className="mt-1 text-xs text-[#514941]">
           Cierre: {formatDate(visit.closedAt)}
         </Text>
       ) : null}
@@ -78,13 +78,13 @@ function VisitDetails({ visit, loading, error, onRetry }) {
 function TableIdentity({ model, table }) {
   return (
     <View className="mb-3 rounded-xl bg-white p-4">
-      <Text className="text-[10px] font-semibold uppercase text-[#687363]">Mesa</Text>
-      <Text className="mt-1 text-base font-bold text-[#23382b]">{table?.code || '—'}</Text>
-      <Text className="mt-2 text-xs text-[#455343]">Estado: {table?.active ? 'Activa' : 'Inactiva'}</Text>
+      <Text className="text-[10px] font-semibold uppercase text-[#8b8178]">Mesa</Text>
+      <Text className="mt-1 text-base font-bold text-[#332d28]">{table?.code || '—'}</Text>
+      <Text className="mt-2 text-xs text-[#514941]">Estado: {table?.active ? 'Activa' : 'Inactiva'}</Text>
       {model.tableLoading ? (
         <View className="mt-3 flex-row items-center gap-2">
-          <ActivityIndicator size="small" color="#24543a" />
-          <Text className="text-xs text-[#687363]">Actualizando estado…</Text>
+          <ActivityIndicator size="small" color="#b7472a" />
+          <Text className="text-xs text-[#8b8178]">Actualizando estado…</Text>
         </View>
       ) : null}
     </View>
@@ -95,7 +95,7 @@ function TableLoadError({ model }) {
   if (!model.tableError) return null;
   return (
     <View className="mb-3 rounded-xl bg-white p-4">
-      <Text accessibilityRole="alert" className="mb-3 text-xs text-[#24543a]">{model.tableError}</Text>
+      <Text accessibilityRole="alert" className="mb-3 text-xs text-[#b7472a]">{model.tableError}</Text>
       <Button onPress={model.retryTable}>Reintentar consulta</Button>
     </View>
   );
@@ -105,7 +105,7 @@ function VisitContents({ model, qr, table, isBusy, hasOpenVisit }) {
   if (model.tableError) return null;
   return (
     <>
-      <Text className="mb-2 text-xs text-[#455343]">
+      <Text className="mb-2 text-xs text-[#514941]">
         {hasOpenVisit ? 'Hay una visita abierta.' : 'No hay visita abierta.'}
       </Text>
       {model.canReadVisits ? (
@@ -115,7 +115,7 @@ function VisitContents({ model, qr, table, isBusy, hasOpenVisit }) {
           ) : null}
         </View>
       ) : (
-        <Text className="mb-3 text-xs leading-5 text-[#687363]">
+        <Text className="mb-3 text-xs leading-5 text-[#8b8178]">
           Tu cuenta puede gestionar visitas, pero no tiene permiso para consultar sus fechas y detalles.
         </Text>
       )}
@@ -134,7 +134,7 @@ function VisitChangedNotice({ model, visitChanged }) {
   if (!visitChanged || model.tableError) return null;
   return (
     <View className="mb-3">
-      <Text className="mb-2 text-xs leading-5 text-[#24543a]">
+      <Text className="mb-2 text-xs leading-5 text-[#b7472a]">
         La visita cambió mientras consultabas. Actualiza la mesa antes de continuar.
       </Text>
       <Button onPress={model.retryTable}>Actualizar mesa</Button>
@@ -158,8 +158,8 @@ function VisitActions({ model, isBusy, hasOpenVisit, visitChanged, confirmClose,
         </ActionButton>
       ) : null}
       {canClose && confirmClose ? (
-        <View className="rounded-xl border border-[#dedfce] bg-white p-4">
-          <Text className="text-xs leading-5 text-[#455343]">
+        <View className="rounded-xl border border-[#eadfd2] bg-white p-4">
+          <Text className="text-xs leading-5 text-[#514941]">
             Al cerrar, el backend finalizará las participaciones. La operación se rechazará si hay consumos pendientes en alguna cuenta.
           </Text>
           <View className="mt-3 gap-2">
@@ -180,19 +180,19 @@ function VisitMessages({ model, table, hasOpenVisit }) {
   return (
     <>
       {!model.canManageVisits && !model.tableError ? (
-        <Text className="text-xs text-[#687363]">Tu cuenta no tiene permiso para abrir o cerrar visitas.</Text>
+        <Text className="text-xs text-[#8b8178]">Tu cuenta no tiene permiso para abrir o cerrar visitas.</Text>
       ) : null}
       {table && !table.active && !hasOpenVisit && !model.tableError ? (
-        <Text className="text-xs text-[#687363]">Activa la mesa antes de abrir una visita.</Text>
+        <Text className="text-xs text-[#8b8178]">Activa la mesa antes de abrir una visita.</Text>
       ) : null}
       {model.message ? (
-        <Text accessibilityRole="alert" className={`mt-3 text-xs leading-5 ${model.operationFailed ? 'text-[#24543a]' : 'text-[#477052]'}`}>
+        <Text accessibilityRole="alert" className={`mt-3 text-xs leading-5 ${model.operationFailed ? 'text-[#b7472a]' : 'text-[#477052]'}`}>
           {model.message}
         </Text>
       ) : null}
       {model.listRefreshError ? (
         <View className="mt-3">
-          <Text className="mb-2 text-xs leading-5 text-[#24543a]">
+          <Text className="mb-2 text-xs leading-5 text-[#b7472a]">
             La operación se confirmó, pero no se pudo actualizar el listado.
           </Text>
           <Button onPress={model.retryTableList}>Reintentar actualización</Button>
@@ -240,9 +240,9 @@ export default function TableVisitModal({ model, qr, canManageParticipants }) {
     <Modal visible={model.visible} transparent animationType="fade" onRequestClose={requestClose}>
       <SafeAreaView className="flex-1 bg-black/40">
         <View className="flex-1 justify-center px-5 py-4">
-          <View accessibilityViewIsModal className="max-h-[85%] w-full max-w-[460px] self-center rounded-3xl bg-[#f8f5ec] p-5">
+          <View accessibilityViewIsModal className="max-h-[85%] w-full max-w-[460px] self-center rounded-3xl bg-[#fff8ef] p-5">
             <View className="mb-4 flex-row items-center justify-between gap-3">
-              <Text accessibilityRole="header" className="flex-1 text-lg font-bold text-[#23382b]">Visita de mesa</Text>
+              <Text accessibilityRole="header" className="flex-1 text-lg font-bold text-[#332d28]">Visita de mesa</Text>
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="Cerrar detalle de visita"
@@ -252,7 +252,7 @@ export default function TableVisitModal({ model, qr, canManageParticipants }) {
                 className="h-11 w-11 items-center justify-center rounded-full bg-white"
                 style={{ opacity: isBusy ? 0.5 : 1 }}
               >
-                <Text className="text-xl text-[#24543a]">×</Text>
+                <Text className="text-xl text-[#b7472a]">×</Text>
               </Pressable>
             </View>
             <ScrollView showsVerticalScrollIndicator={false}>

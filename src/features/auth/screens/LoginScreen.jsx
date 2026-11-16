@@ -13,12 +13,7 @@ function getRouteForRole(roleCode) {
 
 export default function LoginScreen() {
   return (
-    <View className="flex-1 justify-center bg-[#f8f5ec] px-6">
-      <Link href="/" asChild>
-        <Pressable accessibilityRole="link" className="mb-6 py-3">
-          <Text className="font-semibold text-[#24543a]">← Volver a MontePica</Text>
-        </Pressable>
-      </Link>
+    <View className="flex-1 justify-center bg-[#fff8ef] px-6">
       <View className="mb-7">
         <Title
           titulo="¡Qué gusto verte!"
@@ -32,12 +27,12 @@ export default function LoginScreen() {
           router.replace(getRouteForRole(session.user?.role?.code));
         }}
       />
-      <Text className="mt-5 text-center text-sm text-[#687363]">
+      <Text className="mt-5 text-center text-sm text-[#8b8178]">
         ¿Primera vez?
       </Text>
       <Link href="/(auth)/register" asChild>
         <Pressable accessibilityRole="link" className="mt-2">
-          <Text className="text-center text-sm font-medium text-[#24543a]">
+          <Text className="text-center text-sm font-medium text-[#b7472a]">
             Crea una cuenta
           </Text>
         </Pressable>

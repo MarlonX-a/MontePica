@@ -29,7 +29,7 @@ function QuantityButton({ label, onPress, children, disabled }) {
       className={`h-9 w-9 items-center justify-center rounded-lg ${disabled ? 'bg-[#f4eee5]' : 'bg-[#f5e7d5]'}`}
     >
       <Text
-        className={`text-lg font-semibold ${disabled ? 'text-[#c6b9aa]' : 'text-[#24543a]'}`}
+        className={`text-lg font-semibold ${disabled ? 'text-[#c6b9aa]' : 'text-[#8e3b27]'}`}
       >
         {children}
       </Text>
@@ -92,10 +92,10 @@ export default function ProductDetailScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-[#f8f5ec]">
+      <SafeAreaView className="flex-1 items-center justify-center bg-[#fff8ef]">
         <StatusBar style="dark" />
-        <ActivityIndicator color="#24543a" />
-        <Text className="mt-3 text-xs text-[#687363]">
+        <ActivityIndicator color="#b7472a" />
+        <Text className="mt-3 text-xs text-[#8b8178]">
           Cargando producto...
         </Text>
       </SafeAreaView>
@@ -104,23 +104,23 @@ export default function ProductDetailScreen() {
 
   if (loadError || !product) {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-[#f8f5ec] px-8">
+      <SafeAreaView className="flex-1 items-center justify-center bg-[#fff8ef] px-8">
         <StatusBar style="dark" />
-        <Text className="text-lg font-bold text-[#23382b]">
+        <Text className="text-lg font-bold text-[#332d28]">
           {loadError || 'No encontramos ese producto.'}
         </Text>
         {loadError ? (
           <Pressable
             accessibilityRole="button"
             onPress={() => setReloadKey((key) => key + 1)}
-            className="mt-4 rounded-xl bg-[#24543a] px-5 py-3"
+            className="mt-4 rounded-xl bg-[#b7472a] px-5 py-3"
           >
             <Text className="font-semibold text-white">Reintentar</Text>
           </Pressable>
         ) : null}
         <Pressable
           onPress={() => router.back()}
-          className="mt-4 rounded-xl bg-[#24543a] px-5 py-3"
+          className="mt-4 rounded-xl bg-[#b7472a] px-5 py-3"
         >
           <Text className="font-semibold text-white">Volver al menú</Text>
         </Pressable>
@@ -132,7 +132,7 @@ export default function ProductDetailScreen() {
   const total = ((product.priceCents / 100) * quantity).toFixed(2);
 
   return (
-    <SafeAreaView className="flex-1 bg-[#f8f5ec]">
+    <SafeAreaView className="flex-1 bg-[#fff8ef]">
       <StatusBar style="dark" />
       <View className="flex-1">
         <ScrollView showsVerticalScrollIndicator={false}>
@@ -165,7 +165,7 @@ export default function ProductDetailScreen() {
               </IconButton>
             </View>
             <View className="absolute bottom-4 left-5 rounded-full bg-white/90 px-3 py-1.5">
-              <Text className="text-[10px] font-semibold text-[#52602b]">
+              <Text className="text-[10px] font-semibold text-[#8a4a34]">
                 {isCeviche ? 'PREPARADO AL MOMENTO' : 'BEBIDA REFRESCANTE'}
               </Text>
             </View>
@@ -173,10 +173,10 @@ export default function ProductDetailScreen() {
 
           <View className="px-5 pb-5 pt-5">
             <View className="flex-row items-start justify-between">
-              <Text className="mr-3 flex-1 text-[23px] font-semibold leading-7 text-[#23382b]">
+              <Text className="mr-3 flex-1 text-[23px] font-semibold leading-7 text-[#332d28]">
                 {product.name}
               </Text>
-              <Text className="pt-1 text-lg font-semibold text-[#24543a]">
+              <Text className="pt-1 text-lg font-semibold text-[#b7472a]">
                 {product.price}
               </Text>
             </View>
@@ -189,7 +189,7 @@ export default function ProductDetailScreen() {
             </Text>
 
             <View className="mt-4 flex-row items-center rounded-lg bg-[#f4eee5] px-3 py-2.5">
-              <View className="mr-2 h-2 w-2 rounded-full bg-[#24543a]" />
+              <View className="mr-2 h-2 w-2 rounded-full bg-[#b7472a]" />
               <Text className="flex-1 text-[11px] font-medium text-[#75695f]">
                 Disponibilidad por confirmar
               </Text>
@@ -200,7 +200,7 @@ export default function ProductDetailScreen() {
 
             {isCeviche && (
               <View className="mt-4">
-                <Text className="mb-2 text-sm font-semibold text-[#455343]">
+                <Text className="mb-2 text-sm font-semibold text-[#514941]">
                   Elige tu picante
                 </Text>
                 <View className="flex-row">
@@ -211,7 +211,7 @@ export default function ProductDetailScreen() {
                       selected={spice === option}
                       onPress={() => setSpice(option)}
                       className="mr-2 rounded-full px-3 py-2"
-                      selectedClassName="bg-[#24543a]"
+                      selectedClassName="bg-[#8e3b27]"
                       unselectedClassName="bg-[#f1eee9]"
                       textClassName="text-[11px]"
                       selectedTextClassName="font-semibold text-white"
@@ -224,7 +224,7 @@ export default function ProductDetailScreen() {
 
             {isCeviche && (
               <View className="mt-4">
-                <Text className="mb-2 text-sm font-semibold text-[#455343]">
+                <Text className="mb-2 text-sm font-semibold text-[#514941]">
                   Nota para cocina
                 </Text>
                 <TextInput
@@ -235,7 +235,7 @@ export default function ProductDetailScreen() {
                   placeholderTextColor="#a79b90"
                   multiline
                   textAlignVertical="top"
-                  className="min-h-[64px] rounded-xl border border-[#dedfce] bg-white px-3 py-3 text-xs text-[#455343]"
+                  className="min-h-[64px] rounded-xl border border-[#eadfd2] bg-white px-3 py-3 text-xs text-[#514941]"
                   maxLength={120}
                 />
               </View>
@@ -243,11 +243,11 @@ export default function ProductDetailScreen() {
           </View>
         </ScrollView>
 
-        <View className="border-t border-[#eee2d7] bg-[#f8f5ec] px-5 py-3">
+        <View className="border-t border-[#eee2d7] bg-[#fff8ef] px-5 py-3">
           {cartError ? (
             <Text
               accessibilityRole="alert"
-              className="mb-2 text-xs leading-4 text-[#24543a]"
+              className="mb-2 text-xs leading-4 text-[#b7472a]"
             >
               {cartError}
             </Text>
@@ -261,7 +261,7 @@ export default function ProductDetailScreen() {
               >
                 −
               </QuantityButton>
-              <Text className="w-8 text-center text-sm font-semibold text-[#455343]">
+              <Text className="w-8 text-center text-sm font-semibold text-[#514941]">
                 {quantity}
               </Text>
               <QuantityButton
@@ -296,7 +296,7 @@ export default function ProductDetailScreen() {
                   params: { service, table, visitId },
                 });
               }}
-              className="h-12 flex-1 flex-row items-center justify-center rounded-xl bg-[#24543a]"
+              className="h-12 flex-1 flex-row items-center justify-center rounded-xl bg-[#b7472a]"
             >
               <Text className="mr-2 text-white">▣</Text>
               <Text className="font-bold text-white">Agregar · ${total}</Text>

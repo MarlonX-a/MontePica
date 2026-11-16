@@ -29,7 +29,7 @@ export default function AdminShell({
   const pathname = usePathname();
 
   return (
-    <SafeAreaView className="flex-1 bg-[#f8f5ec]">
+    <SafeAreaView className="flex-1 bg-[#fff8ef]">
       <StatusBar style="dark" />
       <View className="w-full max-w-[620px] flex-1 self-center">
         <ScrollView
@@ -45,11 +45,11 @@ export default function AdminShell({
             <View className="flex-1">
               <Text
                 accessibilityRole="header"
-                className="text-2xl font-bold text-[#23382b]"
+                className="text-2xl font-bold text-[#332d28]"
               >
                 {title}
               </Text>
-              <Text className="mt-0.5 text-[11px] text-[#687363]">
+              <Text className="mt-0.5 text-[11px] text-[#8b8178]">
                 {subtitle}
               </Text>
             </View>
@@ -59,18 +59,18 @@ export default function AdminShell({
                   accessibilityRole="button"
                   accessibilityLabel={addLabel}
                   onPress={onAdd}
-                  className="h-11 w-11 items-center justify-center rounded-full bg-white active:bg-[#edf0df]"
+                  className="h-11 w-11 items-center justify-center rounded-full bg-white active:bg-[#fff0e4]"
                 >
-                  <Text className="text-2xl font-light text-[#24543a]">＋</Text>
+                  <Text className="text-2xl font-light text-[#b7472a]">＋</Text>
                 </Pressable>
               )}
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="Cerrar sesión"
                 onPress={handleLogout}
-                className="h-11 items-center justify-center rounded-full bg-white px-3 active:bg-[#edf0df]"
+                className="h-11 items-center justify-center rounded-full bg-white px-3 active:bg-[#fff0e4]"
               >
-                <Text className="text-[11px] font-semibold text-[#24543a]">
+                <Text className="text-[11px] font-semibold text-[#b7472a]">
                   Salir
                 </Text>
               </Pressable>
@@ -81,7 +81,7 @@ export default function AdminShell({
         <View className="flex-row border-t border-[#eee2d7] bg-white px-2 pb-2 pt-2">
           {tabs.map((tab) => {
             const selected = pathname === tab.path;
-            const color = selected ? '#24543a' : '#988d83';
+            const color = selected ? '#b7472a' : '#988d83';
             return (
               <Pressable
                 key={tab.path}
@@ -89,7 +89,7 @@ export default function AdminShell({
                 accessibilityLabel={tab.label}
                 accessibilityState={{ selected }}
                 onPress={() => router.navigate(tab.path)}
-                className="min-h-12 flex-1 items-center justify-center rounded-lg active:bg-[#f8f5ec]"
+                className="min-h-12 flex-1 items-center justify-center rounded-lg active:bg-[#fff8ef]"
               >
                 <AdminIcon name={tab.icon} color={color} />
                 <Text

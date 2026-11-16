@@ -68,7 +68,7 @@ function PermissionMessage({ permission, onRequest }) {
         <Pressable
           accessibilityRole="button"
           onPress={onRequest}
-          className="mt-6 rounded-xl bg-[#24543a] px-6 py-3"
+          className="mt-6 rounded-xl bg-[#b7472a] px-6 py-3"
         >
           <Text className="font-bold text-white">Permitir cámara</Text>
         </Pressable>
@@ -90,8 +90,8 @@ function ResultPanel({
 }) {
   if (cameraError) {
     return (
-      <View className="rounded-[24px] bg-[#f8f5ec] p-5">
-        <Text accessibilityRole="alert" className="text-sm text-[#24543a]">
+      <View className="rounded-[24px] bg-[#fff8ef] p-5">
+        <Text accessibilityRole="alert" className="text-sm text-[#b7472a]">
           {cameraError}
         </Text>
         <ActionButton label="Reintentar cámara" onPress={onRetryCamera} />
@@ -100,9 +100,9 @@ function ResultPanel({
   }
   if (scanner.status === 'resolving') {
     return (
-      <View className="items-center rounded-[24px] bg-[#f8f5ec] p-6">
-        <ActivityIndicator color="#24543a" />
-        <Text className="mt-3 text-sm font-semibold text-[#23382b]">
+      <View className="items-center rounded-[24px] bg-[#fff8ef] p-6">
+        <ActivityIndicator color="#b7472a" />
+        <Text className="mt-3 text-sm font-semibold text-[#332d28]">
           Consultando mesa…
         </Text>
       </View>
@@ -120,10 +120,10 @@ function ResultPanel({
   }
   if (scanner.status === 'error') {
     return (
-      <View className="rounded-[24px] bg-[#f8f5ec] p-5">
+      <View className="rounded-[24px] bg-[#fff8ef] p-5">
         <Text
           accessibilityRole="alert"
-          className="text-sm leading-5 text-[#24543a]"
+          className="text-sm leading-5 text-[#b7472a]"
         >
           {scanner.error}
         </Text>
@@ -148,14 +148,14 @@ function ResultPanel({
     );
   }
   return (
-    <View className="items-center rounded-[24px] bg-[#f8f5ec] p-6">
-      <Text className="text-[10px] font-semibold tracking-wide text-[#687363]">
+    <View className="items-center rounded-[24px] bg-[#fff8ef] p-6">
+      <Text className="text-[10px] font-semibold tracking-wide text-[#8b8178]">
         BUSCANDO QR
       </Text>
-      <Text className="mt-2 text-center text-base font-bold text-[#23382b]">
+      <Text className="mt-2 text-center text-base font-bold text-[#332d28]">
         Alinea el código QR dentro del marco
       </Text>
-      <Text className="mt-1 text-center text-xs leading-5 text-[#687363]">
+      <Text className="mt-1 text-center text-xs leading-5 text-[#8b8178]">
         La cámara validará la mesa con el servidor.
       </Text>
     </View>
@@ -167,10 +167,10 @@ function ActionButton({ label, onPress, secondary = false }) {
     <Pressable
       accessibilityRole="button"
       onPress={onPress}
-      className={`mt-3 min-h-11 items-center justify-center rounded-xl px-4 ${secondary ? 'bg-[#f2e8d6]' : 'bg-[#24543a]'}`}
+      className={`mt-3 min-h-11 items-center justify-center rounded-xl px-4 ${secondary ? 'bg-[#f2e8d6]' : 'bg-[#b7472a]'}`}
     >
       <Text
-        className={`text-xs font-semibold ${secondary ? 'text-[#24543a]' : 'text-white'}`}
+        className={`text-xs font-semibold ${secondary ? 'text-[#b7472a]' : 'text-white'}`}
       >
         {label}
       </Text>

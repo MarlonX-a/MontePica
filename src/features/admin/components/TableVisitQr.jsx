@@ -9,10 +9,10 @@ function QrPreview({ qr, table }) {
       <View className="rounded-xl bg-white p-4">
         <QRCode value={qr.qrToken} size={192} ecl="M" />
       </View>
-      <Text className="mt-2 text-xs font-medium text-[#455343]">
+      <Text className="mt-2 text-xs font-medium text-[#514941]">
         {table.code} · Versión {qr.qrVersion}
       </Text>
-      <Text className="mt-2 text-center text-[10px] leading-4 text-[#687363]">
+      <Text className="mt-2 text-center text-[10px] leading-4 text-[#8b8178]">
         Este código solo se conserva mientras esta ventana permanece abierta.
       </Text>
     </View>
@@ -21,7 +21,7 @@ function QrPreview({ qr, table }) {
 
 function QrUnavailable() {
   return (
-    <Text className="mt-2 text-xs leading-5 text-[#687363]">
+    <Text className="mt-2 text-xs leading-5 text-[#8b8178]">
       El backend entrega el código una sola vez. Si cierras esta ventana,
       tendrás que emitir uno nuevo; emitirlo invalida el anterior y cancela
       solicitudes pendientes.
@@ -34,7 +34,7 @@ function QrError({ error, uncertain, onRefresh }) {
     <View className="mt-3">
       <Text
         accessibilityRole="alert"
-        className="mb-2 text-xs leading-5 text-[#24543a]"
+        className="mb-2 text-xs leading-5 text-[#b7472a]"
       >
         {error}
       </Text>
@@ -50,7 +50,7 @@ function StartIssueButton({ qr, pending, onPress }) {
       accessibilityLabel={qr ? 'Emitir un nuevo código QR' : 'Emitir código QR'}
       disabled={pending}
       onPress={onPress}
-      className="mt-3 min-h-11 items-center justify-center rounded-xl bg-[#24543a] px-4 py-3"
+      className="mt-3 min-h-11 items-center justify-center rounded-xl bg-[#b7472a] px-4 py-3"
       style={{ opacity: pending ? 0.5 : 1 }}
     >
       <Text className="text-xs font-semibold text-white">
@@ -68,8 +68,8 @@ async function confirmIssue(model, setConfirming) {
 function IssueConfirmation({ model, onCancel }) {
   const pending = model.issuing || model.saving;
   return (
-    <View className="mt-3 rounded-xl bg-[#f8f5ec] p-3">
-      <Text className="text-xs leading-5 text-[#455343]">
+    <View className="mt-3 rounded-xl bg-[#fff8ef] p-3">
+      <Text className="text-xs leading-5 text-[#514941]">
         Al continuar, el QR actual quedará invalidado y se cancelarán las
         solicitudes pendientes de esta visita.
       </Text>
@@ -95,8 +95,8 @@ export default function TableVisitQr({ model, table, visitId }) {
   if (!visitId) return null;
 
   return (
-    <View className="mt-3 rounded-xl border border-[#dedfce] bg-white p-4">
-      <Text className="text-sm font-semibold text-[#23382b]">
+    <View className="mt-3 rounded-xl border border-[#eadfd2] bg-white p-4">
+      <Text className="text-sm font-semibold text-[#332d28]">
         Código QR de la visita
       </Text>
       {model.qr ? <QrPreview qr={model.qr} table={table} /> : <QrUnavailable />}
@@ -110,7 +110,7 @@ export default function TableVisitQr({ model, table, visitId }) {
         <IssueConfirmation model={model} onCancel={setConfirming} />
       ) : null}
       {!canIssue ? (
-        <Text className="mt-2 text-xs text-[#687363]">
+        <Text className="mt-2 text-xs text-[#8b8178]">
           Se requiere permiso de gestión de visitas y una mesa activa.
         </Text>
       ) : null}

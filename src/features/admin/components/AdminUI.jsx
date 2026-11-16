@@ -25,7 +25,7 @@ export const tones = {
   blue: { background: '#deebf5', text: '#456d8a' },
   purple: { background: '#eee3f4', text: '#7c5994' },
   yellow: { background: '#fff0c7', text: '#9c7b31' },
-  sand: { background: '#f2e8d6', text: '#687363' },
+  sand: { background: '#f2e8d6', text: '#8b8178' },
 };
 
 export function Button({ children, onPress, secondary = false }) {
@@ -33,10 +33,10 @@ export function Button({ children, onPress, secondary = false }) {
     <Pressable
       accessibilityRole="button"
       onPress={onPress}
-      className={`min-h-11 items-center justify-center rounded-xl px-4 py-3 active:opacity-70 ${secondary ? 'bg-[#f2e8d6]' : 'bg-[#24543a]'}`}
+      className={`min-h-11 items-center justify-center rounded-xl px-4 py-3 active:opacity-70 ${secondary ? 'bg-[#f2e8d6]' : 'bg-[#b7472a]'}`}
     >
       <Text
-        className={`text-xs font-semibold ${secondary ? 'text-[#24543a]' : 'text-white'}`}
+        className={`text-xs font-semibold ${secondary ? 'text-[#b7472a]' : 'text-white'}`}
       >
         {children}
       </Text>
@@ -75,7 +75,7 @@ export function Chips({ items, value, onChange }) {
             accessibilityRole="button"
             accessibilityState={{ selected: value === key }}
             onPress={() => onChange(key)}
-            className={`mr-2 rounded-full px-3 py-2 ${value === key ? 'bg-[#24543a]' : 'bg-[#f2e8d6]'}`}
+            className={`mr-2 rounded-full px-3 py-2 ${value === key ? 'bg-[#8e3b27]' : 'bg-[#f2e8d6]'}`}
           >
             <Text
               className={`text-[10px] ${value === key ? 'font-semibold text-white' : 'text-[#70665e]'}`}
@@ -91,7 +91,7 @@ export function Chips({ items, value, onChange }) {
 
 export function Search({ value, onChange, placeholder }) {
   return (
-    <View className="mb-3 h-12 flex-row items-center rounded-xl border border-[#dedfce] bg-white px-3">
+    <View className="mb-3 h-12 flex-row items-center rounded-xl border border-[#eadfd2] bg-white px-3">
       <Text className="mr-2 text-lg text-[#988d83]">⌕</Text>
       <TextInput
         accessibilityLabel={placeholder}
@@ -100,7 +100,7 @@ export function Search({ value, onChange, placeholder }) {
         placeholder={placeholder}
         placeholderTextColor="#a79b90"
         returnKeyType="search"
-        className="flex-1 py-3 text-xs text-[#23382b]"
+        className="flex-1 py-3 text-xs text-[#332d28]"
       />
     </View>
   );
@@ -109,10 +109,10 @@ export function Search({ value, onChange, placeholder }) {
 export function Empty({ children }) {
   return (
     <View className="mb-3 items-center rounded-2xl bg-white px-5 py-10">
-      <Text className="text-sm font-semibold text-[#455343]">
+      <Text className="text-sm font-semibold text-[#514941]">
         No encontramos resultados
       </Text>
-      <Text className="mt-1 text-center text-xs text-[#687363]">
+      <Text className="mt-1 text-center text-xs text-[#8b8178]">
         {children}
       </Text>
     </View>
@@ -125,7 +125,7 @@ export function Stats({ items }) {
       {items.map((item) => (
         <View key={item.label} className="flex-1 rounded-2xl bg-white p-3">
           <View className="mb-2 flex-row items-center justify-between gap-1">
-            <Text className="flex-1 text-[10px] text-[#687363]">
+            <Text className="flex-1 text-[10px] text-[#8b8178]">
               {item.label}
             </Text>
             <View
@@ -139,11 +139,11 @@ export function Stats({ items }) {
               />
             </View>
           </View>
-          <Text className="text-2xl font-bold text-[#23382b]">
+          <Text className="text-2xl font-bold text-[#332d28]">
             {item.value}
           </Text>
           {item.note ? (
-            <Text className="mt-1 text-[9px] text-[#687363]">{item.note}</Text>
+            <Text className="mt-1 text-[9px] text-[#8b8178]">{item.note}</Text>
           ) : null}
         </View>
       ))}
@@ -161,11 +161,11 @@ export function ToggleFilter({ checked, label, onPress }) {
       className="mb-3 min-h-10 flex-row items-center gap-2"
     >
       <View
-        className={`h-4 w-4 items-center justify-center rounded border ${checked ? 'border-[#24543a] bg-[#24543a]' : 'border-[#cbbcaf] bg-white'}`}
+        className={`h-4 w-4 items-center justify-center rounded border ${checked ? 'border-[#b7472a] bg-[#b7472a]' : 'border-[#cbbcaf] bg-white'}`}
       >
         {checked ? <Text className="text-[10px] text-white">✓</Text> : null}
       </View>
-      <Text className="text-[11px] text-[#687363]">{label}</Text>
+      <Text className="text-[11px] text-[#8b8178]">{label}</Text>
     </Pressable>
   );
 }
@@ -242,13 +242,13 @@ export function Editor({
           className="flex-1 justify-center px-5 py-4"
         >
           <View
-            className="max-h-[90%] w-full max-w-[460px] self-center rounded-3xl bg-[#f8f5ec] p-5"
+            className="max-h-[90%] w-full max-w-[460px] self-center rounded-3xl bg-[#fff8ef] p-5"
             accessibilityViewIsModal
           >
             <View className="mb-4 flex-row items-center justify-between gap-3">
               <Text
                 accessibilityRole="header"
-                className="flex-1 text-lg font-bold text-[#23382b]"
+                className="flex-1 text-lg font-bold text-[#332d28]"
               >
                 {title}
               </Text>
@@ -258,13 +258,13 @@ export function Editor({
                 onPress={onClose}
                 className="h-11 w-11 items-center justify-center rounded-full bg-white"
               >
-                <Text className="text-xl text-[#24543a]">×</Text>
+                <Text className="text-xl text-[#b7472a]">×</Text>
               </Pressable>
             </View>
             <ScrollView keyboardShouldPersistTaps="handled">
               {fields.map((field) => (
                 <View key={field.key} className="mb-4">
-                  <Text className="mb-2 text-xs text-[#455343]">
+                  <Text className="mb-2 text-xs text-[#514941]">
                     {field.label}
                     {field.required ? ' *' : ''}
                   </Text>
@@ -286,7 +286,7 @@ export function Editor({
                           ? 'none'
                           : 'sentences'
                       }
-                      className="min-h-12 rounded-xl border border-[#dedfce] bg-white px-4 py-3 text-sm text-[#23382b]"
+                      className="min-h-12 rounded-xl border border-[#eadfd2] bg-white px-4 py-3 text-sm text-[#332d28]"
                     />
                   )}
                 </View>
@@ -295,7 +295,7 @@ export function Editor({
               {error ? (
                 <Text
                   accessibilityRole="alert"
-                  className="mb-3 text-xs text-[#24543a]"
+                  className="mb-3 text-xs text-[#b7472a]"
                 >
                   {error}
                 </Text>
@@ -305,7 +305,7 @@ export function Editor({
                   {saving ? 'Guardando…' : 'Guardar cambios'}
                 </Button>
               ) : null}
-              <Text className="mt-3 text-center text-[10px] text-[#687363]">
+              <Text className="mt-3 text-center text-[10px] text-[#8b8178]">
                 {saveHint}
               </Text>
             </ScrollView>

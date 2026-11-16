@@ -105,7 +105,7 @@ export default function BottomNavigation({
     <View className="flex-row border-t border-[#eee2d7] bg-white px-2 pb-2 pt-2">
       {tabs.map((tab) => {
         const isActive = activeTab === tab.key;
-        const color = isActive ? '#24543a' : '#988d83';
+        const color = isActive ? '#b7472a' : '#988d83';
 
         return (
           <Pressable
@@ -114,7 +114,7 @@ export default function BottomNavigation({
             accessibilityRole="tab"
             accessibilityLabel={tab.label}
             accessibilityState={{ selected: isActive }}
-            className="min-h-12 flex-1 items-center justify-center rounded-lg active:bg-[#f8f5ec]"
+            className="min-h-12 flex-1 items-center justify-center rounded-lg active:bg-[#fff8ef]"
           >
             <TabIcon name={tab.key} color={color} />
             <Text

@@ -10,22 +10,22 @@ function OrderButton({ icon, title, subtitle, primary, onPress }) {
     <Pressable
       accessibilityRole="button"
       onPress={onPress}
-      className={`min-h-[104px] flex-1 rounded-2xl px-3 py-3 ${primary ? 'bg-[#24543a]' : 'border border-[#dedfce] bg-white'}`}
+      className={`min-h-[104px] flex-1 rounded-2xl px-3 py-3 ${primary ? 'bg-[#b7472a]' : 'border border-[#eadfd2] bg-white'}`}
     >
       <View
-        className={`mb-2 h-8 w-8 items-center justify-center rounded-full ${primary ? 'bg-white/20' : 'bg-[#edf0df]'}`}
+        className={`mb-2 h-8 w-8 items-center justify-center rounded-full ${primary ? 'bg-white/20' : 'bg-[#fff0e7]'}`}
       >
-        <Text className={`text-lg ${primary ? 'text-white' : 'text-[#24543a]'}`}>
+        <Text className={`text-lg ${primary ? 'text-white' : 'text-[#b7472a]'}`}>
           {icon}
         </Text>
       </View>
       <Text
-        className={`text-xs font-bold ${primary ? 'text-white' : 'text-[#23382b]'}`}
+        className={`text-xs font-bold ${primary ? 'text-white' : 'text-[#332d28]'}`}
       >
         {title}
       </Text>
       <Text
-        className={`mt-0.5 text-[10px] ${primary ? 'text-white/80' : 'text-[#687363]'}`}
+        className={`mt-0.5 text-[10px] ${primary ? 'text-white/80' : 'text-[#8b8178]'}`}
       >
         {subtitle}
       </Text>
@@ -46,18 +46,18 @@ async function handleTabPress(tab) {
 
 export default function HomeScreen() {
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#f8f5ec' }}>
-      <View className="flex-1 bg-[#f8f5ec]">
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff8ef' }}>
+      <View className="flex-1 bg-[#fff8ef]">
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: 20 }}
         >
           <View className="mb-5 flex-row items-center justify-between">
             <View>
-              <Text className="text-2xl font-bold text-[#23382b]">
+              <Text className="text-2xl font-bold text-[#332d28]">
                 Hola, María <Text>👋</Text>
               </Text>
-              <Text className="mt-0.5 text-xs text-[#687363]">
+              <Text className="mt-0.5 text-xs text-[#8b8178]">
                 Mesa aún no vinculada
               </Text>
             </View>
@@ -70,9 +70,9 @@ export default function HomeScreen() {
                   await logoutUser();
                   router.replace('/(auth)/login');
                 }}
-                className="h-10 items-center justify-center rounded-full bg-white px-3 active:bg-[#edf0df]"
+                className="h-10 items-center justify-center rounded-full bg-white px-3 active:bg-[#fff0e4]"
               >
-                <Text className="text-[11px] font-semibold text-[#24543a]">
+                <Text className="text-[11px] font-semibold text-[#b7472a]">
                   Salir
                 </Text>
               </Pressable>
@@ -87,7 +87,7 @@ export default function HomeScreen() {
               className="absolute inset-0 h-full w-full"
             />
             <View className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1">
-              <Text className="text-[10px] font-semibold text-[#52602b]">
+              <Text className="text-[10px] font-semibold text-[#8a4a34]">
                 Favorito de la casa
               </Text>
             </View>
@@ -107,7 +107,7 @@ export default function HomeScreen() {
           </View>
 
           <View className="mb-3 mt-5">
-            <Text className="text-sm font-semibold text-[#455343]">
+            <Text className="text-sm font-semibold text-[#514941]">
               ¿Cómo quieres pedir?
             </Text>
           </View>
@@ -135,13 +135,13 @@ export default function HomeScreen() {
           <Pressable
             accessibilityRole="button"
             onPress={() => router.push('/admin/dashboard')}
-            className="mt-5 flex-row items-center justify-between rounded-2xl border border-[#dedfce] bg-white px-4 py-4 active:bg-[#edf0df]"
+            className="mt-5 flex-row items-center justify-between rounded-2xl border border-[#eadfd2] bg-white px-4 py-4 active:bg-[#fff0e4]"
           >
             <View>
-              <Text className="text-sm font-semibold text-[#24543a]">Administrar MontePica</Text>
-              <Text className="mt-1 text-xs text-[#687363]">Productos, mesas y usuarios</Text>
+              <Text className="text-sm font-semibold text-[#b7472a]">Administrar MontePica</Text>
+              <Text className="mt-1 text-xs text-[#8b8178]">Productos, mesas y usuarios</Text>
             </View>
-            <Text className="text-lg text-[#24543a]">→</Text>
+            <Text className="text-lg text-[#b7472a]">→</Text>
           </Pressable>
         </ScrollView>
 

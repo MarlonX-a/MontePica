@@ -20,7 +20,7 @@ export function ProductCard({ product, onPress }) {
       accessibilityRole="button"
       accessibilityLabel={`Editar ${product.name}`}
       onPress={onPress}
-      className="mb-2 flex-row items-center rounded-2xl bg-white p-3 active:bg-[#edf0df]"
+      className="mb-2 flex-row items-center rounded-2xl bg-white p-3 active:bg-[#fff0e4]"
     >
       <View style={imageStyles.thumbnail}>
         {product.image || product.imageUrl ? (
@@ -35,14 +35,14 @@ export function ProductCard({ product, onPress }) {
         )}
       </View>
       <View className="flex-1" style={{ minWidth: 0 }}>
-        <Text className="text-xs font-semibold text-[#23382b]">
+        <Text className="text-xs font-semibold text-[#332d28]">
           {product.name}
         </Text>
-        <Text className="mt-1 text-[10px] text-[#687363]">
+        <Text className="mt-1 text-[10px] text-[#8b8178]">
           {product.category}
         </Text>
         <View className="mt-2 flex-row flex-wrap items-center gap-2">
-          <Text className="text-xs font-bold text-[#24543a]">
+          <Text className="text-xs font-bold text-[#b7472a]">
             ${product.price.toFixed(2)}
           </Text>
           <Badge tone={tone}>{status}</Badge>
@@ -57,7 +57,7 @@ export function ProductCard({ product, onPress }) {
 
 export function TableCard({ table, onEdit, onVisit }) {
   return (
-    <View className="flex-1 rounded-2xl border border-[#dedfce] bg-white p-3">
+    <View className="flex-1 rounded-2xl border border-[#eadfd2] bg-white p-3">
       <View className="mb-2 flex-row flex-wrap items-center justify-between gap-2">
         <View className="h-8 w-8 items-center justify-center rounded-lg bg-[#f2e8d6]">
           <AdminIcon name="table" color="#988d83" />
@@ -66,7 +66,7 @@ export function TableCard({ table, onEdit, onVisit }) {
           {table.statusLabel}
         </Badge>
       </View>
-      <Text className="my-2 text-sm font-medium text-[#23382b]">
+      <Text className="my-2 text-sm font-medium text-[#332d28]">
         {table.code}
       </Text>
       <Badge tone={table.openVisitId ? 'peach' : 'blue'}>
@@ -81,7 +81,7 @@ export function TableCard({ table, onEdit, onVisit }) {
               onPress={onVisit}
               className="min-h-10 flex-1 items-center justify-center rounded-lg bg-[#f2e8d6] px-2"
             >
-              <Text className="text-[10px] font-semibold text-[#24543a]">
+              <Text className="text-[10px] font-semibold text-[#b7472a]">
                 Visita
               </Text>
             </Pressable>
@@ -93,7 +93,7 @@ export function TableCard({ table, onEdit, onVisit }) {
               onPress={onEdit}
               className="min-h-10 flex-1 items-center justify-center rounded-lg bg-[#f2e8d6] px-2"
             >
-              <Text className="text-[10px] font-semibold text-[#24543a]">
+              <Text className="text-[10px] font-semibold text-[#b7472a]">
                 Editar
               </Text>
             </Pressable>
@@ -121,7 +121,7 @@ export function UserCard({ user, onPress }) {
       accessibilityRole="button"
       accessibilityLabel={`Editar ${user.name}`}
       onPress={onPress}
-      className="mb-2 flex-row items-center rounded-2xl bg-white px-3 py-3 active:bg-[#edf0df]"
+      className="mb-2 flex-row items-center rounded-2xl bg-white px-3 py-3 active:bg-[#fff0e4]"
     >
       <View
         className="mr-3 h-10 w-10 items-center justify-center rounded-full"
@@ -130,18 +130,18 @@ export function UserCard({ user, onPress }) {
           opacity: user.active ? 1 : 0.5,
         }}
       >
-        <Text className="text-xs font-bold text-[#455343]">{initials}</Text>
+        <Text className="text-xs font-bold text-[#514941]">{initials}</Text>
       </View>
       <View className="mr-2 flex-1" style={{ minWidth: 0 }}>
-        <Text className="text-xs font-medium text-[#23382b]">{user.name}</Text>
-        <Text numberOfLines={1} className="mt-1 text-[9px] text-[#687363]">
+        <Text className="text-xs font-medium text-[#332d28]">{user.name}</Text>
+        <Text numberOfLines={1} className="mt-1 text-[9px] text-[#8b8178]">
           {user.email}
         </Text>
       </View>
       <View className="items-end gap-1">
         <Badge tone={roleTones[user.role]}>{user.role}</Badge>
         <Text
-          className={`text-[9px] ${user.active ? 'font-semibold text-[#477052]' : 'text-[#687363]'}`}
+          className={`text-[9px] ${user.active ? 'font-semibold text-[#477052]' : 'text-[#8b8178]'}`}
         >
           {user.active ? 'Activo' : 'Suspendido'}
         </Text>
@@ -160,7 +160,7 @@ const imageStyles = StyleSheet.create({
     marginRight: 12,
     borderRadius: 12,
     overflow: 'hidden',
-    backgroundColor: '#edf0df',
+    backgroundColor: '#fff0e4',
     alignItems: 'center',
     justifyContent: 'center',
   },

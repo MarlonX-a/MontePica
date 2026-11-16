@@ -66,7 +66,7 @@ export default function LoginForm({ onValidSubmit }) {
 
   return (
     <View>
-      <Text className="mb-1 mt-4 text-sm text-[#455343]">
+      <Text className="mb-1 mt-4 text-sm text-[#514941]">
         Correo Electrónico:
       </Text>
       <TextInput
@@ -80,18 +80,18 @@ export default function LoginForm({ onValidSubmit }) {
         accessibilityLabel="Correo electrónico"
         accessibilityHint={errors.email || undefined}
         placeholderTextColor="#a69a8e"
-        className={`rounded-xl border bg-white px-4 py-3 text-[#23382b] ${errors.email ? 'border-red-500' : 'border-[#dedfce]'}`}
+        className={`rounded-xl border bg-white px-4 py-3 text-[#332d28] ${errors.email ? 'border-red-500' : 'border-[#eadfd2]'}`}
       />
       {errors.email ? (
         <Text className="mt-1 text-sm text-red-600" accessibilityRole="alert">
           {errors.email}
         </Text>
       ) : null}
-      <Text className="mb-1 mt-4 text-sm text-[#455343]">
+      <Text className="mb-1 mt-4 text-sm text-[#514941]">
         Contraseña:
       </Text>
       <View
-        className={`flex-row items-center rounded-xl border bg-white pr-4 ${errors.password ? 'border-red-500' : 'border-[#dedfce]'}`}
+        className={`flex-row items-center rounded-xl border bg-white pr-4 ${errors.password ? 'border-red-500' : 'border-[#eadfd2]'}`}
       >
         <TextInput
           value={values.password}
@@ -102,7 +102,7 @@ export default function LoginForm({ onValidSubmit }) {
           secureTextEntry={!passwordVisible}
           accessibilityLabel="Contraseña"
           accessibilityHint={errors.password || undefined}
-          className="flex-1 px-4 py-3 text-[#23382b]"
+          className="flex-1 px-4 py-3 text-[#332d28]"
         />
         <Pressable
           onPress={() => setPasswordVisible((visible) => !visible)}
@@ -110,7 +110,7 @@ export default function LoginForm({ onValidSubmit }) {
           accessibilityLabel={passwordVisible ? 'Ocultar contraseña' : 'Mostrar contraseña'}
           className="py-2 pl-2"
         >
-          <Text className="text-xs font-semibold text-[#24543a]">
+          <Text className="text-xs font-semibold text-[#b7472a]">
             {passwordVisible ? 'Ocultar' : 'Mostrar'}
           </Text>
         </Pressable>
@@ -125,7 +125,7 @@ export default function LoginForm({ onValidSubmit }) {
           {submitError}
         </Text>
       ) : null}
-      <Text className="mt-3 text-right text-xs font-semibold text-[#24543a]">
+      <Text className="mt-3 text-right text-xs font-semibold text-[#b7472a]">
         ¿Olvidaste tu contraseña?
       </Text>
       <Pressable
@@ -133,7 +133,7 @@ export default function LoginForm({ onValidSubmit }) {
         disabled={isSubmitting}
         accessibilityRole="button"
         accessibilityState={{ busy: isSubmitting, disabled: isSubmitting }}
-        className={`mt-5 flex-row items-center justify-center rounded-xl bg-[#24543a] px-4 py-4 ${isSubmitting ? 'opacity-70' : 'active:bg-[#183e2a]'}`}
+        className={`mt-5 flex-row items-center justify-center rounded-xl bg-[#b7472a] px-4 py-4 ${isSubmitting ? 'opacity-70' : 'active:bg-[#9f3c24]'}`}
       >
         {!isSubmitting ? (
           <Text className="mr-2 text-base text-white">→</Text>

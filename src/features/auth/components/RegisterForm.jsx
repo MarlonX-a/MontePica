@@ -8,7 +8,7 @@ import {
 } from '@/features/auth/validators/registerValidator';
 
 const inputClassName =
-  'min-h-12 flex-1 rounded-xl border bg-white px-4 py-3 text-sm text-[#23382b]';
+  'min-h-12 flex-1 rounded-xl border bg-white px-4 py-3 text-sm text-[#332d28]';
 
 function RegisterField({
   label,
@@ -24,12 +24,12 @@ function RegisterField({
   passwordVisible,
   onTogglePassword,
 }) {
-  const borderClassName = error ? 'border-red-500' : 'border-[#dedfce]';
+  const borderClassName = error ? 'border-red-500' : 'border-[#eadfd2]';
   const rightPaddingClassName = secureTextEntry ? 'pr-20' : '';
 
   return (
     <View className="mb-3">
-      <Text className="mb-1.5 text-xs font-medium text-[#455343]">
+      <Text className="mb-1.5 text-xs font-medium text-[#514941]">
         {label}
       </Text>
       <View className="flex-row items-center">
@@ -54,7 +54,7 @@ function RegisterField({
             accessibilityLabel={passwordVisible ? 'Ocultar contraseña' : 'Mostrar contraseña'}
             className="absolute right-3 px-1 py-2"
           >
-            <Text className="text-[11px] font-semibold text-[#24543a]">
+            <Text className="text-[11px] font-semibold text-[#b7472a]">
               {passwordVisible ? 'Ocultar' : 'Mostrar'}
             </Text>
           </Pressable>
@@ -246,7 +246,7 @@ export default function RegisterForm({ onRegistered }) {
           </Text>
         </View>
         <Text
-          className={`text-[11px] ${passwordIsValid ? 'text-[#64815d]' : 'text-[#687363]'}`}
+          className={`text-[11px] ${passwordIsValid ? 'text-[#64815d]' : 'text-[#8b8178]'}`}
         >
           8 caracteres, una mayúscula y un número
         </Text>
@@ -269,7 +269,7 @@ export default function RegisterForm({ onRegistered }) {
         <Checkbox
           value={termsAccepted}
           onValueChange={handleTermsChange}
-          color={termsAccepted ? '#24543a' : undefined}
+          color={termsAccepted ? '#b7472a' : undefined}
           style={{ marginRight: 9, width: 18, height: 18 }}
         />
         <Text className="flex-1 text-[11px] leading-4 text-[#6f655c]">
@@ -292,7 +292,7 @@ export default function RegisterForm({ onRegistered }) {
         disabled={isSubmitting}
         accessibilityRole="button"
         accessibilityState={{ busy: isSubmitting, disabled: isSubmitting }}
-        className={`mt-4 min-h-12 flex-row items-center justify-center rounded-xl bg-[#24543a] px-4 py-3 ${isSubmitting ? 'opacity-70' : 'active:bg-[#183e2a]'}`}
+        className={`mt-4 min-h-12 flex-row items-center justify-center rounded-xl bg-[#b7472a] px-4 py-3 ${isSubmitting ? 'opacity-70' : 'active:bg-[#9f3c24]'}`}
       >
         {!isSubmitting ? (
           <Text className="mr-2 text-base text-white">→</Text>
