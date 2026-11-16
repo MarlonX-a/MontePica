@@ -11,21 +11,12 @@ function getCartItemNote(item) {
   return `${item.quantity} unidad(es): ${parts.join('; ')}`;
 }
 
-export function mapCartToVisitOrder(items) {
+export function mapCartToOrderItems(items) {
   if (!items.length) {
     return { error: 'Agrega al menos un producto antes de enviar el pedido.' };
   }
 
-  const visitIds = new Set(items.map((item) => item.visitId));
-  const isDineIn = items.every((item) => item.service === 'dine-in');
-  const [visitId] = visitIds;
-
-  if (!isDineIn || visitIds.size !== 1 || !visitId) {
-    return {
-      error:
-        'El carrito debe contener productos de una sola visita reconocida para pedir en el local.',
-    };
-  }
+  if (!items.every((item) => item.service === items[0].service)) return { error: 'El carrito no puede mezclar modalidades.' };
 
   const groupedItems = new Map();
 
@@ -78,10 +69,17 @@ export function mapCartToVisitOrder(items) {
     return { error: 'Un pedido puede incluir como máximo 100 productos.' };
   }
 
-  return {
-    visitId,
-    payload: { items: payloadItems },
-  };
+  return { payload: { items: payloadItems } };
+}
+
+export function mapCartToVisitOrder(items) {
+  const visitIds = new Set(items.map((item) => item.visitId));
+  const [visitId] = visitIds;
+  if (!items.every((item) => item.service === 'dine-in') || visitIds.size !== 1 || !visitId) {
+    return { error: 'El carrito debe contener productos de una sola visita reconocida para pedir en el local.' };
+  }
+  const mapped = mapCartToOrderItems(items);
+  return mapped.error ? mapped : { visitId, payload: mapped.payload };
 }
 
 export function getOrderStatusLabel(status) {

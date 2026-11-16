@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  createDeliveryOrder,
   createVisitOrder,
+  getMyOrder,
   getMyOrders,
   getOrderError,
 } from '@/features/client/api/ordersApi';
-import { mapCartToVisitOrder } from '@/features/client/data/orderMapper';
+import { mapCartToOrderItems, mapCartToVisitOrder } from '@/features/client/data/orderMapper';
+import { getCurrentUser } from '@/shared/session/sessionStore';
 import {
   beginOrderSubmission,
   completeOrderSubmission,
@@ -28,6 +31,8 @@ export default function useClientOrders() {
   const [submitError, setSubmitError] = useState('');
   const [submitErrorStatus, setSubmitErrorStatus] = useState(null);
   const [notice, setNotice] = useState('');
+  const [modality, setModality] = useState('local');
+  const [selectedOrder, setSelectedOrder] = useState(null);
 
   const mounted = useRef(false);
   const listController = useRef(null);
@@ -37,7 +42,7 @@ export default function useClientOrders() {
   const pageRef = useRef(1);
   const totalRef = useRef(0);
 
-  const loadOrders = useCallback(async (requestedPage = 1, append = false) => {
+  const loadOrders = useCallback(async (requestedPage = 1, append = false, requestedModality = modality) => {
     if (!mounted.current) return false;
 
     listController.current?.abort();
@@ -62,7 +67,7 @@ export default function useClientOrders() {
       const result = await getMyOrders(controller.signal, {
         page: requestedPage,
         limit: PAGE_LIMIT,
-        modality: 'local',
+        modality: requestedModality,
       });
       if (
         !mounted.current ||
@@ -109,7 +114,7 @@ export default function useClientOrders() {
         listController.current = null;
       }
     }
-  }, []);
+  }, [modality]);
 
   useEffect(() => {
     mounted.current = true;
@@ -123,6 +128,15 @@ export default function useClientOrders() {
   }, [loadOrders]);
 
   const refresh = useCallback(() => loadOrders(1, false), [loadOrders]);
+
+  const changeModality = useCallback((value) => {
+    setModality(value);
+    ordersRef.current = [];
+    totalRef.current = 0;
+    setOrders([]);
+    setTotal(0);
+    setSelectedOrder(null);
+  }, []);
 
   const loadMore = useCallback(() => {
     if (
@@ -150,14 +164,19 @@ export default function useClientOrders() {
       setNotice('');
 
       try {
-        const order = await createVisitOrder(
-          submission.visitId,
-          submission.payload,
-          submission.key,
-        );
+        const order = submission.modality === 'delivery'
+          ? await createDeliveryOrder(submission.requestId, submission.payload, submission.key)
+          : await createVisitOrder(submission.visitId, submission.payload, submission.key);
         completeOrderSubmission(submission.key);
 
-        if (!mounted.current) return true;
+      if (!mounted.current) return true;
+
+        const submittedModality = submission.modality === 'delivery' ? 'delivery' : 'local';
+        setModality(submittedModality);
+        ordersRef.current = [];
+        totalRef.current = 0;
+        setOrders([]);
+        setTotal(0);
 
         const alreadyListed = ordersRef.current.some(
           (item) => item.id === order.id,
@@ -172,7 +191,7 @@ export default function useClientOrders() {
         setTotal(totalRef.current);
         setNotice('El pedido fue confirmado por el servidor.');
 
-        const refreshed = await loadOrders(1, false);
+        const refreshed = await loadOrders(1, false, submittedModality);
         if (!refreshed && mounted.current) {
           setNotice(
             'El pedido sí se creó, pero no se pudo actualizar la lista. Puedes reintentar la consulta.',
@@ -224,10 +243,32 @@ export default function useClientOrders() {
     [sendSubmission],
   );
 
+  const submitDeliveryOrder = useCallback(async (cartItems, requestId, clientId) => {
+    if (writeLock.current || getPendingOrderSubmission()) return false;
+    const result = mapCartToOrderItems(cartItems);
+    if (result.error) { setSubmitError(result.error); return false; }
+    if (!cartItems.every((item) => item.service === 'delivery')) { setSubmitError('El carrito debe contener solo productos de domicilio.'); return false; }
+    const pending = createPendingOrderSubmission(null, result.payload, { modality: 'delivery', requestId, clientId });
+    return pending ? sendSubmission(pending) : false;
+  }, [sendSubmission]);
+
+  const loadOrderDetail = useCallback(async (id) => {
+    try { setSelectedOrder(await getMyOrder(id)); }
+    catch (error) { setLoadError(getOrderError(error)); }
+  }, []);
+
   const retrySubmission = useCallback(() => {
     const pending = getPendingOrderSubmission();
     if (pending?.status !== 'uncertain')
       return Promise.resolve(false);
+    if (pending.modality === 'delivery') {
+      const user = getCurrentUser();
+      const clientId = user?.clientId || user?.id || user?.userId;
+      if (clientId !== pending.clientId) {
+        setSubmitError('El pedido pendiente pertenece a otra cuenta. Inicia sesión con esa cuenta para reintentarlo.');
+        return Promise.resolve(false);
+      }
+    }
 
     return sendSubmission(pending);
   }, [sendSubmission]);
@@ -249,5 +290,11 @@ export default function useClientOrders() {
     loadMore,
     submitVisitOrder,
     retrySubmission,
+    modality,
+    changeModality,
+    selectedOrder,
+    setSelectedOrder,
+    loadOrderDetail,
+    submitDeliveryOrder,
   };
 }

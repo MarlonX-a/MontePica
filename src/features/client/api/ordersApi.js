@@ -8,6 +8,13 @@ export async function createVisitOrder(visitId, payload, idempotencyKey) {
   return data;
 }
 
+export async function createDeliveryOrder(requestId, payload, idempotencyKey) {
+  const { data } = await apiClient.post(`/me/delivery-requests/${requestId}/orders`, payload, {
+    headers: { 'Idempotency-Key': idempotencyKey },
+  });
+  return data;
+}
+
 export async function getMyOrders(signal, params = {}) {
   const { data } = await apiClient.get('/me/orders', {
     params,
@@ -20,6 +27,21 @@ export async function getMyOrders(signal, params = {}) {
 export async function getMyOrder(id, signal) {
   const { data } = await apiClient.get(`/me/orders/${id}`, { signal });
 
+  return data;
+}
+
+export async function getMySettlement(id, signal) {
+  const { data } = await apiClient.get(`/me/settlements/${id}`, { signal });
+  return data;
+}
+
+export async function submitTransferReceipt(settlementId, file, key) {
+  const body = new FormData();
+  body.append('file', file);
+  const { data } = await apiClient.post(`/me/settlements/${settlementId}/transfer-payments`, body, {
+    headers: { 'Idempotency-Key': key, 'Content-Type': undefined },
+    transformRequest: [(value) => value],
+  });
   return data;
 }
 
@@ -36,5 +58,5 @@ export function getOrderError(error) {
     return message.join(' ');
   }
 
-  return message || 'No se pudo completar la solicitud de pedidos.';
+  return message || error?.message || 'No se pudo completar la solicitud de pedidos.';
 }
