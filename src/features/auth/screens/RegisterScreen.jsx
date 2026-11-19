@@ -6,7 +6,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { Link, router } from 'expo-router';
+import { Link } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import RegisterForm from '@/features/auth/components/RegisterForm';
 import { registerWithApi } from '@/features/auth/api/authApi';
@@ -76,7 +76,6 @@ export default function RegisterScreen() {
                 throw error;
               }
 
-              router.replace('/home');
             }}
           />
 

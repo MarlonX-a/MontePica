@@ -1,17 +1,13 @@
 import { View, Text, Pressable } from 'react-native';
-import { Link, router } from 'expo-router';
+import { Link } from 'expo-router';
+import useSession from '@/shared/session/useSession';
 import Title from '@/components/ui/Title';
 import LoginForm from '@/features/auth/components/LoginForm';
 import { loginWithApi } from '@/features/auth/api/authApi';
 import { setCurrentSession } from '@/shared/session/sessionStore';
 
-function getRouteForRole(roleCode) {
-  if (roleCode === 'admin') return '/admin/dashboard';
-  if (roleCode === 'worker') return '/waiter';
-  return '/home';
-}
-
 export default function LoginScreen() {
+  const { notice } = useSession();
   return (
     <View className="flex-1 justify-center bg-[#fff8ef] px-6">
       <View className="mb-7">
@@ -20,11 +16,11 @@ export default function LoginScreen() {
           subtitulo="Ingresa para ordenar o administrar el servicio."
         />
       </View>
+      {notice ? <Text accessibilityRole="alert" className="mb-4 text-sm text-[#8e3b27]">{notice}</Text> : null}
       <LoginForm
         onValidSubmit={async (credentials) => {
           const session = await loginWithApi(credentials);
           await setCurrentSession(session);
-          router.replace(getRouteForRole(session.user?.role?.code));
         }}
       />
       <Text className="mt-5 text-center text-sm text-[#8b8178]">

@@ -3,7 +3,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { router, usePathname } from 'expo-router';
 import AdminIcon from '@/features/admin/components/AdminIcon';
-import { logoutUser } from '@/shared/session/sessionStore';
+import { logoutUser } from '@/shared/api/apiClient';
+import { getCurrentUser } from '@/shared/session/sessionStore';
+import { billingReadPermissions } from '@/features/admin/hooks/useAdminCancellationRefunds';
 
 const tabs = [
   { label: 'Panel', icon: 'panel', path: '/admin/dashboard' },
@@ -11,12 +13,9 @@ const tabs = [
   { label: 'Productos', icon: 'products', path: '/admin/products' },
   { label: 'Mesas', icon: 'qr', path: '/admin/tables' },
   { label: 'Usuarios', icon: 'users', path: '/admin/users' },
+  { label: 'Cobros', icon: 'products', path: '/admin/billing' },
+  { label: 'Puntos', icon: 'users', path: '/admin/rewards' },
 ];
-
-async function handleLogout() {
-  await logoutUser();
-  router.replace('/(auth)/login');
-}
 
 export default function AdminShell({
   title,
@@ -27,6 +26,12 @@ export default function AdminShell({
   children,
 }) {
   const pathname = usePathname();
+  const permissions = getCurrentUser()?.permissions || [];
+  const visibleTabs = tabs.filter((tab) => {
+    if (tab.path === '/admin/billing') return billingReadPermissions.some((permission) => permissions.includes(permission));
+    if (tab.path === '/admin/rewards') return ['points.read', 'points.configure', 'rewards.read', 'rewards.manage'].some((permission) => permissions.includes(permission));
+    return true;
+  });
 
   return (
     <SafeAreaView className="flex-1 bg-[#fff8ef]">
@@ -67,7 +72,7 @@ export default function AdminShell({
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="Cerrar sesión"
-                onPress={handleLogout}
+                onPress={logoutUser}
                 className="h-11 items-center justify-center rounded-full bg-white px-3 active:bg-[#fff0e4]"
               >
                 <Text className="text-[11px] font-semibold text-[#b7472a]">
@@ -76,10 +81,14 @@ export default function AdminShell({
               </Pressable>
             </View>
           </View>
+          <Pressable accessibilityRole="button" onPress={() => router.push('/change-password')}
+            className="mb-3 self-start rounded-xl bg-white px-3 py-2">
+            <Text className="text-xs font-semibold text-[#b7472a]">Cambiar contraseña</Text>
+          </Pressable>
           {children}
         </ScrollView>
         <View className="flex-row border-t border-[#eee2d7] bg-white px-2 pb-2 pt-2">
-          {tabs.map((tab) => {
+          {visibleTabs.map((tab) => {
             const selected = pathname === tab.path;
             const color = selected ? '#b7472a' : '#988d83';
             return (

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Text, View } from 'react-native';
+import { router } from 'expo-router';
 import AdminShell from '@/features/admin/components/AdminShell';
 import { UserCard } from '@/features/admin/components/AdminCards';
 import {
@@ -12,6 +13,7 @@ import {
   ToggleFilter,
 } from '@/features/admin/components/AdminUI';
 import AdminIcon from '@/features/admin/components/AdminIcon';
+import { getCurrentUser } from '@/shared/session/sessionStore';
 import {
   createAdminUser,
   getAdminRoles,
@@ -26,6 +28,7 @@ const roleTones = {
   Cliente: 'blue',
 };
 export default function UsersScreen() {
+  const canReadClientPoints = getCurrentUser()?.permissions?.includes('points.read') || false;
   const [users, setUsers] = useState([]);
   const [roles, setRoles] = useState([]);
   const [totalUsers, setTotalUsers] = useState(0);
@@ -207,6 +210,9 @@ export default function UsersScreen() {
             key={user.id}
             user={user}
             onPress={() => setEditor({ item: user })}
+            onViewPoints={canReadClientPoints && user.clientId
+              ? () => router.push({ pathname: '/admin/rewards', params: { clientId: user.clientId } })
+              : undefined}
           />
         ))}
         {!shown.length && <Empty>Prueba con otro nombre, correo o rol.</Empty>}

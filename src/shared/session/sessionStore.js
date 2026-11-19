@@ -2,84 +2,78 @@ import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
 const SESSION_KEY = 'montepica.session';
-const canPersistSession = Platform.OS !== 'web';
-let currentSession = null;
+let snapshot = { session: null, generation: 0, notice: '', closing: false };
+let persistence = Promise.resolve();
+const listeners = new Set();
 
-export function getCurrentUser() {
-  return currentSession?.user ?? null;
+export const getSessionSnapshot = () => snapshot;
+export const getCurrentUser = () => snapshot.session?.user ?? null;
+export const subscribeToSession = (listener) => {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+};
+
+function publish(changes) {
+  snapshot = { ...snapshot, ...changes };
+  listeners.forEach((listener) => listener());
 }
 
-export function setCurrentUser(user) {
-  currentSession = user
-    ? { user, accessToken: null, refreshToken: null }
-    : null;
-}
-
-export function getAccessToken() {
-  return currentSession?.accessToken ?? null;
-}
-
-export function getRefreshToken() {
-  return currentSession?.refreshToken ?? null;
+function persist(session) {
+  if (Platform.OS === 'web') return Promise.resolve();
+  const write = persistence.then(() => session
+    ? SecureStore.setItemAsync(SESSION_KEY, JSON.stringify(session))
+    : SecureStore.deleteItemAsync(SESSION_KEY));
+  persistence = write.catch(() => {});
+  return write;
 }
 
 export async function setCurrentSession(session) {
-  if (!session) {
-    currentSession = null;
+  const generation = snapshot.generation + 1;
+  publish({ session: null, generation, notice: '', closing: false });
+  await persist(session);
+  if (snapshot.generation === generation) publish({ session });
+}
 
-    if (canPersistSession) {
-      await SecureStore.deleteItemAsync(SESSION_KEY);
+export async function updateSession(generation, changes) {
+  if (snapshot.generation !== generation || !snapshot.session) return;
+  const session = { ...snapshot.session, ...changes };
+  publish({ session });
+  await persist(session);
+}
+
+export function beginLogout(generation) {
+  if (snapshot.generation === generation) publish({ closing: true });
+}
+
+export async function clearSession(generation, notice = '') {
+  if (snapshot.generation !== generation) return;
+  const nextGeneration = generation + 1;
+  publish({ session: null, generation: nextGeneration, notice, closing: false });
+  try {
+    await persist(null);
+  } catch {
+    if (snapshot.generation === nextGeneration) {
+      publish({ notice: `${notice} No se pudo borrar la sesión guardada del dispositivo.`.trim() });
     }
-
-    return;
-  }
-
-  currentSession = { ...session };
-
-  if (canPersistSession) {
-    await SecureStore.setItemAsync(SESSION_KEY, JSON.stringify(session));
   }
 }
 
 export async function restoreCurrentSession() {
-  if (!canPersistSession) {
-    return currentSession;
-  }
+  if (Platform.OS === 'web' || snapshot.session) return snapshot.session;
+  const { generation } = snapshot;
+  const saved = await SecureStore.getItemAsync(SESSION_KEY);
+  if (!saved || snapshot.generation !== generation) return snapshot.session;
 
-  const savedSession = await SecureStore.getItemAsync(SESSION_KEY);
-
-  if (!savedSession) {
-    currentSession = null;
-    return null;
-  }
-
+  let session;
   try {
-    const session = JSON.parse(savedSession);
-    const isValidSession =
-      session &&
-      typeof session.accessToken === 'string' &&
-      session.user &&
-      typeof session.user === 'object';
-
-    if (!isValidSession) {
-      await SecureStore.deleteItemAsync(SESSION_KEY);
-      currentSession = null;
-      return null;
-    }
-
-    currentSession = session;
-    return currentSession;
+    session = JSON.parse(saved);
   } catch {
-    await SecureStore.deleteItemAsync(SESSION_KEY);
-    currentSession = null;
+    session = null;
+  }
+  if (typeof session?.accessToken !== 'string' || !session.user?.id) {
+    await persist(null);
     return null;
   }
-}
-
-export async function logoutUser() {
-  currentSession = null;
-
-  if (canPersistSession) {
-    await SecureStore.deleteItemAsync(SESSION_KEY);
-  }
+  publish({ session });
+  return session;
 }

@@ -57,6 +57,12 @@ export default function VisitParticipants({
       setReason('');
     }
   }
+  async function openDecision(item, action) {
+    if (!(await model.prepareDecision(item, action))) return;
+    setEditor({ item, action });
+    setReason('');
+    setValidation('');
+  }
   return (
     <View className="my-3 rounded-xl border border-[#eadfd2] bg-white p-4">
       <Text className="text-base font-bold text-[#332d28]">Participantes</Text>
@@ -105,26 +111,25 @@ export default function VisitParticipants({
               {item.rejectionReason}
             </Text>
           ) : null}
-          {item.status === 'pending' && !model.error && !model.uncertain ? (
-            <View className="flex-row gap-2">
+          {(item.status === 'pending' || item.status === 'approved') && !model.error && !model.uncertain ? (
+            <View className="flex-row flex-wrap gap-2">
+              {item.status === 'approved' ? <Button disabled={disabled} onPress={() => openDecision(item, 'finish')}>Finalizar participación</Button> : null}
+              {item.status === 'approved' ? null : (
+              <>
               <Button
                 disabled={disabled}
-                onPress={() => {
-                  setEditor({ item, action: 'approve' });
-                  setReason('');
-                }}
+                onPress={() => openDecision(item, 'approve')}
               >
                 Aprobar
               </Button>
               <Button
                 disabled={disabled}
-                onPress={() => {
-                  setEditor({ item, action: 'reject' });
-                  setReason('');
-                }}
+                onPress={() => openDecision(item, 'reject')}
               >
                 Rechazar
               </Button>
+              </>
+              )}
             </View>
           ) : null}
         </View>
@@ -134,7 +139,9 @@ export default function VisitParticipants({
           <Text className="text-sm text-[#332d28]">
             {editor.action === 'approve'
               ? `¿Aprobar a ${editor.item.alias}? Se autorizará su participación y se creará una cuenta individual de consumo.`
-              : `Motivo de rechazo para ${editor.item.alias}`}
+              : editor.action === 'finish'
+                ? `¿Finalizar la participación de ${editor.item.alias}? Se cerrará su participación y el backend cerrará la cuenta individual si no tiene consumos pendientes. El servidor rechazará el cierre si el saldo no está resuelto.`
+                : `Motivo de rechazo para ${editor.item.alias}`}
           </Text>
           {editor.action === 'reject' ? (
             <TextInput

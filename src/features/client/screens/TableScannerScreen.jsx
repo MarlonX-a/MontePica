@@ -15,7 +15,7 @@ import IconButton from '@/features/client/components/IconButton';
 import useTableQrScanner from '@/features/client/hooks/useTableQrScanner';
 import useVisitParticipation from '@/features/client/hooks/useVisitParticipation';
 import VisitParticipationPanel from '@/features/client/components/VisitParticipationPanel';
-import { logoutUser } from '@/shared/session/sessionStore';
+import { logoutUser } from '@/shared/api/apiClient';
 
 function ScannerHeader({ showTorch, torchEnabled, onToggleTorch }) {
   return (
@@ -132,7 +132,6 @@ function ResultPanel({
             label="Volver a iniciar sesión"
             onPress={async () => {
               await logoutUser();
-              router.replace('/login');
             }}
           />
         ) : null}

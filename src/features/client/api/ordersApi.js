@@ -51,6 +51,31 @@ export async function getMyOrderHistory(id, signal) {
   return data;
 }
 
+export async function getMyAccounts(params, signal) {
+  const { data } = await apiClient.get('/me/accounts', { params, signal });
+  return data;
+}
+
+export async function getMyAccount(id, signal) {
+  const { data } = await apiClient.get(`/me/accounts/${id}`, { signal });
+  return data;
+}
+
+export async function getMyPayments(params, signal) {
+  const { data } = await apiClient.get('/me/payments', { params, signal });
+  return data;
+}
+
+export async function getMyPayment(id, signal) {
+  const { data } = await apiClient.get(`/me/payments/${id}`, { signal });
+  return data;
+}
+
+export async function getMyPaymentReceipt(id, signal) {
+  const response = await apiClient.get(`/me/payments/${id}/receipt`, { responseType: 'blob', signal });
+  return { blob: response.data, mime: response.headers['content-type'] };
+}
+
 export function getOrderError(error) {
   const message = error?.response?.data?.message;
 

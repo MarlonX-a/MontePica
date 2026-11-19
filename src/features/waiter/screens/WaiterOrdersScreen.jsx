@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { router } from 'expo-router';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { logoutUser, getCurrentUser } from '@/shared/session/sessionStore';
+import { logoutUser } from '@/shared/api/apiClient';
+import { getCurrentUser } from '@/shared/session/sessionStore';
 import useWaiterOrders from '@/features/waiter/hooks/useWaiterOrders';
 
 const filters = [
@@ -329,11 +330,6 @@ function OrdersListContent({ state }) {
   ));
 }
 
-async function handleLogout() {
-  await logoutUser();
-  router.replace('/(auth)/login');
-}
-
 export default function WaiterOrdersScreen() {
   const [cancelReason, setCancelReason] = useState('');
   const permissions = getCurrentUser()?.permissions || [];
@@ -407,8 +403,16 @@ export default function WaiterOrdersScreen() {
             </Pressable>
             <Pressable
               accessibilityRole="button"
+              accessibilityLabel="Cambiar contraseña"
+              onPress={() => router.push('/change-password')}
+              className="h-10 items-center justify-center rounded-full bg-white px-3"
+            >
+              <Text className="text-[11px] font-semibold text-[#b7472a]">Contraseña</Text>
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
               accessibilityLabel="Cerrar sesión"
-              onPress={handleLogout}
+              onPress={logoutUser}
               className="h-10 w-10 items-center justify-center rounded-full bg-white"
             >
               <Text className="text-base text-[#b7472a]">↪</Text>

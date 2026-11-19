@@ -109,7 +109,7 @@ const roleTones = {
   Trabajador: 'peach',
   Cliente: 'blue',
 };
-export function UserCard({ user, onPress }) {
+export function UserCard({ user, onPress, onViewPoints }) {
   const initials = user.name
     .trim()
     .split(/\s+/)
@@ -117,12 +117,13 @@ export function UserCard({ user, onPress }) {
     .slice(0, 2)
     .join('');
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={`Editar ${user.name}`}
-      onPress={onPress}
-      className="mb-2 flex-row items-center rounded-2xl bg-white px-3 py-3 active:bg-[#fff0e4]"
-    >
+    <View className="mb-2 flex-row items-center rounded-2xl bg-white px-3 py-3">
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`Editar ${user.name}`}
+        onPress={onPress}
+        className="flex-1 flex-row items-center active:bg-[#fff0e4]"
+      >
       <View
         className="mr-3 h-10 w-10 items-center justify-center rounded-full"
         style={{
@@ -146,8 +147,10 @@ export function UserCard({ user, onPress }) {
           {user.active ? 'Activo' : 'Suspendido'}
         </Text>
       </View>
-      <Text className="ml-2 text-lg text-[#988d83]">›</Text>
-    </Pressable>
+        <Text className="ml-2 text-lg text-[#988d83]">›</Text>
+      </Pressable>
+      {onViewPoints && user.clientId ? <Pressable accessibilityRole="button" accessibilityLabel={`Ver puntos de ${user.name}`} onPress={onViewPoints} className="ml-2 rounded-lg bg-[#f2e8d6] px-2 py-2"><Text className="text-[9px] font-semibold text-[#b7472a]">Puntos</Text></Pressable> : null}
+    </View>
   );
 }
 

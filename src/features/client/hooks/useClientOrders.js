@@ -36,6 +36,7 @@ export default function useClientOrders() {
 
   const mounted = useRef(false);
   const listController = useRef(null);
+  const detailController = useRef(null);
   const requestId = useRef(0);
   const writeLock = useRef(false);
   const ordersRef = useRef([]);
@@ -130,13 +131,17 @@ export default function useClientOrders() {
   const refresh = useCallback(() => loadOrders(1, false), [loadOrders]);
 
   const changeModality = useCallback((value) => {
+    if (value === modality) return;
+    detailController.current?.abort();
     setModality(value);
     ordersRef.current = [];
     totalRef.current = 0;
     setOrders([]);
     setTotal(0);
     setSelectedOrder(null);
-  }, []);
+  }, [modality]);
+
+  useEffect(() => () => detailController.current?.abort(), []);
 
   const loadMore = useCallback(() => {
     if (
@@ -252,9 +257,27 @@ export default function useClientOrders() {
     return pending ? sendSubmission(pending) : false;
   }, [sendSubmission]);
 
+  const closeOrderDetail = useCallback(() => {
+    detailController.current?.abort();
+    setSelectedOrder(null);
+  }, []);
+
   const loadOrderDetail = useCallback(async (id) => {
-    try { setSelectedOrder(await getMyOrder(id)); }
-    catch (error) { setLoadError(getOrderError(error)); }
+    detailController.current?.abort();
+    const controller = new AbortController();
+    detailController.current = controller;
+    setSelectedOrder(null);
+    setLoadError('');
+    setLoadErrorStatus(null);
+    try {
+      const order = await getMyOrder(id, controller.signal);
+      if (!controller.signal.aborted) setSelectedOrder(order);
+    } catch (error) {
+      if (!controller.signal.aborted) {
+        setLoadError(getOrderError(error));
+        setLoadErrorStatus(error.response?.status ?? null);
+      }
+    }
   }, []);
 
   const retrySubmission = useCallback(() => {
@@ -295,6 +318,7 @@ export default function useClientOrders() {
     selectedOrder,
     setSelectedOrder,
     loadOrderDetail,
+    closeOrderDetail,
     submitDeliveryOrder,
   };
 }
