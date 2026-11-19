@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { Redirect } from 'expo-router';
+import WelcomeScreen from '@/features/welcome/screens/WelcomeScreen';
 import { restoreCurrentSession } from '@/shared/session/sessionStore';
 
 function getRouteForRole(roleCode) {
@@ -36,14 +37,14 @@ export default function Index() {
 
   if (isCheckingSession) {
     return (
-      <View className="flex-1 items-center justify-center bg-[#fff8ef]">
-        <ActivityIndicator color="#b7472a" />
+      <View className="flex-1 items-center justify-center bg-[#f8f5ec]">
+        <ActivityIndicator color="#24543a" />
       </View>
     );
   }
 
   if (!session) {
-    return <Redirect href="/(auth)/login" />;
+    return <WelcomeScreen />;
   }
 
   return <Redirect href={getRouteForRole(session.user?.role?.code)} />;

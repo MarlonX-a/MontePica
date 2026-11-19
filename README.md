@@ -10,7 +10,7 @@ Aplicación para una cevichería, construida con Expo, React Native, Expo Router
 ├── src/
 │   ├── app/                             # Entradas y layouts de Expo Router
 │   │   ├── _layout.jsx                  # Stack raíz y estilos globales
-│   │   ├── index.jsx                    # Redirección inicial al login
+│   │   ├── index.jsx                    # Bienvenida pública y restauración de sesión
 │   │   ├── (auth)/                      # Rutas /login y /register
 │   │   ├── (client)/                    # /home, /scan-table, /menu, /orders, /product/[id]
 │   │   ├── (waiter)/                    # /waiter
@@ -57,7 +57,7 @@ Aplicación para una cevichería, construida con Expo, React Native, Expo Router
 ## Recorrido de navegación
 
 1. Expo Router toma `src/app/` como raíz; `src/app/_layout.jsx` monta el Stack principal.
-2. `/` redirige a `/login`. Las rutas `/login` y `/register` muestran sus pantallas de autenticación.
+2. `/` restaura la sesión y dirige según el rol; sin sesión muestra una bienvenida pública con información de MontePica, especialidades ilustrativas y accesos a `/login` y `/register`. No consulta el catálogo ni muestra precios o stock.
 3. Login o registro validan la cuenta con el backend; la sesión restaura el destino correspondiente al rol.
 4. Desde `/home`, **Pedir a domicilio** abre `/menu`; **Para servirse** abre `/scan-table`. La cámara lee un QR y `POST /table-access/resolve` valida su token. Si el backend lo acepta, la app muestra el código real de mesa y permite continuar al menú.
 5. El menú obtiene productos y categorías del backend. En servicio en salón, el `visitId` real viaja del escáner al menú, al detalle y al carrito, sin enviar el token QR en la navegación. `/orders` envía el carrito a `POST /visits/:id/orders` y consulta pedidos en `GET /me/orders`. En domicilio solicita cobertura, crea el pedido tras una aprobación y permite enviar un comprobante desde el detalle; el envío no implica que el pago esté confirmado.
@@ -185,6 +185,9 @@ Consultar configuración y solicitudes requiere `delivery.read`; cambiar la conf
 Un resultado incierto no se reenvía automáticamente: se puede consultar la configuración vigente y reintentar exactamente el mismo cuerpo con la misma clave. Una nueva configuración puede hacer que solicitudes pendientes con una versión anterior ya no cumplan las condiciones para ser aprobadas. Aprobar cobertura no crea un pedido automáticamente; el cliente confirma el pedido desde el carrito. La carga de comprobantes está implementada, pero la revisión administrativa y las pruebas reales con backend/cuentas autorizadas siguen pendientes. Expo Export web/iOS/Android y `git diff --check` se ejecutan para esta entrega; no hubo escrituras reales ni pruebas en dispositivos. La puerta SonarCloud consultada está OK en el análisis del 13 de noviembre de 2026, revisión `5189900a7de43d461a5c7a6c6c7256afc59c3b2d`, que no incluye estos cambios. Lint, pruebas unitarias y tipos no están configurados.
 
 El detalle de pedidos a domicilio consulta su liquidación en `/me/settlements/:id` y permite enviar JPEG/PNG de hasta 5 MiB mediante `/me/settlements/:id/transfer-payments`. La app conserva en memoria el archivo y la clave durante un resultado incierto; el estado `pendingVerification` no representa un pago confirmado. Los formatos PDF y HEIC no se ofrecen. La revisión administrativa del comprobante sigue pendiente.
+
+
+La interfaz utiliza verde profundo, oliva y crema, con detalles verdes, blancos y rojos inspirados en Manabí. La imagen de la tonga se usa únicamente como referencia de estilo; no se incorpora al contenido.
 
 En `/admin/deliveries`, la pestaña **Transferencias** consulta pagos `transfer` de salón y domicilio porque el API no ofrece filtro por modalidad. `payments.read` permite consultar lista/detalle, `payments.receipts.read` permite cargar el comprobante autenticado y `payments.verify` habilita confirmar o rechazar. La revisión requiere referencia bancaria (confirmación) o motivo (rechazo) y conserva `Idempotency-Key` ante resultados inciertos. JPEG/PNG se previsualiza; PDF se identifica, pero no tiene visor en la app. Las pruebas reales de decisiones y almacenamiento quedan pendientes.
 

@@ -19,7 +19,7 @@ El login, el registro, el catálogo del cliente, productos/categorías, inventar
 
 Flujo actual:
 
-1. `/` restaura la sesión y dirige al usuario según su rol; si no hay sesión, abre login.
+1. `/` restaura la sesión y dirige al usuario según su rol; si no hay sesión, muestra la bienvenida pública de MontePica con acceso a login y registro.
 2. Login y registro usan la API.
 3. Desde Inicio, **Para servirse** abre el escáner. La cámara lee un QR y la app consulta `POST /table-access/resolve`; si el backend lo acepta, muestra el código de mesa real y permite continuar al menú. Resolver el QR no crea una participación ni aprueba el ingreso.
 4. **Pedir a domicilio** abre el menú directamente.
@@ -107,7 +107,7 @@ import { isValidEmail } from '@/shared/validators/emailValidator';
 
 ## Interfaz y navegación
 
-- Conserva JavaScript/JSX, Expo Router, React Native y NativeWind. Mantén consistencia con los colores crema, terracota y café que ya usa la aplicación.
+- Conserva JavaScript/JSX, Expo Router, React Native y NativeWind. Mantén la paleta manabita: verde profundo #24543a, oliva #6f741b, crema #f8f5ec y acentos rojo #c72f32. La referencia de la tonga es solo visual; no forma parte del contenido ni del catálogo.
 - Prioriza layouts móviles y revisa que el contenido funcione en web, iOS y Android. Ten cuidado con safe areas, alturas disponibles, teclado y overlays de cámara.
 - Usa `Pressable` para acciones y agrega etiquetas de accesibilidad cuando no haya texto visible que describa el control.
 - Mantén el menú y la pantalla de detalle conectados al catálogo de la API mediante `catalogApi.js` y el mapper de cliente.
