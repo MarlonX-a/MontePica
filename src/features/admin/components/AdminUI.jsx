@@ -28,12 +28,14 @@ export const tones = {
   sand: { background: '#f2e8d6', text: '#8b8178' },
 };
 
-export function Button({ children, onPress, secondary = false }) {
+export function Button({ children, onPress, secondary = false, disabled = false }) {
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityState={{ disabled }}
+      disabled={disabled}
       onPress={onPress}
-      className={`min-h-11 items-center justify-center rounded-xl px-4 py-3 active:opacity-70 ${secondary ? 'bg-[#f2e8d6]' : 'bg-[#b7472a]'}`}
+      className={`min-h-11 items-center justify-center rounded-xl px-4 py-3 active:opacity-70 ${disabled ? 'opacity-50' : ''} ${secondary ? 'bg-[#f2e8d6]' : 'bg-[#b7472a]'}`}
     >
       <Text
         className={`text-xs font-semibold ${secondary ? 'text-[#b7472a]' : 'text-white'}`}

@@ -14,7 +14,7 @@ import BottomNavigation from '@/features/client/components/BottomNavigation';
 import MenuProductCard from '@/features/client/components/MenuProductCard';
 import CartButton from '@/features/client/components/CartButton';
 import SelectableChip from '@/features/client/components/SelectableChip';
-import { logoutUser } from '@/shared/session/sessionStore';
+import { logoutUser } from '@/shared/api/apiClient';
 import {
   getMenuCategories,
   getMenuProducts,
@@ -244,7 +244,6 @@ export default function MenuScreen() {
             }
             if (tab === 'profile') {
               await logoutUser();
-              router.replace('/(auth)/login');
             }
           }}
         />

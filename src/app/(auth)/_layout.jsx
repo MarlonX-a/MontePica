@@ -1,10 +1,9 @@
-import { Stack } from 'expo-router';
+import { Redirect, Stack } from 'expo-router';
+import useSession, { getSessionDestination } from '@/shared/session/useSession';
 
 export default function AuthLayout() {
-  return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="login" />
-      <Stack.Screen name="register" />
-    </Stack>
-  );
+  const { session } = useSession();
+  const destination = getSessionDestination(session);
+  if (destination) return <Redirect href={destination} />;
+  return <Stack screenOptions={{ headerShown: false }} />;
 }

@@ -23,6 +23,14 @@ export async function rejectParticipant(id, reason, key) {
   );
   return data;
 }
+export async function finishParticipant(id, key) {
+  const { data } = await apiClient.post(
+    `/admin/participants/${id}/finish`,
+    {},
+    { headers: { 'Idempotency-Key': key } },
+  );
+  return data;
+}
 export function getParticipantsError(error) {
   const message = error.response?.data?.message;
   return Array.isArray(message)

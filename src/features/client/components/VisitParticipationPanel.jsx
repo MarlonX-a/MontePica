@@ -6,8 +6,8 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { router } from 'expo-router';
-import { getCurrentUser, logoutUser } from '@/shared/session/sessionStore';
+import { logoutUser } from '@/shared/api/apiClient';
+import { getCurrentUser } from '@/shared/session/sessionStore';
 
 const labels = {
   pending: 'Pendiente de aprobación',
@@ -182,7 +182,6 @@ export default function VisitParticipationPanel({
           disabled={blocked}
           onPress={async () => {
             await logoutUser();
-            router.replace('/login');
           }}
         />
       ) : null}

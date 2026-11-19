@@ -4,14 +4,17 @@ import {
   approveParticipant,
   getParticipantsError,
   getVisitParticipants,
+  finishParticipant,
   rejectParticipant,
 } from '@/features/admin/api/participantsAdminApi';
 
 function canDecide(item, action, state, isLocked, pendingOperation) {
   const pendingMismatch = pendingOperation &&
     (pendingOperation.id !== item.id || pendingOperation.action !== action);
-  return !isLocked && !state.loading && !state.error &&
-    item.status === 'pending' && !pendingMismatch;
+  const validStatus = action === 'finish'
+    ? item.status === 'approved'
+    : item.status === 'pending';
+  return !isLocked && !state.loading && !state.error && validStatus && !pendingMismatch;
 }
 
 function findParticipantPage(visitId, participantId, page, pageCount, signal) {
@@ -101,7 +104,7 @@ export default function useAdminParticipants(visitId) {
       const trimmed = reason.trim();
       if (
         !operation.current &&
-        action === 'reject' &&
+          action === 'reject' &&
         (!trimmed || trimmed.length > 500)
       ) {
         update({ notice: 'El motivo debe tener entre 1 y 500 caracteres.' });
@@ -118,10 +121,11 @@ export default function useAdminParticipants(visitId) {
       lock.current = true;
       update({ busy: true, error: '', notice: '' });
       try {
-        const result =
-          action === 'approve'
-            ? await approveParticipant(op.id, op.key)
-            : await rejectParticipant(op.id, op.reason, op.key);
+        const result = action === 'approve'
+          ? await approveParticipant(op.id, op.key)
+          : action === 'reject'
+            ? await rejectParticipant(op.id, op.reason, op.key)
+            : await finishParticipant(op.id, op.key);
         if (!alive.current) return false;
         operation.current = null;
         update({
@@ -164,11 +168,19 @@ export default function useAdminParticipants(visitId) {
     try {
       const found = await findParticipantForOperation(visitId, op.id, request.signal);
       if (!alive.current || request.signal.aborted) return;
-      if (found && found.status !== 'pending') {
+      const expectedStatus = op.action === 'approve'
+        ? 'approved'
+        : op.action === 'reject'
+          ? 'rejected'
+          : 'finished';
+      const sourceStatus = op.action === 'finish' ? 'approved' : 'pending';
+      if (found && found.status !== sourceStatus) {
         operation.current = null;
         update({
           uncertain: null,
-          notice: `Estado actual: ${found.status}. No se atribuye a una operación no confirmada.`,
+          notice: found.status === expectedStatus
+            ? `Estado actual: ${found.status}. El servidor confirmó el resultado consultado.`
+            : `Estado actual: ${found.status}. No se atribuye a una operación no confirmada.`,
         });
       } else
         update({
@@ -190,11 +202,35 @@ export default function useAdminParticipants(visitId) {
     update({ error: '' });
     return decide(op.item, op.action, op.reason);
   }, [decide, update]);
+  const prepareDecision = useCallback(async (item, action) => {
+    if (!canDecide(item, action, current.current, lock.current, operation.current)) return false;
+    const request = new AbortController();
+    controller.current?.abort();
+    controller.current = request;
+    update({ loading: true, error: '', notice: '' });
+    try {
+      const latest = await findParticipantForOperation(visitId, item.id, request.signal);
+      if (!alive.current || request.signal.aborted) return false;
+      const expected = action === 'finish' ? 'approved' : 'pending';
+      if (!latest || latest.status !== expected) {
+        update({ notice: 'La solicitud cambió desde la última consulta. Se actualizará el listado antes de decidir.' });
+        await load();
+        return false;
+      }
+      return true;
+    } catch (error) {
+      if (alive.current && !request.signal.aborted) update({ error: getParticipantsError(error) });
+      return false;
+    } finally {
+      if (alive.current && !request.signal.aborted) update({ loading: false });
+    }
+  }, [load, update, visitId]);
   return {
     ...state,
     refresh,
     retry,
     decide,
+    prepareDecision,
     filter: (status) => {
       if (!lock.current) void load(1, status);
     },

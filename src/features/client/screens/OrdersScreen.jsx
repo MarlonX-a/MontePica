@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -5,7 +6,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BottomNavigation from '@/features/client/components/BottomNavigation';
 import {
@@ -19,9 +20,32 @@ import {
   getOrderStatusLabel,
 } from '@/features/client/data/orderMapper';
 import useClientOrders from '@/features/client/hooks/useClientOrders';
-import { logoutUser } from '@/shared/session/sessionStore';
+import { logoutUser } from '@/shared/api/apiClient';
 import DeliveryRequestPanel from '@/features/client/components/DeliveryRequestPanel';
 import DeliveryReceiptPanel from '@/features/client/components/DeliveryReceiptPanel';
+import AccountPaymentHistory from '@/features/client/components/AccountPaymentHistory';
+import OrderLifecyclePanel from '@/features/client/components/OrderLifecyclePanel';
+
+function OrderDetail({ order, onUpdated, onClose, refreshOrders }) {
+  return (
+    <View className="mb-3 rounded-2xl bg-white p-4">
+      <Text className="text-sm font-bold text-[#332d28]">Detalle · {getOrderStatusLabel(order.status)}</Text>
+      {order.delivery ? (
+        <>
+          <Text className="mt-2 text-xs leading-5 text-[#75695f]">
+            {order.delivery.recipientName}{'\n'}{order.delivery.phone}{'\n'}{order.delivery.address}
+            {'\n'}Envío: {formatOrderTotal(order.shippingCents, order.currency)}
+          </Text>
+          <DeliveryReceiptPanel key={order.id} order={order} onUpdated={onUpdated} />
+        </>
+      ) : null}
+      <OrderLifecyclePanel key={order.id} order={order} onUpdated={onUpdated} refreshOrders={refreshOrders} />
+      <Pressable accessibilityRole="button" onPress={onClose}>
+        <Text className="mt-2 text-xs font-bold text-[#b7472a]">Cerrar detalle</Text>
+      </Pressable>
+    </View>
+  );
+}
 
 function getCartKind(items) {
   if (!items.length) return 'empty';
@@ -175,7 +199,6 @@ function OrderSubmissionError({ ordersState }) {
           label="Volver a iniciar sesión"
           onPress={async () => {
             await logoutUser();
-            router.replace('/(auth)/login');
           }}
         />
       ) : null}
@@ -345,7 +368,11 @@ function OrderHistory({ ordersState }) {
       <View className="mb-3 flex-row gap-2">
         {['local', 'delivery'].map((modality) => <Pressable key={modality} onPress={() => ordersState.changeModality(modality)} className={`rounded-full px-3 py-2 ${ordersState.modality === modality ? 'bg-[#8e3b27]' : 'bg-white'}`}><Text className={`text-[10px] ${ordersState.modality === modality ? 'text-white' : 'text-[#70665e]'}`}>{modality === 'local' ? 'Salón' : 'Domicilio'}</Text></Pressable>)}
       </View>
-      {ordersState.selectedOrder ? <View className="mb-3 rounded-2xl bg-white p-4"><Text className="text-sm font-bold text-[#332d28]">Detalle · {ordersState.selectedOrder.status}</Text>{ordersState.selectedOrder.delivery ? <><Text className="mt-2 text-xs leading-5 text-[#75695f]">{ordersState.selectedOrder.delivery.recipientName}{'\n'}{ordersState.selectedOrder.delivery.phone}{'\n'}{ordersState.selectedOrder.delivery.address}{'\n'}Envío: {formatOrderTotal(ordersState.selectedOrder.shippingCents, ordersState.selectedOrder.currency)}</Text><DeliveryReceiptPanel order={ordersState.selectedOrder} onUpdated={ordersState.setSelectedOrder} /></> : null}<Pressable onPress={() => ordersState.setSelectedOrder(null)}><Text className="mt-2 text-xs font-bold text-[#b7472a]">Cerrar detalle</Text></Pressable></View> : null}
+      {ordersState.selectedOrder ? (
+        <OrderDetail order={ordersState.selectedOrder} onUpdated={ordersState.setSelectedOrder}
+          onClose={ordersState.closeOrderDetail} refreshOrders={ordersState.refresh}
+        />
+      ) : null}
 
       {ordersState.notice ? (
         <View className="mb-3 rounded-xl bg-[#e4efe2] px-3 py-3">
@@ -380,7 +407,6 @@ function OrderHistory({ ordersState }) {
               label="Volver a iniciar sesión"
               onPress={async () => {
                 await logoutUser();
-                router.replace('/(auth)/login');
               }}
             />
           ) : (
@@ -427,6 +453,8 @@ export default function OrdersScreen() {
   const params = useLocalSearchParams();
   const { cartItems, activeOrder, pendingSubmission } = useOrderStore();
   const ordersState = useClientOrders();
+  const { closeOrderDetail } = ordersState;
+  useFocusEffect(useCallback(() => closeOrderDetail, [closeOrderDetail]));
   const routeService = firstParam(params.service);
   const routeTable = firstParam(params.table);
   const routeVisitId = firstParam(params.visitId);
@@ -470,6 +498,7 @@ export default function OrdersScreen() {
           />
           {routeService === 'delivery' || cartItems.some((item) => item.service === 'delivery') ? <DeliveryRequestPanel cartItems={cartItems} ordersState={ordersState} /> : null}
           <OrderHistory ordersState={ordersState} />
+          <AccountPaymentHistory />
         </ScrollView>
         <BottomNavigation
           activeTab="orders"

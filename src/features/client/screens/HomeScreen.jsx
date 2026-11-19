@@ -3,7 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import BottomNavigation from '@/features/client/components/BottomNavigation';
 import CartButton from '@/features/client/components/CartButton';
-import { logoutUser } from '@/shared/session/sessionStore';
+import { logoutUser } from '@/shared/api/apiClient';
 
 function OrderButton({ icon, title, subtitle, primary, onPress }) {
   return (
@@ -40,7 +40,6 @@ async function handleTabPress(tab) {
   }
   if (tab === 'profile') {
     await logoutUser();
-    router.replace('/(auth)/login');
   }
 }
 
@@ -68,7 +67,6 @@ export default function HomeScreen() {
                 accessibilityLabel="Cerrar sesión"
                 onPress={async () => {
                   await logoutUser();
-                  router.replace('/(auth)/login');
                 }}
                 className="h-10 items-center justify-center rounded-full bg-white px-3 active:bg-[#fff0e4]"
               >
@@ -134,14 +132,19 @@ export default function HomeScreen() {
 
           <Pressable
             accessibilityRole="button"
-            onPress={() => router.push('/admin/dashboard')}
-            className="mt-5 flex-row items-center justify-between rounded-2xl border border-[#eadfd2] bg-white px-4 py-4 active:bg-[#fff0e4]"
+            onPress={() => router.push('/rewards')}
+            className="mt-4 rounded-2xl border border-[#eadfd2] bg-white p-4"
           >
-            <View>
-              <Text className="text-sm font-semibold text-[#b7472a]">Administrar MontePica</Text>
-              <Text className="mt-1 text-xs text-[#8b8178]">Productos, mesas y usuarios</Text>
-            </View>
-            <Text className="text-lg text-[#b7472a]">→</Text>
+            <Text className="text-sm font-semibold text-[#332d28]">Mis puntos y recompensas</Text>
+            <Text className="mt-1 text-[10px] text-[#8b8178]">Consulta tu saldo y movimientos</Text>
+          </Pressable>
+
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => router.push('/change-password')}
+            className="mt-3 rounded-2xl border border-[#eadfd2] bg-white p-4"
+          >
+            <Text className="text-center text-sm font-semibold text-[#b7472a]">Cambiar contraseña</Text>
           </Pressable>
         </ScrollView>
 

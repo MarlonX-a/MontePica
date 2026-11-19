@@ -1,8 +1,7 @@
 import { Alert, Pressable, Text, TextInput, View } from 'react-native';
-import { router } from 'expo-router';
 import { useState } from 'react';
 import useDeliveryRequests from '@/features/client/hooks/useDeliveryRequests';
-import { logoutUser } from '@/shared/session/sessionStore';
+import { logoutUser } from '@/shared/api/apiClient';
 const formatMoney = (cents, currency = 'USD') => new Intl.NumberFormat('es-EC', { style: 'currency', currency }).format(cents / 100);
 
 const statusLabels = { pending: 'Pendiente', approved: 'Aprobada', rejected: 'Rechazada', cancelled: 'Cancelada' };
@@ -38,6 +37,6 @@ export default function DeliveryRequestPanel({ cartItems = [], ordersState }) {
     {selected ? <><Text className="mt-3 text-xs text-[#75695f]">Subtotal estimado: {formatMoney(cartSubtotal, selected.currency)} · Envío: {formatMoney(selected.shippingFeeCents, selected.currency)} · Total estimado: {formatMoney(cartSubtotal + selected.shippingFeeCents, selected.currency)}</Text><Pressable disabled={ordersState.submitting || !cartItems.length} onPress={() => void createOrder()} className="mt-2 rounded-xl bg-[#b7472a] p-3"><Text className="text-center text-xs font-bold text-white">{ordersState.submitting ? 'Creando pedido…' : 'Confirmar pedido a domicilio'}</Text></Pressable></> : null}
     {ordersState.submitError ? <Text accessibilityRole="alert" className="mt-2 text-xs text-[#a83224]">{ordersState.submitError}</Text> : null}
     {total > 20 ? <View className="mt-3 flex-row justify-between"><Pressable disabled={page <= 1} onPress={() => void state.load(page - 1, true)}><Text className="text-xs font-bold text-[#b7472a]">Anterior</Text></Pressable><Text className="text-xs text-[#75695f]">Página {page}</Text><Pressable disabled={page * 20 >= total} onPress={() => void state.load(page + 1, true)}><Text className="text-xs font-bold text-[#b7472a]">Siguiente</Text></Pressable></View> : null}
-    {error.includes('sesión expiró') ? <Pressable onPress={async () => { await logoutUser(); router.replace('/(auth)/login'); }}><Text className="mt-2 text-xs font-bold text-[#b7472a]">Volver a iniciar sesión</Text></Pressable> : null}
+    {error.includes('sesión expiró') ? <Pressable onPress={logoutUser}><Text className="mt-2 text-xs font-bold text-[#b7472a]">Volver a iniciar sesión</Text></Pressable> : null}
   </View>;
 }

@@ -1,6 +1,6 @@
 # MontePica
 
-Aplicación para una cevichería, construida con Expo, React Native, Expo Router y NativeWind. El login, el registro, el catálogo del cliente, los pedidos de servicio en salón y de domicilio, la bandeja del mesero y la gestión administrativa de productos/categorías, inventario, usuarios, mesas y visitas consultan el backend. El carrito permanece en memoria. El detalle del pedido a domicilio permite enviar un comprobante JPEG/PNG; su revisión administrativa sigue pendiente. Otras pantallas administrativas conservan simulaciones locales.
+Aplicación para una cevichería, construida con Expo, React Native, Expo Router y NativeWind. El login, el registro, el catálogo del cliente, los pedidos de servicio en salón y de domicilio, la bandeja del mesero y la gestión administrativa de productos/categorías, inventario, usuarios, mesas y visitas consultan el backend. El carrito permanece en memoria. El detalle del pedido a domicilio permite enviar un comprobante JPEG/PNG; la bandeja administrativa de revisión de transferencias ya está conectada y su prueba real queda pendiente. Otras pantallas administrativas conservan simulaciones locales.
 
 ## Estructura del código
 
@@ -10,17 +10,17 @@ Aplicación para una cevichería, construida con Expo, React Native, Expo Router
 ├── src/
 │   ├── app/                             # Entradas y layouts de Expo Router
 │   │   ├── _layout.jsx                  # Stack raíz y estilos globales
-│   │   ├── index.jsx                    # Bienvenida pública y restauración de sesión
+│   │   ├── index.jsx                    # Bienvenida pública y destino según el rol
 │   │   ├── (auth)/                      # Rutas /login y /register
-│   │   ├── (client)/                    # /home, /scan-table, /menu, /orders, /product/[id]
+│   │   ├── (client)/                    # /home, /scan-table, /menu, /orders, /rewards, /product/[id]
 │   │   ├── (waiter)/                    # /waiter
-│   │   └── admin/                       # /admin/dashboard, products, movement, mesas, usuarios y deliveries
+│   │   └── admin/                       # /admin/dashboard, products, movement, mesas, usuarios, cobros, puntos y deliveries
 │   ├── components/                      # Guía breve y UI transversal
 │   │   ├── components.md                # Referencia a esta guía
 │   │   └── ui/Title.jsx                 # Título genérico
 │   ├── features/
 │   │   ├── auth/                        # Formularios, pantallas, API y validadores
-│   │   ├── client/                      # Inicio, escáner, menú, detalle, pedidos y UI cliente
+│   │   ├── client/                      # Inicio, escáner, menú, detalle, pedidos, puntos/recompensas y UI cliente
 │   │   │   ├── api/                     # Catálogo, QR, participación y pedidos
 │   │   │   ├── hooks/                   # Escáner, participación y pedidos
 │   │   │   └── data/                    # Mappers de catálogo/pedidos y carrito local
@@ -57,7 +57,7 @@ Aplicación para una cevichería, construida con Expo, React Native, Expo Router
 ## Recorrido de navegación
 
 1. Expo Router toma `src/app/` como raíz; `src/app/_layout.jsx` monta el Stack principal.
-2. `/` restaura la sesión y dirige según el rol; sin sesión muestra una bienvenida pública con información de MontePica, especialidades ilustrativas y accesos a `/login` y `/register`. No consulta el catálogo ni muestra precios o stock.
+2. Al abrir la app se comprueba la sesión. `/` dirige según el rol; sin sesión muestra una bienvenida pública con información de MontePica, especialidades ilustrativas y accesos a `/login` y `/register`. No consulta el catálogo ni muestra precios o stock.
 3. Login o registro validan la cuenta con el backend; la sesión restaura el destino correspondiente al rol.
 4. Desde `/home`, **Pedir a domicilio** abre `/menu`; **Para servirse** abre `/scan-table`. La cámara lee un QR y `POST /table-access/resolve` valida su token. Si el backend lo acepta, la app muestra el código real de mesa y permite continuar al menú.
 5. El menú obtiene productos y categorías del backend. En servicio en salón, el `visitId` real viaja del escáner al menú, al detalle y al carrito, sin enviar el token QR en la navegación. `/orders` envía el carrito a `POST /visits/:id/orders` y consulta pedidos en `GET /me/orders`. En domicilio solicita cobertura, crea el pedido tras una aprobación y permite enviar un comprobante desde el detalle; el envío no implica que el pago esté confirmado.
@@ -138,7 +138,7 @@ Las reglas de colaboración y mantenimiento del proyecto están en [AGENTS.md](A
 
 `adminTableMapper.js` adapta código, estado activo y visita abierta; una visita no equivale a ocupación física. `useAdminTables.js` coordina carga, edición, cancelación, permisos y recargas; `TablesList.jsx` presenta filtros, conteos y páginas de 20 mesas. Se recorren todas las páginas del backend (hasta 100 por solicitud) antes de filtrar. Tras crear o editar, se vuelve a consultar y se muestra la página de la mesa; si falla la recarga, se informa que el cambio ya fue confirmado.
 
-La acción **Visita** consulta nuevamente la mesa y abre un modal con su estado. `visitsAdminApi.js` llama a la API; `useAdminVisits.js` coordina consulta, apertura, cierre, permisos e idempotencia; `TableVisitModal.jsx` presenta el detalle y la confirmación de cierre. `tables.read` permite consultar la mesa, `visits.read` permite ver estado y fechas de la visita, y `visits.manage` permite abrirla o cerrarla, sin requerir `tables.manage`. La apertura solo se permite en una mesa activa sin visita y el backend exige una jornada operativa abierta. El cierre finaliza participaciones y el backend lo rechaza si hay consumos pendientes. Los cierres envían una clave `Idempotency-Key`; los reintentos del mismo cierre reutilizan esa clave. Tras abrir o cerrar se actualiza el listado sin perder búsqueda ni filtros. La emisión de QR, el historial y la gestión de participantes siguen pendientes.
+La acción **Visita** consulta nuevamente la mesa y abre un modal con su estado. `visitsAdminApi.js` llama a la API; `useAdminVisits.js` coordina consulta, apertura, cierre, permisos e idempotencia; `TableVisitModal.jsx` presenta el detalle y la confirmación de cierre. `tables.read` permite consultar la mesa, `visits.read` permite ver estado y fechas de la visita, y `visits.manage` permite abrirla o cerrarla, sin requerir `tables.manage`. La apertura solo se permite en una mesa activa sin visita y el backend exige una jornada operativa abierta. El cierre finaliza participaciones y el backend lo rechaza si hay consumos pendientes. Los cierres envían una clave `Idempotency-Key`; los reintentos del mismo cierre reutilizan esa clave. Tras abrir o cerrar se actualiza el listado sin perder búsqueda ni filtros. La emisión de QR, la consulta y las decisiones de participantes están implementadas; el historial de visitas no forma parte de las pantallas actuales.
 
 El panel mantiene sus semillas de mesas independientes. El escáner resuelve QR reales mediante el backend, pero la existencia de una visita no se interpreta como permiso de ingreso: resolver el QR no crea una participación. La aprobación y el rechazo están conectados en el modal administrativo; la salida voluntaria del cliente está conectada.
 
@@ -149,7 +149,7 @@ Después de resolver el QR, el escáner consulta las participaciones propias por
 
 `participationApi.js` contiene las llamadas Axios; `useVisitParticipation.js` coordina consulta, envío, bloqueo y respuestas obsoletas; `VisitParticipationPanel.jsx` presenta formulario y estados dentro del escáner. El hook del escáner conserva el QR solo en memoria y lo limpia al confirmar una participación, reiniciar, continuar o abandonar. Ante resultado incierto se conserva la clave y el alias para un reintento explícito; abandonar no revierte un envío recibido por el servidor. No hay consultas periódicas.
 
-Ver menú permite explorar el catálogo. Los pedidos de servicio en salón y de domicilio se crean y consultan con el backend. El cliente puede enviar un comprobante JPEG/PNG para el pedido a domicilio, aunque la revisión administrativa del pago sigue pendiente. La bandeja del mesero gestiona pedidos locales del backend por separado del flujo del cliente. La consulta, aprobación y rechazo administrativos y la salida voluntaria del cliente están conectados; finalizar desde administración sigue pendiente.
+Ver menú permite explorar el catálogo. Los pedidos de servicio en salón y de domicilio se crean y consultan con el backend. El cliente puede enviar un comprobante JPEG/PNG para el pedido a domicilio, aunque la revisión administrativa del pago sigue pendiente. La bandeja del mesero gestiona pedidos locales del backend por separado del flujo del cliente. La consulta, aprobación/rechazo y finalización administrativa, además de la salida voluntaria del cliente, están conectadas; falta verificarlas con backend y cuentas de prueba.
 
 Comprobaciones de esta etapa: Expo Export completó bundles web, iOS y Android; `git diff --check` pasó. Las comprobaciones aisladas con API simulada verificaron paginación, alias vacío, bloqueo de envíos simultáneos, reintento con cuerpo/clave idénticos, actualización de estado y respuesta posterior al desmontaje. No se probaron cámaras físicas ni escrituras contra el backend. SonarCloud consultado: último análisis del 30 de octubre de 2026, correspondiente a otra revisión; no confirma esta entrega. Lint, suite de pruebas y tipos siguen sin configuración.
 
@@ -161,7 +161,7 @@ El modal de visita de `/admin/tables` consulta y decide solicitudes con `partici
 Los resultados inciertos conservan clave y cuerpo para reintento explícito. La reconciliación recorre páginas sin filtro antes de mostrar el estado encontrado; no atribuye el resultado a una escritura no confirmada. Durante el envío se bloquean cierre del modal y escrituras de visita/QR. Una recarga fallida después de confirmar la decisión solo requiere reintentar la consulta. Emitir QR refresca participantes; cambiar/cerrar visita desmonta la sección y cancela consultas. El cliente actualiza su estado manualmente desde el escáner.
 
 - [ ] Verificar aprobación/rechazo con backend y cuentas de prueba, incluidos errores, concurrencia, QR renovado y plataformas físicas; confirmar SonarCloud de esta revisión.
-- [ ] Conectar finalización administrativa y pedidos reales cuando se solicite.
+- [x] Conectar la finalización administrativa de participaciones aprobadas. La verificación real de permisos y consumos pendientes sigue pendiente.
 
 Verificación administrativa de esta entrega: bundles web, iOS y Android exportados correctamente y `git diff --check` sin errores. Comprobaciones aisladas con API simulada: consulta filtrada, motivo vacío, bloqueo de envíos repetidos, reintento con la misma clave, recarga tras confirmación y respuesta posterior al desmontaje. No se realizaron escrituras reales ni pruebas con dispositivos. SonarCloud devuelve OK para el análisis del 30 de octubre de 2026, de otra revisión; la puerta actual queda pendiente. Lint, suite de pruebas y tipos no están configurados.
 
@@ -188,3 +188,74 @@ El detalle de pedidos a domicilio consulta su liquidación en `/me/settlements/:
 
 
 La interfaz utiliza verde profundo, oliva y crema, con detalles verdes, blancos y rojos inspirados en Manabí. La imagen de la tonga se usa únicamente como referencia de estilo; no se incorpora al contenido.
+
+En `/admin/deliveries`, la pestaña **Transferencias** consulta pagos `transfer` de salón y domicilio porque el API no ofrece filtro por modalidad. `payments.read` permite consultar lista/detalle, `payments.receipts.read` permite cargar el comprobante autenticado y `payments.verify` habilita confirmar o rechazar. La revisión requiere referencia bancaria (confirmación) o motivo (rechazo) y conserva `Idempotency-Key` ante resultados inciertos. JPEG/PNG se previsualiza; PDF se identifica, pero no tiene visor en la app. Las pruebas reales de decisiones y almacenamiento quedan pendientes.
+
+La pestaña **Pedidos** de `/admin/deliveries` consulta solo modalidad `delivery`, con `orders.read`; las transiciones requieren `orders.manage`. El detalle muestra destinatario, domicilio, líneas, totales e historial del backend. Iniciar preparación y despachar quedan sujetos a jornada y transferencia confirmada según el servidor. Las acciones usan versión esperada e `Idempotency-Key`; los resultados inciertos permiten consultar o reintentar la misma operación.
+
+### Ciclo de sesión
+
+La app valida las sesiones restauradas mediante `GET /auth/me` antes de mostrar rutas privadas. El rol del servidor determina el destino y el acceso. En móvil se usa SecureStore y en web la sesión vive en memoria.
+
+Axios renueva los tokens una vez por sesión para varias respuestas 401 simultáneas. Cada petición puede repetirse una vez con sus datos originales. Los fallos temporales permiten reintentar y un refresh rechazado devuelve al login.
+
+**Salir** revoca el refresh token vigente y borra la sesión local. Si no se confirma la revocación, el login muestra un aviso. **Cambiar contraseña** está disponible desde Inicio, la bandeja del mesero y el panel administrativo. Al cambiarla, el backend revoca todas las sesiones de la cuenta.
+
+Esta entrega pasó Expo Export para web, iOS y Android, y `git diff --check`. Las comprobaciones aisladas con Axios y SecureStore simulados cubrieron renovación simultánea, conservación del cuerpo y la clave de idempotencia, cierre durante una renovación, respuesta de una cuenta anterior, fallos de red y persistencia.
+
+- [ ] Verificar con cuentas de prueba los tres roles, la restauración en iOS y Android, el cierre remoto y el cambio de contraseña. Confirmar CI y SonarCloud para la revisión publicada.
+
+## Cuentas, liquidaciones y pagos
+
+La ruta `/admin/billing` muestra cuentas de consumo y liquidaciones del backend. `features/admin/api/billingAdminApi.js` concentra las solicitudes Axios y la traducción de errores; `hooks/useAdminBilling.js` coordina permisos, paginación, detalle, escrituras y operaciones idempotentes; `screens/BillingScreen.jsx` presenta las listas y acciones.
+
+`accounts.read` permite listar y consultar cuentas; `settlements.read` permite consultar liquidaciones. Preparar una liquidación y anularla requieren `settlements.manage`; cobrar efectivo o completar una liquidación en cero requiere `payments.collect`. Preparar solo está disponible para cuentas locales abiertas y sin liquidación pendiente. La caja y jornada actual deben estar abiertas y todos los pedidos tienen que estar entregados; el backend valida estas condiciones. Los domicilios se liquidan junto con el pedido y no se cobran en efectivo desde esta pantalla. La revisión de transferencias se conserva en `/admin/deliveries`.
+
+La pantalla del cliente `/orders` ahora presenta **Mis cuentas** y **Mis pagos** consultando `/me/accounts` y `/me/payments`, con detalle paginado y estados del servidor. Cuando el pago incluye un comprobante, el cliente puede solicitarlo de forma autenticada y verlo en la app. El comprobante no se copia a almacenamiento persistente. `features/client/api/ordersApi.js` contiene estas consultas y `features/client/components/AccountPaymentHistory.jsx` presenta la sección.
+
+Las operaciones de cobro, preparación y anulación usan `Idempotency-Key`. Ante un resultado incierto, la interfaz conserva la operación y permite consultar el recurso o reintentar con el mismo cuerpo y clave; no reenvía automáticamente. Un pago `pendingVerification` sigue esperando revisión, no significa que esté confirmado.
+
+Esta entrega requiere validación contra una instancia y cuentas de prueba autorizadas. La exportación Expo, SonarCloud, lint, pruebas unitarias y tipos deben registrarse según los comandos disponibles y no se consideran aprobados solo por implementar el código.
+
+## Edición de pedidos, cancelaciones y reembolsos
+
+En **Pedidos**, abre un pedido de salón recibido y elige **Editar pedido** cuando el servidor lo permita. El editor usa un borrador independiente del carrito. También puedes cancelar directamente un pedido de salón recibido o solicitar una cancelación para los estados admitidos por la API. En domicilio, el estado del pago determina si puedes solicitarla o si la anulación corresponde al personal. Desde el detalle puedes consultar solicitudes, retirar una solicitud propia pendiente y ver el estado de un reembolso.
+
+En **Cobros**, **Cancelaciones** permite aprobar o rechazar solicitudes. **Reembolsos** permite consultar importes autorizados y registrar una entrega en efectivo o una transferencia ya realizada. Las consultas requieren `cancellations.read` o `refunds.read`. Las acciones requieren el rol administrador y el permiso correspondiente `cancellations.decide` o `refunds.execute`.
+
+Cada escritura pide confirmación y usa una clave de idempotencia. Si el resultado queda incierto, consulta el estado antes de reintentar. La app conserva la clave y el cuerpo original en memoria por usuario y recurso. Si el servidor confirma la operación pero falla la recarga, actualiza la consulta.
+
+## Gestión de jornada y caja
+
+El panel `/admin/dashboard` permite consultar la operación vigente, abrir una jornada y su caja, editar la configuración operativa y revisar cierres de caja y jornada. No se agregaron rutas.
+
+`features/admin/api/operationsAdminApi.js` contiene las llamadas a `/admin/operations`. `hooks/useAdminOperationsManagement.js` aplica permisos, carga y conciliación de escrituras; `components/OperationsManagementPanel.jsx` presenta los controles e historial. `operations.read` habilita consultas; `operations.open` permite aperturas; `operations.manage` permite editar zona horaria, horarios y ventana de edición de pedidos; `operations.closeCash` y `operations.closeDay` habilitan cada cierre por separado.
+
+La caja requiere una jornada abierta. El cierre muestra ingresos, devoluciones, transferencias confirmadas y los grupos de bloqueos del backend. El usuario registra el efectivo contado en dólares, que se convierte a centavos; si difiere del saldo esperado se exige un motivo. Antes de guardar se consulta de nuevo la vista previa. La caja cerrada conserva un registro inmutable con saldo esperado, conteo y diferencia.
+
+El cierre de jornada muestra conteos, bloqueos paginados, acciones de limpieza previstas y reembolsos pendientes. El usuario confirma de forma explícita y el backend valida de nuevo las condiciones y ejecuta la limpieza. La API no ofrece un listado general de jornadas: las históricas se consultan por UUID; las cajas sí tienen listado paginado y filtros por estado o UUID de jornada. La apertura excepcional de la jornada actual con fechas anteriores pendientes no se realiza automáticamente ni forma parte de esta etapa.
+
+Las aperturas sin clave idempotente consultan el estado actual ante un resultado incierto y no se repiten automáticamente. Los cierres conservan el mismo cuerpo y `Idempotency-Key`; ante incertidumbre se consulta primero el registro inmutable y, si no existe, se ofrece el reintento explícito idéntico. Un cambio en la vista previa exige revisar y confirmar de nuevo.
+
+En el modal de `/admin/tables`, una cuenta con `participants.manage` puede finalizar participaciones aprobadas. La pantalla vuelve a consultar el estado antes de confirmar; el backend bloquea el cierre de la cuenta si aún hay consumos pendientes. La respuesta y los rechazos del servidor se muestran directamente.
+
+- [ ] Probar apertura de jornada/caja, edición de configuración, permisos y conflictos con cuentas de prueba.
+- [ ] Probar cierres permitidos y bloqueados, conteos con diferencia, reintentos idempotentes e historial contra el backend.
+- [ ] Probar finalización administrativa de participantes con consumos pendientes y saldados.
+- [ ] Confirmar CI y SonarCloud para esta revisión y registrar qué plataformas físicas se probaron.
+
+La exportación Expo y `git diff --check` deben registrarse para esta revisión. No hay scripts de lint, pruebas unitarias ni comprobación de tipos configurados.
+
+Para esta entrega, Expo Export generó correctamente los bundles web, Android e iOS y `git diff --check` pasó. La suite `RUN_POSTGRES_E2E=1 npm run test:e2e -- test/table-access-postgres.e2e-spec.ts` del backend vecino pasó 41 pruebas sobre su base desechable; esto valida el backend aislado, no una conexión frontend/backend en dispositivos. No se probaron cuentas reales ni dispositivos. SonarCloud se consultó: el último análisis disponible es del 16 de noviembre de 2026, revisión `e1fdab46fa155cde904cae87420b278e4d257e9f`, con Quality Gate OK y 28 issues abiertos. Ese análisis no incluye esta revisión, así que su puerta queda pendiente para estos cambios. Lint, pruebas unitarias y tipos no están configurados en este frontend.
+
+## Puntos y recompensas
+
+Desde Inicio, el cliente registrado abre **Mis puntos y recompensas** (`/rewards`). La pantalla consulta `GET /me/points`, la configuración pública y el catálogo disponible en `/rewards`; permite recorrer los movimientos propios con filtro por tipo y páginas de 20. El saldo y los cambios provienen del servidor. En esta entrega se puede consultar el catálogo, pero todavía no solicitar canjes.
+
+La administración encuentra el módulo en la pestaña **Puntos** y en la acción rápida del panel (`/admin/rewards`). `points.read` permite consultar configuración, saldos e historial por UUID de cliente; `points.configure` permite habilitar el programa y definir una tasa entera de 1 a 1000 puntos por dólar. El acceso desde `/admin/users` abre la consulta para un usuario si el backend provee su `clientId`.
+
+Con `rewards.read` se consulta el catálogo administrativo con búsqueda, filtro por estado y páginas de 20. `rewards.manage` permite crear una recompensa asociada a un producto disponible y editar su nombre, descripción, costo, estado y orden. La edición envía la versión actual (`expectedVersion`) y no permite cambiar el producto asociado. Las escrituras usan claves `Idempotency-Key`; si la respuesta queda incierta, la app conserva el cuerpo y la clave en memoria y permite repetir exactamente esa solicitud. Un conflicto de versión conserva el borrador para rebasarlo sobre el detalle actualizado.
+
+Las escrituras reales contra cuentas de prueba, las comprobaciones por rol y el análisis SonarCloud de esta revisión siguen pendientes. Estos módulos no implementan el canje ni su aprobación/rechazo; son el siguiente bloque de recompensas.
+
+Verificación de esta entrega: el bundle de Expo exportó web, Android e iOS y `git diff --check` no reportó errores. La suite de integración PostgreSQL del backend pasó 41 pruebas aisladas; no verifica la interfaz ni una conexión con cuentas reales. No se probaron dispositivos. El último Quality Gate visible de SonarCloud es `OK`, análisis del 16 de noviembre de 2026 sobre un commit anterior; falta un análisis de estos cambios. Este frontend no tiene scripts de lint, unit tests ni tipos configurados.

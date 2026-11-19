@@ -1,10 +1,12 @@
 import { Pressable, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import AdminShell from '@/features/admin/components/AdminShell';
+import { billingReadPermissions } from '@/features/admin/hooks/useAdminCancellationRefunds';
 import AdminIcon from '@/features/admin/components/AdminIcon';
 import { Stats } from '@/features/admin/components/AdminUI';
 import useAdminDashboard from '@/features/admin/hooks/useAdminDashboard';
 import { formatDashboardMoney } from '@/features/admin/data/dashboardMapper';
+import OperationsManagementPanel from '@/features/admin/components/OperationsManagementPanel';
 
 function QuickAction({ icon, title, subtitle, onPress }) {
   return <Pressable accessibilityRole="button" onPress={onPress} className="flex-1 items-center rounded-2xl bg-white px-2 py-4 active:bg-[#fff0e4]"><View className="mb-2 h-9 w-9 items-center justify-center rounded-xl bg-[#f2e8d6]"><AdminIcon name={icon} size={18} color="#477052" /></View><Text className="text-center text-[10px] font-semibold text-[#332d28]">{title}</Text><Text className="mt-1 text-center text-[9px] text-[#8b8178]">{subtitle}</Text></Pressable>;
@@ -38,8 +40,11 @@ export default function DashboardScreen() {
       {permissions.includes('inventory.read') ? <QuickAction icon="products" title="Inventario" subtitle="Revisar stock" onPress={() => router.push('/admin/inventory')} /> : null}
       {permissions.includes('tables.read') ? <QuickAction icon="qr" title="Mesas" subtitle={`${data.tables ?? '—'} con visita`} onPress={() => router.push('/admin/tables')} /> : null}
       {permissions.includes('delivery.read') ? <QuickAction icon="products" title="Domicilios" subtitle="Revisar solicitudes" onPress={() => router.push('/admin/deliveries')} /> : null}
+      {billingReadPermissions.some((permission) => permissions.includes(permission)) ? <QuickAction icon="products" title="Cobros" subtitle="Cuentas y liquidaciones" onPress={() => router.push('/admin/billing')} /> : null}
+      {['points.read', 'points.configure', 'rewards.read', 'rewards.manage'].some((permission) => permissions.includes(permission)) ? <QuickAction icon="users" title="Puntos" subtitle="Programa y recompensas" onPress={() => router.push('/admin/rewards')} /> : null}
       <QuickAction icon="users" title="Usuarios" subtitle="Gestionar acceso" onPress={() => router.push('/admin/users')} />
     </View>
     {inventory ? <Pressable accessibilityRole="button" onPress={() => router.push('/admin/inventory')} className="flex-row items-center rounded-2xl bg-[#fff0c7] px-4 py-3"><Text className="mr-3 text-lg">⚠</Text><View className="flex-1"><Text className="text-xs font-semibold text-[#9c7b31]">Inventario por revisar</Text><Text className="mt-1 text-[10px] text-[#9c7b31]">{inventory.lowStock} productos con existencia disponible baja.</Text></View><Text className="text-base text-[#9c7b31]">›</Text></Pressable> : null}
+    <OperationsManagementPanel permissions={permissions} />
   </AdminShell>;
 }

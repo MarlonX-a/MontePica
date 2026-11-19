@@ -21,3 +21,15 @@ export async function registerWithApi({
   });
   return data;
 }
+
+export async function getAuthenticatedUser() {
+  const { data } = await apiClient.get('/auth/me');
+  return data;
+}
+
+export async function changePassword(currentPassword, newPassword, sessionGeneration) {
+  await apiClient.post('/auth/change-password', { currentPassword, newPassword }, {
+    sessionGeneration,
+    skipSessionRefresh: true,
+  });
+}
