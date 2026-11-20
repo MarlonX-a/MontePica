@@ -21,3 +21,8 @@ export async function getPublicRewards({ page = 1, limit = 20, signal } = {}) {
   const { data } = await apiClient.get('/rewards', { params: { page, limit }, signal });
   return data;
 }
+
+export async function getPublicReward(id, signal) {
+  const { data } = await apiClient.get(`/rewards/${id}`, { signal });
+  return data;
+}
