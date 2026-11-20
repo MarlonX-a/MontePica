@@ -115,6 +115,7 @@ function ResultPanel({
         scanner={scanner}
         participation={participation}
         onContinue={onContinue}
+        onRewards={() => router.push({ pathname: '/rewards', params: { visitId: scanner.table.visitId } })}
       />
     );
   }

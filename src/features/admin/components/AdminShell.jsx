@@ -29,7 +29,7 @@ export default function AdminShell({
   const permissions = getCurrentUser()?.permissions || [];
   const visibleTabs = tabs.filter((tab) => {
     if (tab.path === '/admin/billing') return billingReadPermissions.some((permission) => permissions.includes(permission));
-    if (tab.path === '/admin/rewards') return ['points.read', 'points.configure', 'rewards.read', 'rewards.manage'].some((permission) => permissions.includes(permission));
+    if (tab.path === '/admin/rewards') return ['points.read', 'points.configure', 'rewards.read', 'rewards.manage', 'redemptions.read', 'redemptions.manage'].some((permission) => permissions.includes(permission));
     return true;
   });
 
