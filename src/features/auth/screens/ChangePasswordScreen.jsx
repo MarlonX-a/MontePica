@@ -3,6 +3,7 @@ import { Pressable, ScrollView, Text, TextInput } from 'react-native';
 import { Link } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { changePassword, getAuthenticatedUser } from '@/features/auth/api/authApi';
+import { validateNewPassword } from '@/features/auth/validators/newPasswordValidator';
 import { clearSession, getSessionSnapshot } from '@/shared/session/sessionStore';
 import useSession, { getSessionDestination } from '@/shared/session/useSession';
 
@@ -14,12 +15,7 @@ const fields = [
 
 function validate({ current, next, confirmation }) {
   if (!current || current.length > 128) return 'Ingresa tu contraseña actual.';
-  if (next.length < 8 || next.length > 128 || !/[A-ZÁÉÍÓÚÜÑ]/.test(next) ||
-      !/\d/.test(next) || /[\r\n\u2028\u2029]/.test(next)) {
-    return 'La contraseña nueva debe tener entre 8 y 128 caracteres, una mayúscula y un número.';
-  }
-  if (next !== confirmation) return 'Las contraseñas nuevas deben coincidir.';
-  return '';
+  return validateNewPassword(next, confirmation);
 }
 
 export default function ChangePasswordScreen() {

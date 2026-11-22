@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'expo-router';
 import { View, Text, TextInput, Pressable } from 'react-native';
 import {
   validateLoginField,
@@ -125,9 +126,9 @@ export default function LoginForm({ onValidSubmit }) {
           {submitError}
         </Text>
       ) : null}
-      <Text className="mt-3 text-right text-xs font-semibold text-[#b7472a]">
+      <Link href="/recover-password" className="mt-3 self-end py-2 text-xs font-semibold text-[#b7472a]">
         ¿Olvidaste tu contraseña?
-      </Text>
+      </Link>
       <Pressable
         onPress={handleSubmit}
         disabled={isSubmitting}

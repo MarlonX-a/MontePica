@@ -205,6 +205,12 @@ Esta entrega pasó Expo Export para web, iOS y Android, y `git diff --check`. La
 
 - [ ] Verificar con cuentas de prueba los tres roles, la restauración en iOS y Android, el cierre remoto y el cambio de contraseña. Confirmar CI y SonarCloud para la revisión publicada.
 
+### Recuperar el acceso por correo
+
+Desde el login, **¿Olvidaste tu contraseña?** abre `/recover-password`. Solicita el código con tu correo, copia los 43 caracteres del mensaje y elige una contraseña nueva. El servidor entrega un código de un solo uso, válido por 15 minutos, y revoca las sesiones anteriores al confirmar el cambio. La pantalla permite pedir otro código y volver al login.
+
+Para probar el envío real, la API necesita la migración de recuperación, `PASSWORD_RECOVERY_ENABLED=true` y un servidor SMTP configurado. Usa un buzón de prueba. `EXPO_PUBLIC_API_URL` debe apuntar a la API con el prefijo `/api/v1`. En web, agrega el origen de la app a `CORS_ORIGINS` del backend.
+
 ## Cuentas, liquidaciones y pagos
 
 La ruta `/admin/billing` muestra cuentas de consumo y liquidaciones del backend. `features/admin/api/billingAdminApi.js` concentra las solicitudes Axios y la traducción de errores; `hooks/useAdminBilling.js` coordina permisos, paginación, detalle, escrituras y operaciones idempotentes; `screens/BillingScreen.jsx` presenta las listas y acciones.

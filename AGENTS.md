@@ -299,6 +299,16 @@ Esta entrega pasó Expo Export para web, iOS y Android, y `git diff --check`. La
 
 - [ ] Verificar con cuentas de prueba los tres roles, la restauración en iOS y Android, el cierre remoto y el cambio de contraseña. Confirmar CI y SonarCloud para la revisión publicada.
 
+### Recuperación de contraseña
+
+La ruta pública `/recover-password` delega en `RecoverPasswordScreen.jsx` dentro de `auth`. `authApi.js` envía `{email}` a `POST /auth/forgot-password` y `{token, newPassword}` a `POST /auth/reset-password`. Ambas solicitudes se excluyen de la autenticación y renovación de sesión en Axios. Comparte el validador de contraseña nueva con el cambio autenticado. El código se pega manualmente y los valores sensibles se limpian al cambiar de paso, tras el éxito o al salir.
+
+El mensaje de solicitud es uniforme para correos existentes, desconocidos y solicitudes limitadas. Un `204` confirma el restablecimiento y el servidor revoca las sesiones anteriores. Si la respuesta se pierde, la pantalla ofrece volver al login para comprobar la nueva contraseña.
+
+- [ ] Verificar entrega de correo y revocación con SMTP y cuentas autorizadas en un backend de prueba. Registrar las plataformas probadas y el resultado de SonarCloud para la revisión publicada.
+
+Verificación de esta implementación: Expo Export completó web, Android e iOS. La comprobación aislada del frontend con API simulada cubrió validación, solicitudes simultáneas, reenvío, errores y confirmación. La suite E2E del backend pasó 42 casos con PostgreSQL desechable y correo simulado. La API configurada no respondió a la consulta de disponibilidad. El último Quality Gate de SonarCloud consultado fue OK para `88646c2c`, una revisión anterior.
+
 ## Cuentas y cobros
 
 `/admin/billing` consulta cuentas y liquidaciones mediante `billingAdminApi.js`, coordina el flujo en `useAdminBilling.js` y presenta listas/detalles en `BillingScreen.jsx`. Permisos: `accounts.read` para cuentas, `settlements.read` para liquidaciones, `settlements.manage` para preparar/anular y `payments.collect` para cobrar efectivo o liquidaciones en cero. La API valida caja, jornada, modalidad, pedidos entregados, transferencias pendientes y concurrencia. Las cuentas de domicilio no se preparan ni cobran en efectivo aquí; se liquidan desde el flujo del pedido y sus transferencias se revisan en `/admin/deliveries`.
