@@ -12,7 +12,8 @@ const apiClient = axios.create(defaults);
 const sessionTransport = axios.create(defaults);
 const expiredNotice = 'Tu sesión expiró. Vuelve a iniciar sesión.';
 const publicPaths = new Set([
-  '/auth/login', '/auth/register', '/products', '/categories', '/delivery/settings',
+  '/auth/login', '/auth/register', '/auth/forgot-password', '/auth/reset-password',
+  '/products', '/categories', '/delivery/settings',
 ]);
 const pendingRefreshes = new Map();
 let pendingLogout;

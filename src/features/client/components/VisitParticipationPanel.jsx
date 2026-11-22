@@ -100,6 +100,7 @@ export default function VisitParticipationPanel({
   scanner,
   participation: p,
   onContinue,
+  onRewards,
 }) {
   const [alias, setAlias] = useState(getCurrentUser()?.name ?? '');
   const blocked = p.loading || p.saving;
@@ -196,6 +197,7 @@ export default function VisitParticipationPanel({
         recibida por el servidor.
       </Text>
       <Button label="Ver menú" onPress={onContinue} disabled={p.saving} />
+      {p.participant?.status === 'approved' ? <Button label="Solicitar una recompensa" onPress={onRewards} disabled={p.saving} /> : null}
       <Button
         label="Escanear otro QR"
         onPress={scanner.scanAnother}

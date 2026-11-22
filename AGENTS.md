@@ -299,6 +299,16 @@ Esta entrega pasó Expo Export para web, iOS y Android, y `git diff --check`. La
 
 - [ ] Verificar con cuentas de prueba los tres roles, la restauración en iOS y Android, el cierre remoto y el cambio de contraseña. Confirmar CI y SonarCloud para la revisión publicada.
 
+### Recuperación de contraseña
+
+La ruta pública `/recover-password` delega en `RecoverPasswordScreen.jsx` dentro de `auth`. `authApi.js` envía `{email}` a `POST /auth/forgot-password` y `{token, newPassword}` a `POST /auth/reset-password`. Ambas solicitudes se excluyen de la autenticación y renovación de sesión en Axios. Comparte el validador de contraseña nueva con el cambio autenticado. El código se pega manualmente y los valores sensibles se limpian al cambiar de paso, tras el éxito o al salir.
+
+El mensaje de solicitud es uniforme para correos existentes, desconocidos y solicitudes limitadas. Un `204` confirma el restablecimiento y el servidor revoca las sesiones anteriores. Si la respuesta se pierde, la pantalla ofrece volver al login para comprobar la nueva contraseña.
+
+- [ ] Verificar entrega de correo y revocación con SMTP y cuentas autorizadas en un backend de prueba. Registrar las plataformas probadas y el resultado de SonarCloud para la revisión publicada.
+
+Verificación de esta implementación: Expo Export completó web, Android e iOS. La comprobación aislada del frontend con API simulada cubrió validación, solicitudes simultáneas, reenvío, errores y confirmación. La suite E2E del backend pasó 42 casos con PostgreSQL desechable y correo simulado. La API configurada no respondió a la consulta de disponibilidad. El último Quality Gate de SonarCloud consultado fue OK para `88646c2c`, una revisión anterior.
+
 ## Cuentas y cobros
 
 `/admin/billing` consulta cuentas y liquidaciones mediante `billingAdminApi.js`, coordina el flujo en `useAdminBilling.js` y presenta listas/detalles en `BillingScreen.jsx`. Permisos: `accounts.read` para cuentas, `settlements.read` para liquidaciones, `settlements.manage` para preparar/anular y `payments.collect` para cobrar efectivo o liquidaciones en cero. La API valida caja, jornada, modalidad, pedidos entregados, transferencias pendientes y concurrencia. Las cuentas de domicilio no se preparan ni cobran en efectivo aquí; se liquidan desde el flujo del pedido y sus transferencias se revisan en `/admin/deliveries`.
@@ -322,9 +332,9 @@ Seguimiento de esta entrega:
 
 - [ ] Verificar el recorrido de frontend con cuentas de prueba en navegador y dispositivos. La suite de integración del backend aislado pasó 41 casos. Revisar CI y SonarCloud de la revisión publicada antes de dar por cerrada la etapa.
 
-## Puntos y recompensas
+## Puntos, recompensas y canjes
 
-La ruta del cliente `/rewards` muestra el saldo disponible, puntos pendientes/reservados, tasa pública, recompensas que el backend publica y movimientos paginados por tipo. `features/client/api/rewardsApi.js` concentra las lecturas y `hooks/useClientRewards.js` coordina carga, filtros y páginas. Se accede desde Inicio. No hay solicitud de canje desde esta etapa.
+La ruta del cliente `/rewards` muestra el saldo disponible, puntos pendientes/reservados, tasa pública, recompensas publicadas, movimientos paginados por tipo y canjes propios con filtros/paginación por estado. `features/client/api/rewardsApi.js` contiene lecturas de puntos y catálogo; `hooks/useClientRewards.js` coordina esas consultas. `features/client/api/redemptionsApi.js` contiene las consultas, creación y cancelación de canjes; `hooks/useClientRedemptions.js` coordina permisos de sesión del cliente, paginación, filtros, participación aprobada, versión de recompensa y reintentos.
 
 La ruta administrativa `/admin/rewards` presenta la configuración de puntos, la consulta de saldo e historial por UUID de cliente y el catálogo administrativo de recompensas. `features/admin/api/pointsRewardsAdminApi.js` centraliza las llamadas; `hooks/useAdminPointsRewards.js` coordina permisos, filtros, consultas, validación, versiones y operaciones. La edición de usuarios ofrece un acceso al saldo cuando existe `clientId` y la cuenta posee `points.read`.
 
@@ -332,8 +342,16 @@ La ruta administrativa `/admin/rewards` presenta la configuración de puntos, la
 - `points.configure` permite cambiar la tasa (entero de 1 a 1000) y habilitar o deshabilitar el programa. Cada PUT requiere confirmación, crea una nueva versión e incluye `Idempotency-Key`.
 - `rewards.read` permite consultar detalles y catálogo administrativo paginado con búsqueda y filtro activo.
 - `rewards.manage` permite crear y editar. Crear vincula un producto público existente; editar conserva fijo el producto y envía `expectedVersion` más solo los campos modificados. Ambas escrituras incluyen clave idempotente. Los resultados inciertos conservan clave y cuerpo en memoria para un reintento explícito.
-- El catálogo del cliente usa `/rewards`, que solo expone recompensas activas y disponibles. El cliente aún no puede canjear puntos desde la app.
+- El catálogo del cliente usa `/rewards`, que solo expone recompensas activas y disponibles. Desde el panel de una visita se puede abrir `/rewards?visitId=...`; solicitar requiere una participación aprobada. Antes de enviar se vuelve a consultar la recompensa para comprobar estado y versión. El backend valida puntos, jornada, caja e inventario y reserva puntos; una solicitud pendiente se puede cancelar desde la lista propia. El estado se actualiza por consulta manual, sin sondeo en segundo plano.
+- Una escritura incierta conserva en memoria su clave y cuerpo originales. Se puede consultar el detalle/listado antes de reintentar exactamente la misma operación; no se crean claves nuevas para un reintento pendiente. Abandonar la pantalla no revierte una operación que el servidor haya recibido.
 
-Estas pantallas no afirman que los puntos pendientes ya estén acreditados. Los valores y movimientos se leen del backend. Los canjes y sus decisiones administrativas siguen como actividad posterior. Bundles o consultas simuladas no sustituyen la verificación con cuentas autorizadas; SonarCloud solo confirma una revisión cuando analiza este cambio.
+La sección administrativa de `/admin/rewards` consulta `/admin/redemptions` con `redemptions.read`, y presenta detalle e historial. `redemptions.manage` habilita aprobación/rechazo; el rechazo exige motivo de 1 a 500 caracteres. `features/admin/api/redemptionsAdminApi.js` contiene las solicitudes y `hooks/useAdminRedemptions.js` coordina filtro, páginas, preconsulta del estado y escrituras idempotentes. Ante resultado incierto, la UI conserva clave y decisión/motivo, ofrece consulta del detalle y reintenta el mismo envío. El backend sigue siendo autoridad ante permisos y carreras.
 
-Verificación de puntos/recompensas en esta copia: Expo Export web, Android e iOS completado en `dist/rewards-stage5-final`; `git diff --check` sin errores. La suite aislada del backend `RUN_POSTGRES_E2E=1 npm run test:e2e -- test/table-access-postgres.e2e-spec.ts` pasó 41 pruebas; valida el contrato del servidor, no la integración visual ni cuentas del frontend. No se probaron escrituras con cuentas reales ni dispositivos. SonarCloud: último análisis el 16 de noviembre de 2026 para `e1fdab46fa155cde904cae87420b278e4d257e9f`, Quality Gate `OK`, pero no incluye estos cambios. Lint, unit tests y tipos no están configurados; la verificación real y el análisis de esta revisión siguen pendientes.
+Estas pantallas no afirman que los puntos pendientes ya estén acreditados. Los valores, movimientos y canjes se leen del backend. La aprobación crea el pedido asociado según el contrato del servidor. La implementación no equivale a verificación real: faltan pruebas con cuentas autorizadas, revisión SonarCloud de esta revisión y comprobación en dispositivos.
+
+Verificación de puntos, recompensas y canjes en esta copia: Expo Export web, Android e iOS completado; `git diff --check` pasó. No se probaron escrituras con cuentas reales ni dispositivos. El último Quality Gate consultado en SonarCloud es `OK` (19 de noviembre de 2026, revisión `88646c2c06774d300f85127efc86c0de691aab6b`), pero no incluye estos cambios; la puerta de esta entrega queda pendiente. Lint, unit tests y tipos no están configurados.
+
+Seguimiento de canjes:
+- [x] Implementar consulta, filtros, paginación, solicitud/cancelación del cliente y gestión administrativa con detalle/historial, permisos y reintento idempotente.
+- [ ] Probar con cuentas y backend de prueba: puntos insuficientes, recompensa/versiones, inventario, participación, visita/jornada/caja, cancelación y decisiones concurrentes; verificar roles y errores.
+- [ ] Probar los recorridos en web, iOS y Android y registrar plataformas; revisar el Quality Gate SonarCloud de esta revisión.

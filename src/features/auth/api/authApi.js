@@ -27,6 +27,14 @@ export async function getAuthenticatedUser() {
   return data;
 }
 
+export async function requestPasswordRecovery(email, signal) {
+  await apiClient.post('/auth/forgot-password', { email }, { signal });
+}
+
+export async function resetPassword(token, newPassword, signal) {
+  await apiClient.post('/auth/reset-password', { token, newPassword }, { signal });
+}
+
 export async function changePassword(currentPassword, newPassword, sessionGeneration) {
   await apiClient.post('/auth/change-password', { currentPassword, newPassword }, {
     sessionGeneration,
