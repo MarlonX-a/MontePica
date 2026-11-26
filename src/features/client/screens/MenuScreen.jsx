@@ -10,15 +10,17 @@ import {
 import { useLocalSearchParams, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import {
+  getMenuCategories,
+  getMenuProducts,
+  isCatalogConnectionError,
+} from '@/features/client/api/catalogApi';
+import { getMenuCatalog, saveMenuCatalog } from '@/features/client/data/menuCatalogCache';
 import BottomNavigation from '@/features/client/components/BottomNavigation';
 import MenuProductCard from '@/features/client/components/MenuProductCard';
 import CartButton from '@/features/client/components/CartButton';
 import SelectableChip from '@/features/client/components/SelectableChip';
 import { logoutUser } from '@/shared/api/apiClient';
-import {
-  getMenuCategories,
-  getMenuProducts,
-} from '@/features/client/api/catalogApi';
 
 export default function MenuScreen() {
   const { service, table, visitId } = useLocalSearchParams();
@@ -28,6 +30,7 @@ export default function MenuScreen() {
   const [search, setSearch] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
+  const [cachedAt, setCachedAt] = useState(null);
   const [reloadKey, setReloadKey] = useState(0);
   const isDineIn = service === 'dine-in';
   let serviceLabel = 'Pedido a domicilio';
@@ -55,6 +58,16 @@ export default function MenuScreen() {
         if (isMounted) {
           setProducts(loadedProducts);
           setAvailableCategories(loadedCategories);
+          setCachedAt(null);
+        }
+        try {
+          await saveMenuCatalog({
+            products: loadedProducts,
+            categories: loadedCategories,
+            updatedAt: new Date().toISOString(),
+          });
+        } catch {
+          // A local storage failure must not hide a successful server response.
         }
       } catch (error) {
         const apiMessage = error?.response?.data?.message;
@@ -62,7 +75,21 @@ export default function MenuScreen() {
           ? apiMessage.join(' ')
           : apiMessage;
 
-        if (isMounted) {
+        if (isMounted && isCatalogConnectionError(error)) {
+          try {
+            const cachedCatalog = await getMenuCatalog();
+            if (cachedCatalog) {
+              setProducts(cachedCatalog.products);
+              setAvailableCategories(cachedCatalog.categories);
+              setCachedAt(cachedCatalog.updatedAt);
+              setLoadError('');
+            } else {
+              setLoadError('Conéctate a internet y abre el menú para guardar el catálogo en este dispositivo.');
+            }
+          } catch {
+            setLoadError('Conéctate a internet y abre el menú para guardar el catálogo en este dispositivo.');
+          }
+        } else if (isMounted) {
           setLoadError(
             typeof message === 'string' && message.trim()
               ? message
@@ -220,13 +247,40 @@ export default function MenuScreen() {
           </ScrollView>
 
           <View className="mb-3 flex-row items-center justify-between">
-            <Text className="text-xs text-[#8b8178]">{productCountLabel}</Text>
-            <View className="flex-row items-center">
-              <View className="mr-1.5 h-2 w-2 rounded-full bg-[#4d8c58]" />
-              <Text className="text-[10px] font-semibold text-[#547353]">
-                Cocina operativa
-              </Text>
+            <View>
+              <Text className="text-xs text-[#8b8178]">{productCountLabel}</Text>
+              {cachedAt ? <Text className="mt-1 text-[10px] text-[#a35a45]">
+                Menú guardado · actualizado {new Date(cachedAt).toLocaleString('es-EC')}
+              </Text> : null}
             </View>
+            {cachedAt ? (
+              <View className="items-end">
+                <Text className="mb-1 text-[10px] font-semibold text-[#8e3b27]">
+                  Sin conexión
+                </Text>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityState={{ disabled: isLoading }}
+                  disabled={isLoading}
+                  onPress={() => {
+                    setCachedAt(null);
+                    setReloadKey((key) => key + 1);
+                  }}
+                  className="rounded-lg bg-[#f1e5d7] px-3 py-2"
+                >
+                  <Text className="text-[10px] font-semibold text-[#8e3b27]">
+                    Reintentar
+                  </Text>
+                </Pressable>
+              </View>
+            ) : (
+              <View className="flex-row items-center">
+                <View className="mr-1.5 h-2 w-2 rounded-full bg-[#4d8c58]" />
+                <Text className="text-[10px] font-semibold text-[#547353]">
+                  Cocina operativa
+                </Text>
+              </View>
+            )}
           </View>
 
           {catalogContent}

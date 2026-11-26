@@ -23,7 +23,7 @@ Flujo actual:
 2. Login y registro usan la API.
 3. Desde Inicio, **Para servirse** abre el escáner. La cámara lee un QR y la app consulta `POST /table-access/resolve`; si el backend lo acepta, muestra el código de mesa real y permite continuar al menú. Resolver el QR no crea una participación ni aprueba el ingreso.
 4. **Pedir a domicilio** abre el menú directamente.
-5. El menú y el detalle consultan el catálogo del backend. La búsqueda y los filtros se aplican en la app.
+5. El menú y el detalle consultan el catálogo del backend. En iOS y Android se conserva en SQLite una copia del último catálogo completo; solo ante un fallo de conexión se muestra como referencia sin conexión y se deshabilita agregar al carrito. La web requiere conexión. La búsqueda y los filtros se aplican en la app.
 6. En el detalle, picante, nota y cantidad son controles locales. **Agregar** añade el producto al carrito en memoria. En servicio en salón, el menú conserva `visitId` hasta `/orders`; confirmar envía UUID y cantidades al backend, que valida participación aprobada, cuenta abierta e inventario. En domicilio, `/orders` consulta cobertura y tarifa; tras la aprobación, crea el pedido con el carrito. El detalle consulta su liquidación y permite enviar comprobante JPEG/PNG de hasta 5 MiB; `pendingVerification` significa que espera revisión y no que el pago esté confirmado. El carrito se conserva en memoria y la revisión administrativa del pago sigue pendiente.
 
 La pantalla `/waiter` consulta y cambia pedidos reales de servicio en salón mediante las rutas administrativas del backend; no comparte el carrito ni el estado local del cliente. Los pedidos a domicilio quedan fuera de esa bandeja. El catálogo administrado desde `/admin/products` es el mismo que consulta el cliente; el panel administrativo ya consulta jornada, caja, pedidos, inventario y visitas de mesa desde el backend.
@@ -55,7 +55,7 @@ src/
 │   └── ui/Title.jsx
 ├── features/
 │   ├── auth/                    # formularios, pantallas, API y validadores
-│   ├── client/                  # pantallas, APIs, hook del escáner, mapper, componentes y orderStore
+│   ├── client/                  # pantallas, APIs, hooks, mappers, carrito y caché SQLite del catálogo
 │   ├── waiter/                  # bandeja local del mesero
 │   └── admin/                   # catálogo, inventario, usuarios, mesas/visitas, panel y domicilios
 │       ├── api/                 # APIs administrativas de catálogo, inventario, mesas, visitas y domicilios
@@ -68,7 +68,7 @@ src/
     └── validators/              # validaciones puras reutilizadas por features
 ```
 
-El catálogo del cliente vive en el backend. `features/client/api/catalogApi.js` consulta productos y categorías; `features/client/api/tableAccessApi.js` resuelve el token leído por el escáner; `features/client/hooks/useTableQrScanner.js` coordina estados, eventos repetidos, reintentos y cancelación. `features/client/data/menuProductMapper.js` adapta productos al formato visual. La administración usa `features/admin/api/catalogAdminApi.js` y `adminCatalogMapper.js` para gestionar productos/categorías y `features/admin/api/inventoryAdminApi.js` y `inventoryMapper.js` para la jornada y las existencias. `features/admin/data/adminData.js` conserva semillas locales usadas por el panel, que aún no está conectado.
+El catálogo del cliente vive en el backend. `features/client/api/catalogApi.js` consulta todos los productos paginados y las categorías; `features/client/data/menuProductMapper.js` adapta productos al formato visual; `menuCatalogCache.native.js` guarda el último resultado completo en SQLite en iOS/Android y `menuCatalogCache.web.js` no habilita caché web. El menú usa la caché solo ante fallos de conexión, muestra su fecha y permite reintentar; errores HTTP no se ocultan con datos antiguos. El detalle puede mostrar un producto guardado como referencia, pero bloquea **Agregar** porque el precio podría estar desactualizado. La caché no conserva sesión, carrito, inventario ni pedidos y no habilita operaciones offline. `features/client/api/tableAccessApi.js` resuelve el token leído por el escáner; `features/client/hooks/useTableQrScanner.js` coordina estados, eventos repetidos, reintentos y cancelación. La administración usa `features/admin/api/catalogAdminApi.js` y `adminCatalogMapper.js` para gestionar productos/categorías y `features/admin/api/inventoryAdminApi.js` y `inventoryMapper.js` para la jornada y las existencias. `features/admin/data/adminData.js` conserva semillas locales usadas por el panel, que aún no está conectado.
 
 Otros archivos importantes:
 
@@ -182,6 +182,8 @@ Actividades implementadas en el código actual (las pruebas reales y el análisi
 
 Actividades pendientes:
 
+- [x] Implementar caché SQLite del catálogo completo para iOS/Android, recuperación ante fallos de conexión, fecha/reintento y bloqueo de compra con datos guardados; web conserva solo consulta online.
+- [ ] Probar la caché del catálogo sin conexión en iOS y Android: primera carga online, reinicio de app, actualización correcta, caída de red, error HTTP, imagen remota ausente y bloqueo de **Agregar** desde un detalle guardado. Web debe seguir mostrando el error/reintento sin crear caché local. Registrar pruebas reales por plataforma.
 - [ ] Verificar con el backend y cuentas de prueba autorizadas los flujos ya conectados, incluidos permisos, errores y persistencia. La edición de mesas aún requiere prueba real; documentar resultados y limitaciones por plataforma.
 - [X] Verificar apertura y cierre de visitas en backend con cuentas de prueba: mesa activa/inactiva, visita existente, jornada cerrada, cierre con consumos pendientes, permisos, errores y reintento idempotente. El código de interfaz y API ya está implementado; falta la prueba real y el análisis de calidad de esta revisión.
 - [X] Probar la emisión y renovación de QR con backend y cuentas de prueba autorizadas, incluidos permisos, errores, invalidación del token anterior y cancelación de solicitudes pendientes. La implementación administrativa está en el código; falta la prueba real y el análisis de calidad de esta revisión.
@@ -227,6 +229,8 @@ En el modal de visita, `participants.manage` permite finalizar una participació
 - [ ] Revisar SonarCloud/CI de la revisión correspondiente y completar los flujos en dispositivos; los resultados anteriores no acreditan esta etapa.
 
 Los bundles de Expo, la revisión estática, las pruebas reales del backend y las pruebas en dispositivos deben registrarse por separado. No declarar lint, unit tests, tipos ni la puerta de SonarCloud aprobados si no existe una ejecución para esta revisión.
+
+Verificación de la caché offline del catálogo: `npx expo export --platform all --output-dir dist/offline-catalog-check` generó bundles web, Android e iOS; `git diff --check` pasó. El modo avión y la persistencia tras reiniciar todavía requieren pruebas en dispositivos físicos; no se ejecutaron lint, pruebas unitarias ni tipos porque no están configurados.
 
 Verificación de la etapa de jornada/caja en esta copia: `npx expo export --platform all --output-dir dist/operations-stage4-verified` completó web, Android e iOS; `git diff --check` pasó. `RUN_POSTGRES_E2E=1 npm run test:e2e -- test/table-access-postgres.e2e-spec.ts` en el backend vecino pasó 41 pruebas en su base de datos desechable; valida contratos y reglas del backend, no la interfaz Expo ni una conexión real frontend/backend. No se probaron dispositivos ni cuentas reales. SonarCloud se consultó: el último análisis disponible es del 16 de noviembre de 2026, revisión `e1fdab46fa155cde904cae87420b278e4d257e9f`, con Quality Gate OK y 28 issues abiertos. Ese análisis no incluye esta revisión; su puerta queda pendiente para estos cambios.
 

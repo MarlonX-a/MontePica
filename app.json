@@ -44,7 +44,8 @@
           "locationWhenInUsePermission": "Permite a MontePica adjuntar tu ubicación a una solicitud de domicilio."
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-sqlite"
     ]
   }
 }
