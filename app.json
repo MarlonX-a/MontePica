@@ -26,7 +26,7 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Permite que MontePica use la cámara para escanear el código QR de tu mesa.",
+          "cameraPermission": "Permite que MontePica use la cámara para escanear códigos QR de mesa y fotografiar comprobantes de transferencia.",
           "microphonePermission": false,
           "recordAudioAndroid": false
         }

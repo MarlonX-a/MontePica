@@ -186,7 +186,9 @@ Un resultado incierto no se reenvía automáticamente: se puede consultar la con
 
 La configuración de Expo incluye el mensaje de permiso de ubicación en iOS. La exportación de bundles no comprueba permisos reales del sistema ni el GPS; se debe probar captura, rechazo, servicios desactivados, timeout, cancelación y reintentos en dispositivos con cuentas autorizadas. Lint, pruebas unitarias y tipos no están configurados.
 
-El detalle de pedidos a domicilio consulta su liquidación en `/me/settlements/:id` y permite enviar JPEG/PNG de hasta 5 MiB mediante `/me/settlements/:id/transfer-payments`. La app conserva en memoria el archivo y la clave durante un resultado incierto; el estado `pendingVerification` no representa un pago confirmado. Los formatos PDF y HEIC no se ofrecen. La revisión administrativa del comprobante sigue pendiente.
+En **Pedidos → Detalle del domicilio**, el cliente puede tomar una foto en iOS o Android, o elegir una imagen de la galería (un archivo en web). Ambas opciones aceptan una imagen JPEG o PNG de hasta 5 MiB y abren la misma vista previa. El permiso de cámara se pide al pulsar **Tomar foto**. Si se deniega, la galería sigue disponible. La imagen se puede quitar o reemplazar antes de confirmar el envío.
+
+El panel consulta la liquidación en `/me/settlements/:id` y envía el comprobante a `/me/settlements/:id/transfer-payments`. Si el resultado es incierto, conserva en memoria el archivo y la clave para el reintento. **Pendiente de verificación** indica que el personal debe revisar la transferencia. La comprobación de cámara en dispositivos y del envío hasta la bandeja administrativa con cuentas de prueba sigue pendiente.
 
 
 La interfaz utiliza verde profundo, oliva y crema, con detalles verdes, blancos y rojos inspirados en Manabí. La imagen de la tonga se usa únicamente como referencia de estilo; no se incorpora al contenido.
