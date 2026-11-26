@@ -38,6 +38,12 @@
           "microphonePermission": false
         }
       ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Permite a MontePica adjuntar tu ubicación a una solicitud de domicilio."
+        }
+      ],
       "expo-secure-store"
     ]
   }
