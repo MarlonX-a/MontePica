@@ -62,7 +62,8 @@ export default function useDeliveryReceipt(order, onUpdated) {
       const payment = await submitTransferReceipt(operation.settlementId, file, operation.key);
       clearPendingReceipt(owner, order.id);
       if (alive.current) {
-        setState((current) => ({ ...current, payment, asset: null, uncertain: false, sending: false, notice: `Comprobante recibido. Estado: ${payment.status}. Importe: ${(payment.amountCents / 100).toLocaleString('es-EC', { style: 'currency', currency: 'USD' })}.` }));
+        const status = payment.status === 'pendingVerification' ? 'Pendiente de verificación' : payment.status;
+        setState((current) => ({ ...current, payment, asset: null, uncertain: false, sending: false, notice: `Comprobante recibido. Estado: ${status}. Importe: ${(payment.amountCents / 100).toLocaleString('es-EC', { style: 'currency', currency: 'USD' })}.` }));
       }
       await refresh();
     } catch (error) {

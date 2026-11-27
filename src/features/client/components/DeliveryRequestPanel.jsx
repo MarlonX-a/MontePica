@@ -1,6 +1,8 @@
 import { Alert, Pressable, Text, TextInput, View } from 'react-native';
 import { useState } from 'react';
 import useDeliveryRequests from '@/features/client/hooks/useDeliveryRequests';
+import useDeliveryLocation from '@/features/client/hooks/useDeliveryLocation';
+import DeliveryLocationControls from '@/features/client/components/DeliveryLocationControls';
 import { logoutUser } from '@/shared/api/apiClient';
 const formatMoney = (cents, currency = 'USD') => new Intl.NumberFormat('es-EC', { style: 'currency', currency }).format(cents / 100);
 
@@ -16,6 +18,7 @@ function RequestItem({ item, onRefresh }) {
 
 export default function DeliveryRequestPanel({ cartItems = [], ordersState }) {
   const state = useDeliveryRequests();
+  const locationState = useDeliveryLocation();
   const [selectedId, setSelectedId] = useState(null);
   const { settings, form, update, error, fieldError, loading, submitting, uncertain, items, page, total } = state;
   const selected = items.find((item) => item.id === selectedId);
@@ -25,11 +28,16 @@ export default function DeliveryRequestPanel({ cartItems = [], ordersState }) {
     if (!latest || latest.status !== 'approved' || !latest.usableToday) { setSelectedId(null); return; }
     Alert.alert('Confirmar pedido a domicilio', `Se creará un pedido y una liquidación por aproximadamente ${formatMoney(cartSubtotal + latest.shippingFeeCents, latest.currency)}. Después podrás enviar una imagen JPEG o PNG del comprobante desde el detalle del pedido.`, [{ text: 'Seguir revisando', style: 'cancel' }, { text: 'Crear pedido', onPress: () => void ordersState.submitDeliveryOrder(cartItems, latest.id, state.clientId) }]);
   };
+  const submitRequest = async () => {
+    if (locationState.capturing) return;
+    const submitted = await state.submit(false, locationState.location);
+    if (submitted) locationState.remove();
+  };
   return <View className="mt-5 rounded-2xl bg-[#f5eee5] p-4"><Text className="text-lg font-bold text-[#332d28]">Solicitud de domicilio</Text><Text className="mt-1 text-xs leading-5 text-[#75695f]">{settings?.coverageDescription || 'Consultando cobertura…'}</Text>{settings ? <Text className="mt-2 text-xs font-semibold text-[#a85431]">Tarifa: {formatMoney(settings.shippingFeeCents, settings.currency)}</Text> : null}<Text className="mt-2 text-[10px] leading-4 text-[#81766d]">Enviar tu dirección solicita una revisión y no garantiza cobertura. No envía los productos del carrito.</Text>
     {error ? <Text accessibilityRole="alert" className="mt-3 text-xs text-[#a83224]">{error}</Text> : null}
     {error && !uncertain ? <Pressable onPress={() => void state.load(page, true)} className="mt-2 self-start"><Text className="text-xs font-bold text-[#b7472a]">Reintentar consulta</Text></Pressable> : null}
     {uncertain ? <><Text className="mt-2 text-xs text-[#a83224]">El resultado no está confirmado. Se conservaron los mismos datos y la clave para evitar duplicados.</Text><Pressable disabled={submitting} onPress={() => void state.submit(true)} className="mt-2 rounded-lg bg-[#b7472a] p-3"><Text className="text-center text-xs font-bold text-white">Reintentar la misma solicitud</Text></Pressable></> : null}
-    {!uncertain && settings?.enabled ? <><Field label="Destinatario" value={form.recipientName} onChangeText={(value) => update('recipientName', value)} /><Field label="Teléfono" value={form.phone} onChangeText={(value) => update('phone', value)} /><Field label="Dirección" value={form.address} onChangeText={(value) => update('address', value)} multiline /><Field label="Referencias (opcional)" value={form.references} onChangeText={(value) => update('references', value)} multiline />{fieldError ? <Text className="mb-2 text-xs text-[#a83224]">{fieldError}</Text> : null}<Pressable disabled={submitting || !settings} onPress={() => void state.submit()} className="rounded-xl bg-[#b7472a] p-3"><Text className="text-center text-xs font-bold text-white">{submitting ? 'Enviando solicitud…' : 'Solicitar revisión de cobertura'}</Text></Pressable></> : null}
+    {!uncertain && settings?.enabled ? <><Field label="Destinatario" value={form.recipientName} onChangeText={(value) => update('recipientName', value)} /><Field label="Teléfono" value={form.phone} onChangeText={(value) => update('phone', value)} /><Field label="Dirección" value={form.address} onChangeText={(value) => update('address', value)} multiline /><DeliveryLocationControls locationState={locationState} disabled={submitting} /><Field label="Referencias (opcional)" value={form.references} onChangeText={(value) => update('references', value)} multiline />{fieldError ? <Text className="mb-2 text-xs text-[#a83224]">{fieldError}</Text> : null}<Pressable disabled={submitting || locationState.capturing || !settings} onPress={() => void submitRequest()} className="rounded-xl bg-[#b7472a] p-3"><Text className="text-center text-xs font-bold text-white">{submitting ? 'Enviando solicitud…' : 'Solicitar revisión de cobertura'}</Text></Pressable></> : null}
     {settings && !settings.enabled ? <Text className="mt-3 text-xs text-[#8b8178]">Domicilio está deshabilitado por el momento. Puedes consultar tus solicitudes anteriores.</Text> : null}
     {loading ? <Text className="mt-3 text-xs text-[#8b8178]">Cargando tus solicitudes…</Text> : null}
     {!loading && !items.length ? <Text className="mt-3 text-xs text-[#8b8178]">Aún no tienes solicitudes de domicilio.</Text> : null}

@@ -42,9 +42,15 @@ export default function useDeliveryRequests() {
   useEffect(() => { mounted.current = true; void load(); return () => { mounted.current = false; controller.current?.abort(); }; }, [load]);
 
   const update = (key, value) => setForm((current) => ({ ...current, [key]: value }));
-  const validate = () => {
+  const validate = (location) => {
     const body = { configurationVersion: settings.version, recipientName: form.recipientName.trim(), phone: form.phone.trim(), address: form.address.trim() };
     const references = form.references.trim(); if (references) body.references = references;
+    if (location) {
+      const { latitude, longitude } = location;
+      if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90 || !Number.isFinite(longitude) || longitude < -180 || longitude > 180) return 'La ubicación adjunta no es válida. Actualízala o quítala antes de continuar.';
+      body.latitude = latitude;
+      body.longitude = longitude;
+    }
     if (!body.recipientName || body.recipientName.length > 160) return 'El nombre debe tener entre 1 y 160 caracteres.';
     if (!body.phone || body.phone.length > 20) return 'El teléfono debe tener entre 1 y 20 caracteres.';
     if (!body.address || body.address.length > 500) return 'La dirección debe tener entre 1 y 500 caracteres.';
@@ -52,13 +58,13 @@ export default function useDeliveryRequests() {
     return body;
   };
 
-  const submit = useCallback(async (retry = false) => {
+  const submit = useCallback(async (retry = false, location = null) => {
     if (!clientId || submitting) return;
     let operation = getPendingDeliveryRequest(clientId);
     if (!retry && operation) { setUncertain(true); return; }
     if (!operation) {
       if (!settings?.enabled) { setError('El servicio a domicilio no está disponible actualmente.'); return; }
-      const result = validate(); if (typeof result === 'string') { setFieldError(result); return; }
+      const result = validate(location); if (typeof result === 'string') { setFieldError(result); return false; }
       operation = { body: result, key: Crypto.randomUUID() };
       setPendingDeliveryRequest(clientId, operation);
     }
@@ -67,10 +73,12 @@ export default function useDeliveryRequests() {
       const created = await createDeliveryRequest(operation.body, operation.key);
       clearPendingDeliveryRequest(clientId); setUncertain(false); setItems((current) => [created, ...current]); setTotal((value) => value + 1);
       await load(1, true);
+      return true;
     } catch (requestError) {
       if (isDeliveryResultUncertain(requestError)) setUncertain(true);
       else { clearPendingDeliveryRequest(clientId); setUncertain(false); }
       setError(getDeliveryApiError(requestError));
+      return false;
     } finally { setSubmitting(false); }
   }, [clientId, form, settings, submitting, load]);
 

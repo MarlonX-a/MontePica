@@ -14,7 +14,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import IconButton from '@/features/client/components/IconButton';
 import SelectableChip from '@/features/client/components/SelectableChip';
 import { addToCart } from '@/features/client/data/orderStore';
-import { getMenuProductById } from '@/features/client/api/catalogApi';
+import {
+  getMenuProductById,
+  isCatalogConnectionError,
+} from '@/features/client/api/catalogApi';
+import { getMenuCatalog } from '@/features/client/data/menuCatalogCache';
 
 const spiceOptions = ['Sin ají', 'Suave', 'Medio', 'Fuerte'];
 
@@ -41,6 +45,8 @@ export default function ProductDetailScreen() {
   const { id, service, table, visitId } = useLocalSearchParams();
   const productId = Array.isArray(id) ? id[0] : id;
   const [product, setProduct] = useState(null);
+  const [isCachedProduct, setIsCachedProduct] = useState(false);
+  const [imageFailed, setImageFailed] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [reloadKey, setReloadKey] = useState(0);
@@ -59,8 +65,35 @@ export default function ProductDetailScreen() {
 
       try {
         const loadedProduct = await getMenuProductById(productId);
-        if (isMounted) setProduct(loadedProduct);
+        if (isMounted) {
+          setProduct(loadedProduct);
+          setIsCachedProduct(false);
+          setImageFailed(false);
+        }
       } catch (error) {
+        if (isMounted && isCatalogConnectionError(error)) {
+          try {
+            const catalog = await getMenuCatalog();
+            if (!isMounted) return;
+            const cachedProduct = catalog?.products.find(
+              (item) => item.id === productId,
+            );
+            if (cachedProduct) {
+              setProduct(cachedProduct);
+              setIsCachedProduct(true);
+              setImageFailed(false);
+              return;
+            }
+          } catch {
+            // Show the same offline message when the local database is unavailable.
+          }
+          if (isMounted) {
+            setLoadError(
+              'No hay una copia guardada de este producto. Conéctate a internet y vuelve a abrir el menú.',
+            );
+          }
+          return;
+        }
         const apiMessage = error?.response?.data?.message;
         const message = Array.isArray(apiMessage)
           ? apiMessage.join(' ')
@@ -137,12 +170,13 @@ export default function ProductDetailScreen() {
       <View className="flex-1">
         <ScrollView showsVerticalScrollIndicator={false}>
           <View className="relative h-[300px] items-center justify-center overflow-hidden bg-[#ead2bd]">
-            {product.image ? (
+            {product.image && !imageFailed ? (
               <Image
                 source={product.image}
                 resizeMode="cover"
                 accessibilityLabel={product.name}
                 className="absolute inset-0 h-full w-full"
+                onError={() => setImageFailed(true)}
               />
             ) : (
               <>
@@ -187,6 +221,26 @@ export default function ProductDetailScreen() {
               {product.description}{' '}
               {isCeviche && 'Acompañado con limón y cilantro fresco.'}
             </Text>
+
+            {isCachedProduct ? (
+              <View className="mt-4 rounded-xl border border-[#e8cda8] bg-[#fff0d8] px-3 py-3">
+                <Text className="text-xs font-semibold text-[#80532d]">
+                  Catálogo guardado
+                </Text>
+                <Text className="mt-1 text-xs leading-5 text-[#80532d]">
+                  El precio es referencial. Conéctate a internet para agregar este producto al pedido.
+                </Text>
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => setReloadKey((key) => key + 1)}
+                  className="mt-2 self-start rounded-lg bg-[#f2dfc5] px-3 py-2"
+                >
+                  <Text className="text-xs font-semibold text-[#80532d]">
+                    Reintentar conexión
+                  </Text>
+                </Pressable>
+              </View>
+            ) : null}
 
             <View className="mt-4 flex-row items-center rounded-lg bg-[#f4eee5] px-3 py-2.5">
               <View className="mr-2 h-2 w-2 rounded-full bg-[#b7472a]" />
@@ -274,6 +328,8 @@ export default function ProductDetailScreen() {
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={`Agregar ${quantity} al pedido por $${total}`}
+              accessibilityState={{ disabled: isCachedProduct }}
+              disabled={isCachedProduct}
               onPress={() => {
                 const added = addToCart({
                   product,
@@ -296,10 +352,12 @@ export default function ProductDetailScreen() {
                   params: { service, table, visitId },
                 });
               }}
-              className="h-12 flex-1 flex-row items-center justify-center rounded-xl bg-[#b7472a]"
+              className={`h-12 flex-1 flex-row items-center justify-center rounded-xl ${isCachedProduct ? 'bg-[#a99b8f]' : 'bg-[#b7472a]'}`}
             >
               <Text className="mr-2 text-white">▣</Text>
-              <Text className="font-bold text-white">Agregar · ${total}</Text>
+              <Text className="font-bold text-white">
+                {isCachedProduct ? 'Sin conexión' : `Agregar · $${total}`}
+              </Text>
             </Pressable>
           </View>
         </View>
