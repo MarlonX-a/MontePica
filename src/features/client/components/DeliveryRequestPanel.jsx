@@ -3,6 +3,7 @@ import { useState } from 'react';
 import useDeliveryRequests from '@/features/client/hooks/useDeliveryRequests';
 import useDeliveryLocation from '@/features/client/hooks/useDeliveryLocation';
 import DeliveryLocationControls from '@/features/client/components/DeliveryLocationControls';
+import DeliveryNotificationControls from '@/features/client/components/DeliveryNotificationControls';
 import { logoutUser } from '@/shared/api/apiClient';
 const formatMoney = (cents, currency = 'USD') => new Intl.NumberFormat('es-EC', { style: 'currency', currency }).format(cents / 100);
 
@@ -16,8 +17,8 @@ function RequestItem({ item, onRefresh }) {
   return <View className="mt-3 rounded-xl border border-[#eadfd2] bg-white p-3"><View className="flex-row justify-between"><Text className="text-xs font-bold text-[#332d28]">{statusLabels[item.status] || item.status}</Text><Text className="text-xs font-semibold text-[#b7472a]">{formatMoney(item.shippingFeeCents, item.currency)}</Text></View><Text className="mt-1 text-[11px] text-[#75695f]">{item.address}</Text><Text className="mt-1 text-[10px] text-[#8b8178]">{new Date(item.createdAt).toLocaleString('es-EC')}</Text>{item.status === 'rejected' && item.rejectionReason ? <Text className="mt-2 text-xs text-[#a83224]">Motivo: {item.rejectionReason}</Text> : null}{item.status === 'approved' ? <Text className="mt-2 text-[10px] text-[#477052]">{item.usableToday ? 'Esta solicitud puede utilizarse hoy.' : 'Aprobada, pero no está disponible para uso hoy.'}</Text> : null}<Pressable onPress={() => onRefresh(item.id)} className="mt-2 self-start"><Text className="text-xs font-bold text-[#b7472a]">Actualizar estado</Text></Pressable></View>;
 }
 
-export default function DeliveryRequestPanel({ cartItems = [], ordersState }) {
-  const state = useDeliveryRequests();
+export default function DeliveryRequestPanel({ cartItems = [], ordersState, noticeId }) {
+  const state = useDeliveryRequests(noticeId);
   const locationState = useDeliveryLocation();
   const [selectedId, setSelectedId] = useState(null);
   const { settings, form, update, error, fieldError, loading, submitting, uncertain, items, page, total } = state;
@@ -34,6 +35,7 @@ export default function DeliveryRequestPanel({ cartItems = [], ordersState }) {
     if (submitted) locationState.remove();
   };
   return <View className="mt-5 rounded-2xl bg-[#f5eee5] p-4"><Text className="text-lg font-bold text-[#332d28]">Solicitud de domicilio</Text><Text className="mt-1 text-xs leading-5 text-[#75695f]">{settings?.coverageDescription || 'Consultando cobertura…'}</Text>{settings ? <Text className="mt-2 text-xs font-semibold text-[#a85431]">Tarifa: {formatMoney(settings.shippingFeeCents, settings.currency)}</Text> : null}<Text className="mt-2 text-[10px] leading-4 text-[#81766d]">Enviar tu dirección solicita una revisión y no garantiza cobertura. No envía los productos del carrito.</Text>
+    <DeliveryNotificationControls />
     {error ? <Text accessibilityRole="alert" className="mt-3 text-xs text-[#a83224]">{error}</Text> : null}
     {error && !uncertain ? <Pressable onPress={() => void state.load(page, true)} className="mt-2 self-start"><Text className="text-xs font-bold text-[#b7472a]">Reintentar consulta</Text></Pressable> : null}
     {uncertain ? <><Text className="mt-2 text-xs text-[#a83224]">El resultado no está confirmado. Se conservaron los mismos datos y la clave para evitar duplicados.</Text><Pressable disabled={submitting} onPress={() => void state.submit(true)} className="mt-2 rounded-lg bg-[#b7472a] p-3"><Text className="text-center text-xs font-bold text-white">Reintentar la misma solicitud</Text></Pressable></> : null}

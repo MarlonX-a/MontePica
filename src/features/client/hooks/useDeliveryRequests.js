@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import * as Crypto from 'expo-crypto';
-import { getCurrentUser } from '@/shared/session/sessionStore';
+import { getCurrentUser, getSessionSnapshot } from '@/shared/session/sessionStore';
 import { createDeliveryRequest, getDeliveryApiError, getDeliverySettings, getMyDeliveryRequest, getMyDeliveryRequests, isDeliveryResultUncertain } from '@/features/client/api/deliveryApi';
 import { clearPendingDeliveryRequest, getPendingDeliveryRequest, setPendingDeliveryRequest } from '@/features/client/data/deliveryRequestStore';
+import { notifyDeliveryRequestCreated } from '@/features/client/data/deliveryNotifications';
 
 const initialForm = { recipientName: '', phone: '', address: '', references: '' };
 const clientIdFor = (user) => user?.clientId || user?.id || user?.userId;
 
-export default function useDeliveryRequests() {
+export default function useDeliveryRequests(noticeId) {
   const user = getCurrentUser();
   const clientId = clientIdFor(user);
   const [settings, setSettings] = useState(null);
@@ -39,7 +40,7 @@ export default function useDeliveryRequests() {
     setLoading(false); setRefreshing(false);
   }, []);
 
-  useEffect(() => { mounted.current = true; void load(); return () => { mounted.current = false; controller.current?.abort(); }; }, [load]);
+  useEffect(() => { mounted.current = true; void load(); return () => { mounted.current = false; controller.current?.abort(); }; }, [load, noticeId]);
 
   const update = (key, value) => setForm((current) => ({ ...current, [key]: value }));
   const validate = (location) => {
@@ -68,9 +69,11 @@ export default function useDeliveryRequests() {
       operation = { body: result, key: Crypto.randomUUID() };
       setPendingDeliveryRequest(clientId, operation);
     }
+    const { generation } = getSessionSnapshot();
     setSubmitting(true); setError(''); setFieldError('');
     try {
       const created = await createDeliveryRequest(operation.body, operation.key);
+      void notifyDeliveryRequestCreated(created.id, generation).catch(() => {});
       clearPendingDeliveryRequest(clientId); setUncertain(false); setItems((current) => [created, ...current]); setTotal((value) => value + 1);
       await load(1, true);
       return true;

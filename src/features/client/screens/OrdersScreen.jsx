@@ -496,7 +496,7 @@ export default function OrdersScreen() {
             onRetry={ordersState.retrySubmission}
             onBackToMenu={goToMenu}
           />
-          {routeService === 'delivery' || cartItems.some((item) => item.service === 'delivery') ? <DeliveryRequestPanel cartItems={cartItems} ordersState={ordersState} /> : null}
+          {routeService === 'delivery' || cartItems.some((item) => item.service === 'delivery') ? <DeliveryRequestPanel cartItems={cartItems} ordersState={ordersState} noticeId={firstParam(params.noticeId)} /> : null}
           <OrderHistory ordersState={ordersState} />
           <AccountPaymentHistory />
         </ScrollView>
