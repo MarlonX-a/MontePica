@@ -2,6 +2,19 @@
 
 Aplicación para una cevichería, construida con Expo, React Native, Expo Router y NativeWind. El login, el registro, el catálogo del cliente, los pedidos de servicio en salón y de domicilio, la bandeja del mesero y la gestión administrativa de productos/categorías, inventario, usuarios, mesas y visitas consultan el backend. El carrito permanece en memoria. El detalle del pedido a domicilio permite enviar un comprobante JPEG/PNG; la bandeja administrativa de revisión de transferencias ya está conectada y su prueba real queda pendiente. Otras pantallas administrativas conservan simulaciones locales.
 
+## Avisos de cobertura en Android
+
+En **Pedidos → Domicilio**, pulsa **Activar avisos de domicilio** y concede el permiso. Después de que la API guarde la solicitud, Android muestra **Solicitud registrada** una vez por ID. Cuando el personal aprueba o rechaza la cobertura, el backend envía el aviso remoto a los dispositivos registrados en sesiones vigentes. Al tocar el aviso, la app abre **Pedidos → Domicilio** y consulta el listado actualizado con la sesión del cliente.
+
+La app Android usa `com.marlonx.montepica`, el proyecto EAS de `marlonx-as-team` y el archivo de configuración de Firebase `google-services.json`. La clave privada de la cuenta de servicio FCM V1 se carga en EAS y se guarda fuera del repositorio. La recepción remota requiere la compilación de desarrollo de MontePica.
+
+1. En el backend, verifica que la conexión apunta a la base de **prueba**. Ejecuta `npm run migration:run` y arranca la API con `npm run start:dev`.
+2. Abre la [compilación de desarrollo de esta revisión](https://expo.dev/accounts/marlonx-as-team/projects/MontePica/builds/5c07bbc5-1731-4352-a6b9-85eb82eaba3e). Cuando EAS publique la APK, instálala en el teléfono. Para una revisión posterior, genera otra con `npx eas-cli@latest build --platform android --profile development` si cambió la configuración nativa.
+3. Configura `EXPO_PUBLIC_API_URL` con una dirección accesible desde el teléfono e inicia Metro con `npx expo start --dev-client`.
+4. Usa cuentas de prueba para activar los avisos, solicitar cobertura y resolverla desde administración. Repite con Android en primer plano, en segundo plano y con la app cerrada. Comprueba que al tocar el aviso aparezca el estado actualizado.
+
+Expo Export generó los bundles de Android, iOS y web. Se probaron de forma aislada el permiso bloqueado, la respuesta correcta o fallida de la API, la deduplicación, la rotación del token y el manejo de la pulsación. Queda pendiente la recepción real en Android.
+
 ## Estructura del código
 
 ```text

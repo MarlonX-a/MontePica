@@ -182,6 +182,8 @@ Actividades implementadas en el código actual (las pruebas reales y el análisi
 
 Actividades pendientes:
 
+- [ ] Verificar en Android físico el aviso local y las push de aprobación y rechazo de cobertura en primer plano, segundo plano y con la app cerrada. El código usa `deliveryNotifications.android.js`, el panel de Pedidos y el registro autenticado `/me/push-device`. Comprobar que la pulsación abre Pedidos y consulta el estado real. Expo Export y las comprobaciones aisladas ya pasaron.
+
 - [x] Implementar caché SQLite del catálogo completo para iOS/Android, recuperación ante fallos de conexión, fecha/reintento y bloqueo de compra con datos guardados; web conserva solo consulta online.
 - [ ] Probar la caché del catálogo sin conexión en iOS y Android: primera carga online, reinicio de app, actualización correcta, caída de red, error HTTP, imagen remota ausente y bloqueo de **Agregar** desde un detalle guardado. Web debe seguir mostrando el error/reintento sin crear caché local. Registrar pruebas reales por plataforma.
 - [ ] Verificar con el backend y cuentas de prueba autorizadas los flujos ya conectados, incluidos permisos, errores y persistencia. La edición de mesas aún requiere prueba real; documentar resultados y limitaciones por plataforma.
